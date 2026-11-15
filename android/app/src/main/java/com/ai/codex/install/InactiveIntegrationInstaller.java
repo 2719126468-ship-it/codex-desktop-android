@@ -1,5 +1,6 @@
 package com.ai.codex.install;
 
+import com.ai.codex.InputStreams;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -286,7 +287,7 @@ public final class InactiveIntegrationInstaller {
         byte[] read(Path path,int limit) throws IOException {
             regular(path);
             try(InputStream stream=Files.newInputStream(path,LinkOption.NOFOLLOW_LINKS)) {
-                byte[] bytes=stream.readNBytes(limit+1); if(bytes.length>limit) throw new IOException("Oversized integration metadata"); return bytes;
+                byte[] bytes=InputStreams.readNBytes(stream,limit+1); if(bytes.length>limit) throw new IOException("Oversized integration metadata"); return bytes;
             }
         }
         void requireExact(Path path,byte[] bytes,int mode) throws IOException {

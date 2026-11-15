@@ -100,10 +100,10 @@ public final class CodexAdbChannel extends AbsAdbConnectionManager {
                 InputStream source=stream.openInputStream();ByteArrayOutputStream output=new ByteArrayOutputStream();
                 while(true){
                     int channel=source.read();if(channel<0)throw new IOException("adb_execution_unknown");
-                    byte[] length=source.readNBytes(4);if(length.length!=4)throw new IOException("adb_execution_unknown");
+                    byte[] length=InputStreams.readNBytes(source,4);if(length.length!=4)throw new IOException("adb_execution_unknown");
                     int size=java.nio.ByteBuffer.wrap(length).order(java.nio.ByteOrder.LITTLE_ENDIAN).getInt();
                     if(size<0||size>1048576)throw new IOException("adb_frame_invalid");
-                    byte[] bytes=source.readNBytes(size);if(bytes.length!=size)throw new IOException("adb_execution_unknown");
+                    byte[] bytes=InputStreams.readNBytes(source,size);if(bytes.length!=size)throw new IOException("adb_execution_unknown");
                     if(channel==3){if(size!=1)throw new IOException("adb_exit_invalid");int exit=bytes[0]&255;
                         return new JSONObject().put("ok",exit==0).put("exitCode",exit).put("output",output.toString(StandardCharsets.UTF_8.name())).put("channel","adb");}
                     if(channel!=1&&channel!=2)throw new IOException("adb_frame_invalid");

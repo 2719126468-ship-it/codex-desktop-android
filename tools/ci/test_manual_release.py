@@ -2,12 +2,14 @@
 import argparse
 import hashlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
 import subprocess
 import shutil
 import tempfile
+import tarfile
 import unittest
 from unittest.mock import patch
 from zipfile import ZipFile, ZIP_STORED
@@ -18,6 +20,31 @@ SPEC = importlib.util.spec_from_file_location("release_candidate", release.ROOT 
 candidate = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(candidate)
 engine_builder = release.module("release_engine_builder", "tools/executor/build-gnu-engine.py")
+
+
+class GnuLoaderTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == "posix" and Path("/lib64/ld-linux-x86-64.so.2").is_file(),
+                         "Requires the Linux host ELF interpreter")
+    def test_collected_interpreter_can_be_executed_directly(self):
+        # Use the trusted host interpreter to exercise execution permissions
+        # without requiring QEMU in the workflow's initial regression job.
+        collector = release.module("release_library_collector", "tools/executor/collect-gnu-rootfs-libraries.py")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "rootfs.tar.gz"
+            payload = Path("/lib64/ld-linux-x86-64.so.2").read_bytes()
+            with tarfile.open(archive, "w:gz") as output:
+                member = tarfile.TarInfo("usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1")
+                member.size, member.mode = len(payload), 0o755
+                output.addfile(member, io.BytesIO(payload))
+            libraries = root / "libraries"
+            args = argparse.Namespace(rootfs_archive=archive, rootfs_sha256=release.digest(archive),
+                                      binaries=root, output=libraries)
+            with patch.object(collector, "needed", return_value=[]):
+                collector.collect(args)
+            result = subprocess.run([libraries / "ld-linux-aarch64.so.1", "--help"],
+                                    text=True, capture_output=True, check=True)
+            self.assertIn("Usage:", result.stdout)
 
 
 class WorkspacePermissionTests(unittest.TestCase):

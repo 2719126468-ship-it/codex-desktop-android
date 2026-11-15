@@ -9,6 +9,7 @@ FoldGPT depends on independent open-source projects. The host's GPL-3.0-or-later
 | OpenAI Codex | Native execution integration patch in [`recovery/engine`](recovery/engine), based on `rust-v0.169.0`; retain the [Apache-2.0 license](docs/licenses/codex-LICENSE) and [upstream NOTICE](docs/licenses/codex-NOTICE) |
 | dsh-Go phone control | Ported modules and their upstream notices are recorded under [third-party/dsh-go-phone](third-party/dsh-go-phone) |
 | Apache Commons components | Installer dependencies resolved by Gradle; Apache License 2.0. Keep each artifact's LICENSE and NOTICE when preparing a binary distribution |
+| desugar_jdk_libs NIO | Java API backports from [google/desugar_jdk_libs](https://github.com/google/desugar_jdk_libs), resolved as `desugar_jdk_libs_nio:2.1.5`; GPL-2.0 with the Classpath Exception |
 | Other toolchain and runtime components | Each prepared-source/build manifest identifies its own upstream inputs and licenses. Preserve those notices with its source and any separately built artifacts |
 
 Vendored Termux:X11 includes dependency-specific licenses, including [Android shared-memory support](vendor/termux-x11/lorie/src/main/cpp/lorie/shm/LICENSE) and [bzip2](vendor/termux-x11/lorie/src/main/cpp/bzip2/LICENSE). Consult the full source trees and build manifests before packaging; this table is an entry point, not a complete binary bill of materials.

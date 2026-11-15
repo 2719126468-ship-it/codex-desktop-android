@@ -63,7 +63,7 @@ public final class NativeFilesRpcProbeService extends Service {
                     File target = new File(sources, relative);
                     Files.createDirectories(target.getParentFile().toPath());
                     try (InputStream input = getAssets().open("native-files-rpc/" + relative)) {
-                        byte[] bytes = input.readNBytes(1048577);
+                        byte[] bytes = InputStreams.readNBytes(input, 1048577);
                         if (bytes.length > 1048576) throw new IOException("APK diagnostic source exceeds bound");
                         Files.write(target.toPath(), bytes, StandardOpenOption.CREATE_NEW);
                     }

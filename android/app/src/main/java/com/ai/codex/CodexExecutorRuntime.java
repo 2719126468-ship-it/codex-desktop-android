@@ -75,7 +75,12 @@ public final class CodexExecutorRuntime {
 
     public synchronized CompletableFuture<Endpoint> prepare() {
         try { return prepare(com.ai.codex.install.GuestIdentity.load(new File(context.getFilesDir(), "debian").toPath()).home); }
-        catch (Exception error) { return CompletableFuture.failedFuture(error); }
+        catch (Exception error) { return failedFuture(error); }
+    }
+    private static <T> CompletableFuture<T> failedFuture(Throwable error) {
+        CompletableFuture<T> result = new CompletableFuture<>();
+        result.completeExceptionally(error);
+        return result;
     }
     /** Only an installed explicit production schema selects the normal UI route. */
     public boolean isNativeSelected() throws Exception {
@@ -88,7 +93,7 @@ public final class CodexExecutorRuntime {
         throw new SecurityException("Installed executor selection has an unsupported schema");
     }
     public synchronized CompletableFuture<Endpoint> prepare(String controllerHome) {
-        if (closing) return CompletableFuture.failedFuture(new IllegalStateException("Native executor owner is closing"));
+        if (closing) return failedFuture(new IllegalStateException("Native executor owner is closing"));
         if (preparing != null) return preparing;
         preparing = new CompletableFuture<>();
         persist("preparing", null, null);

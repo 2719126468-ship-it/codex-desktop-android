@@ -67,7 +67,9 @@ def collect(args):
             with archive.extractfile(member) as source, destination.open("xb") as target:
                 while block := source.read(1024 * 1024):
                     target.write(block)
-            destination.chmod(0o644)
+            # QEMU starts this ELF interpreter directly when probing a portable
+            # dependency set, so it must retain executable permissions.
+            destination.chmod(0o755 if name == "ld-linux-aarch64.so.1" else 0o644)
             if destination.read_bytes()[:7] != b"\x7fELF\x02\x01\x01":
                 raise ValueError("GNU dependency is not ELF64 little-endian")
             records.append({"path": name, "sourceMember": member.name, "sha256": digest(destination),

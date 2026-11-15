@@ -72,7 +72,7 @@ final class CodexPostureController implements AutoCloseable {
     }
 
     void refreshDisplay() {
-        if (!running || !supported) return;
+        if (Build.VERSION.SDK_INT < 31 || !running || !supported) return;
         Display display = activity.getDisplay();
         if (display == null || !display.isValid()) {
             detachContext();

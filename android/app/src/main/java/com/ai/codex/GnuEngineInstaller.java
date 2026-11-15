@@ -31,7 +31,7 @@ public final class GnuEngineInstaller {
         ownedDirectory(share, uid);
         byte[] metadata;
         try (InputStream input = context.getAssets().open("gnu-engine/manifest.json")) {
-            metadata = input.readNBytes(65537);
+            metadata = InputStreams.readNBytes(input, 65537);
         }
         if (metadata.length > 65536) throw new java.io.IOException("GNU engine manifest exceeds limit");
         JSONObject manifest = new JSONObject(new String(metadata, StandardCharsets.UTF_8));

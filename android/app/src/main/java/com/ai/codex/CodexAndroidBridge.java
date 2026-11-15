@@ -84,7 +84,7 @@ public final class CodexAndroidBridge {
             .put("permissionRequests", CodexAndroidPermissionActivity.status())
             .put("deviceCommands", CodexDeviceCommands.status()).put("capabilities", CodexDeviceFeatures.status(context))
             .put("device", new JSONObject().put("manufacturer", android.os.Build.MANUFACTURER)
-                .put("model", android.os.Build.MODEL).put("soc", android.os.Build.SOC_MODEL)
+                .put("model", android.os.Build.MODEL).put("soc", android.os.Build.VERSION.SDK_INT >= 31 ? android.os.Build.SOC_MODEL : "unknown")
                 .put("android", android.os.Build.VERSION.RELEASE).put("api", android.os.Build.VERSION.SDK_INT));
         KeyguardManager keyguard = context.getSystemService(KeyguardManager.class);
         PowerManager power = context.getSystemService(PowerManager.class);

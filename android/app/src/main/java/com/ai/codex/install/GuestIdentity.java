@@ -1,5 +1,6 @@
 package com.ai.codex.install;
 
+import com.ai.codex.InputStreams;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
@@ -34,7 +35,7 @@ public final class GuestIdentity {
     private static String read(Path path,int limit) throws IOException {
         if (!Files.isRegularFile(path,LinkOption.NOFOLLOW_LINKS)) throw new IOException("Missing or linked guest identity file: "+path.getFileName());
         try (SeekableByteChannel channel=Files.newByteChannel(path,Set.of(StandardOpenOption.READ,LinkOption.NOFOLLOW_LINKS))) {
-            byte[] bytes=Channels.newInputStream(channel).readNBytes(limit+1);
+            byte[] bytes=InputStreams.readNBytes(Channels.newInputStream(channel),limit+1);
             if(bytes.length>limit) throw new IOException("Oversized guest identity file");
             String text=new String(bytes,StandardCharsets.UTF_8);
             if(text.indexOf('\0')>=0 || text.indexOf('\r')>=0) throw new IOException("Invalid guest identity encoding");

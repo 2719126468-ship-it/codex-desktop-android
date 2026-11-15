@@ -19,7 +19,7 @@ final class NativeProbeFiles {
             Path target=root.resolve(name);
             Files.createDirectories(target.getParent());
             try(InputStream input=context.getAssets().open(prefix+"/"+name)) {
-                byte[] content=input.readNBytes(1048577);
+                byte[] content=InputStreams.readNBytes(input,1048577);
                 if(content.length>1048576) throw new IOException("Probe source exceeds its bound");
                 Files.write(target,content,StandardOpenOption.CREATE_NEW);
             }

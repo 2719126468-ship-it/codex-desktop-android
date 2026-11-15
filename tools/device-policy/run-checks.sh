@@ -14,7 +14,7 @@ if [[ -z "$json" ]]; then
     json=$(find "${GRADLE_USER_HOME:-$HOME/.gradle}/caches/modules-2/files-2.1/org.json/json" -name '*.jar' -type f -print -quit 2>/dev/null || true)
 fi
 [[ -f "$json" ]] || { printf '%s\n' 'Set CODEX_JSON_JAR to the local org.json dependency jar.' >&2; exit 1; }
-"$JAVA_HOME/bin/javac" -encoding UTF-8 -cp "$json" -d "$out" tools/device-policy/fixtures/android/{content/Context,content/pm/ApplicationInfo,util/AtomicFile,system/Os}.java android/app/src/main/java/com/ai/codex/CodexDeviceHttp.java tools/device-policy/DeviceHttpCheck.java
+"$JAVA_HOME/bin/javac" -encoding UTF-8 -cp "$json" -d "$out" tools/device-policy/fixtures/android/{content/Context,content/pm/ApplicationInfo,util/AtomicFile,system/Os}.java android/app/src/main/java/com/ai/codex/{InputStreams,CodexDeviceHttp}.java tools/device-policy/DeviceHttpCheck.java
 "$JAVA_HOME/bin/java" -cp "$out:$json" com.ai.codex.DeviceHttpCheck
 "$JAVA_HOME/bin/javac" -encoding UTF-8 -cp "$out:$json" -d "$out" tools/device-policy/fixtures/com/ai/codex/CodexDeviceFeatures.java android/app/src/main/java/com/ai/codex/CodexRootChannel.java tools/device-policy/RootEntryCheck.java
 "$JAVA_HOME/bin/java" -cp "$out:$json" com.ai.codex.RootEntryCheck

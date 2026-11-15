@@ -16,6 +16,7 @@ DEPENDENCIES
 work=$(mktemp -d /var/tmp/codex-integration-java-XXXXXXXX)
 chmod 755 "$work"
 mkdir "$work/classes" "$work/sources"
+cp "$repo/android/app/src/main/java/com/ai/codex/InputStreams.java" "$work/sources/"
 for name in RootfsExtractor RootfsTransaction ProotHardlinkStorage GuestIdentity GuestAccountProvisioner InactiveIntegrationBundle InactiveIntegrationInstaller; do
   cp "$repo/android/app/src/main/java/com/ai/codex/install/$name.java" "$work/sources/"
 done

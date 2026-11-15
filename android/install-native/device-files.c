@@ -36,7 +36,7 @@ static int open_path(JNIEnv *env, jbyteArray input, int directory) {
 done:
     free(path); if (fd < 0) fail(env); return fd;
 }
-JNIEXPORT jbyteArray JNICALL Java_com_ai_codex_FoldDeviceFileRead_readUtf8(JNIEnv *env,jclass type,jbyteArray path,jint limit) {
+JNIEXPORT jbyteArray JNICALL Java_com_ai_codex_CodexDeviceFileRead_readUtf8(JNIEnv *env,jclass type,jbyteArray path,jint limit) {
     (void)type;
     if (limit < 1 || limit > 1048576) { fail(env); return NULL; }
     int fd = open_path(env,path,0); if (fd < 0) return NULL;
@@ -57,7 +57,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_ai_codex_FoldDeviceFileRead_readUtf8(JNIEn
     else { result=(*env)->NewByteArray(env,(jsize)size); if (result) (*env)->SetByteArrayRegion(env,result,0,(jsize)size,(jbyte*)data); }
     free(data); return result;
 }
-JNIEXPORT jobjectArray JNICALL Java_com_ai_codex_FoldDeviceFileRead_listUtf8(JNIEnv *env,jclass type,jbyteArray path,jint limit) {
+JNIEXPORT jobjectArray JNICALL Java_com_ai_codex_CodexDeviceFileRead_listUtf8(JNIEnv *env,jclass type,jbyteArray path,jint limit) {
     (void)type;
     if (limit < 1 || limit > 257) { fail(env); return NULL; }
     int fd = open_path(env,path,1); if (fd < 0) return NULL;
@@ -88,7 +88,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_ai_codex_FoldDeviceFileRead_listUtf8(JNI
     free(names); return result;
 }
 
-JNIEXPORT jlong JNICALL Java_com_ai_codex_FoldDeviceFileRead_copyUtf8(JNIEnv *env,jclass type,jbyteArray path,jint output,jlong limit) {
+JNIEXPORT jlong JNICALL Java_com_ai_codex_CodexDeviceFileRead_copyUtf8(JNIEnv *env,jclass type,jbyteArray path,jint output,jlong limit) {
     (void)type;
     if (limit<1 || limit>134217728 || output<0) { fail(env); return -1; }
     int source=open_path(env,path,0); if (source<0) return -1;

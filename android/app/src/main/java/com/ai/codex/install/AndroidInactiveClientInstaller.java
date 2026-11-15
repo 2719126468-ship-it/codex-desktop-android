@@ -1,5 +1,6 @@
 package com.ai.codex.install;
 
+import com.ai.codex.InputStreams;
 import android.content.Context;
 import android.system.*;
 import java.io.*;
@@ -145,7 +146,7 @@ public final class AndroidInactiveClientInstaller {
     private static byte[] readOwned(Path path,int limit) throws IOException {
         regular(path);
         try(InputStream stream=Files.newInputStream(path,LinkOption.NOFOLLOW_LINKS)) {
-            byte[] data=stream.readNBytes(limit+1); if(data.length>limit) throw new IOException("Inactive client report too large"); return data;
+            byte[] data=InputStreams.readNBytes(stream,limit+1); if(data.length>limit) throw new IOException("Inactive client report too large"); return data;
         }
     }
     private static StructStat regular(Path path) throws IOException {

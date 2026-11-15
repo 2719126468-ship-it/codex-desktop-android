@@ -1,5 +1,6 @@
 package com.ai.codex.install;
 
+import com.ai.codex.InputStreams;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -79,10 +80,10 @@ public final class InactiveIntegrationBundle {
     public static InactiveIntegrationBundle read(InputStream input,String trustedSha256,long trustedBytes) throws IOException {
         if(trustedSha256==null || !trustedSha256.matches("[0-9a-f]{64}") || trustedBytes<=0 || trustedBytes>MAX_BYTES)
             throw new IOException("Independent integration digest and size are required");
-        byte[] bytes=input.readNBytes((int)trustedBytes+1);
+        byte[] bytes=InputStreams.readNBytes(input,(int)trustedBytes+1);
         if(bytes.length!=trustedBytes || !hash(bytes).equals(trustedSha256)) throw new IOException("Integration container authentication failed");
         DataInputStream stream=new DataInputStream(new ByteArrayInputStream(bytes));
-        byte[] magic=stream.readNBytes((FORMAT+"\n").length());
+        byte[] magic=InputStreams.readNBytes(stream,(FORMAT+"\n").length());
         String framing=new String(magic,StandardCharsets.US_ASCII);
         if(!framing.equals(FORMAT+"\n") && !framing.equals(FORMAT_WITH_CONTEXT+"\n")) throw new IOException("Invalid integration framing");
         String format=framing.substring(0,framing.length()-1);
@@ -90,7 +91,7 @@ public final class InactiveIntegrationBundle {
         Map<String,Integer> allowedFiles=context?FILES_WITH_CONTEXT:FILES;
         int length=stream.readInt();
         if(length<=0 || length>512*1024) throw new IOException("Integration manifest exceeds bound");
-        byte[] encoded=stream.readNBytes(length);
+        byte[] encoded=InputStreams.readNBytes(stream,length);
         if(encoded.length!=length) throw new IOException("Truncated integration manifest");
         for(byte value:encoded) if(value<0 || value==0 || value=='\r') throw new IOException("Integration manifest must be canonical ASCII");
         String[] lines=new String(encoded,StandardCharsets.US_ASCII).split("\n",-1);

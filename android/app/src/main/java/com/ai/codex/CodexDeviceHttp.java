@@ -69,7 +69,7 @@ public final class CodexDeviceHttp {
                     .put("operations",new JSONArray(java.util.Arrays.asList(OPERATIONS.split(" "))));
             }else if(request[0].equals("GET")&&request[1].equals("/app/status"))result=handler.call("status",new JSONObject());
             else if(request[0].equals("POST")&&request[1].equals("/app/call")&&length>0){
-                byte[] data=input.readNBytes(length);if(data.length!=length)throw new IOException();JSONObject payload=new JSONObject(new String(data,StandardCharsets.UTF_8));
+                byte[] data=InputStreams.readNBytes(input,length);if(data.length!=length)throw new IOException();JSONObject payload=new JSONObject(new String(data,StandardCharsets.UTF_8));
                 if(payload.length()>2||!payload.has("op")||payload.has("args")&&!(payload.opt("args") instanceof JSONObject))throw new IOException();
                 result=handler.call(payload.getString("op"),payload.optJSONObject("args"));
             }else{reply(client,404,new JSONObject().put("ok",false).put("error","unknown_endpoint"));return;}

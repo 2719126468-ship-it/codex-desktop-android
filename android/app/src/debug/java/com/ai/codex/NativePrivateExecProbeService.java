@@ -69,7 +69,7 @@ public final class NativePrivateExecProbeService extends Service {
                     Path target=sourceRoot.resolve(relative);
                     Files.createDirectories(target.getParent());
                     try(InputStream input=getAssets().open("private-exec-probe/"+relative)) {
-                        byte[] data=input.readNBytes(1048577);
+                        byte[] data=InputStreams.readNBytes(input,1048577);
                         if(data.length>1048576) throw new IOException("Diagnostic source exceeds bound");
                         Files.write(target,data,StandardOpenOption.CREATE_NEW);
                     }

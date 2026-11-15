@@ -25,12 +25,14 @@ DEPENDENCIES
 work=$(mktemp -d /var/tmp/codex-install-java-XXXXXXXX)
 chmod 755 "$work"
 mkdir "$work/classes" "$work/sources"
+cp "$repo/android/app/src/main/java/com/ai/codex/InputStreams.java" "$work/sources/"
 cp "$repo/android/app/src/main/java/com/ai/codex/install/"*.java "$work/sources/"
 cp "$repo/android/app/src/test/java/com/ai/codex/install/"*.java "$work/sources/"
 cp "$repo/tools/install/transaction/run-jvm-tests.sh" "$work/sources/"
 java -version 2> "$work/java-version.txt"
 uname -a > "$work/kernel.txt"
 javac -cp "$deps/*" -d "$work/classes" "$work/sources/RootfsExtractor.java" \
+  "$work/sources/InputStreams.java" \
   "$work/sources/RootfsTransaction.java" "$work/sources/RootfsTransactionTest.java" \
   "$work/sources/ProotHardlinkStorage.java" \
   "$work/sources/GuestIdentity.java" "$work/sources/GuestIdentityTest.java" \

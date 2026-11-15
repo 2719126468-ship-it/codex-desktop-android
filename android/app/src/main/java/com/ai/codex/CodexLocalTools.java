@@ -90,7 +90,7 @@ public final class CodexLocalTools {
         // this installation's facts for diagnostic metadata; global AGENTS injection is disabled.
         JSONObject environment;
         try (InputStream input = context.getAssets().open("codex-tools/agent-environment.v1.json")) {
-            environment = new JSONObject(new String(input.readAllBytes(), StandardCharsets.UTF_8));
+            environment = new JSONObject(new String(InputStreams.readAllBytes(input), StandardCharsets.UTF_8));
         }
         JSONObject host = environment.getJSONObject("clientHost");
         String device = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL;
@@ -103,7 +103,7 @@ public final class CodexLocalTools {
         host.put("architecture", android.os.Build.SUPPORTED_ABIS[0]);
         host.put("applicationName", context.getApplicationInfo().loadLabel(context.getPackageManager()).toString());
         host.put("androidVersion", android.os.Build.VERSION.RELEASE);
-        host.put("socModel", android.os.Build.SOC_MODEL);
+        host.put("socModel", android.os.Build.VERSION.SDK_INT >= 31 ? android.os.Build.SOC_MODEL : "unknown");
         host.put("kernelVersion", System.getProperty("os.version", "unknown"));
         host.put("timezone", java.util.TimeZone.getDefault().getID());
         JSONObject storage = SharedProjectStorage.inspect(context);

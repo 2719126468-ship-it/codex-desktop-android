@@ -1,5 +1,6 @@
 package com.ai.codex.install;
 
+import com.ai.codex.InputStreams;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
@@ -91,7 +92,7 @@ public final class PhoneRuntimeInstaller {
     }
     private static byte[] asset(Context context, String name, int limit) throws IOException {
         try (InputStream input = context.getAssets().open("phone-runtime/" + name)) {
-            byte[] value = input.readNBytes(limit + 1);
+            byte[] value = InputStreams.readNBytes(input, limit + 1);
             if (value.length > limit) throw new IOException("Phone runtime release metadata exceeds its bound");
             return value;
         }

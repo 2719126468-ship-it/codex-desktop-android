@@ -1,5 +1,6 @@
 package com.ai.codex.install;
 
+import com.ai.codex.InputStreams;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -56,7 +57,7 @@ public final class InactiveClientInstallCommand {
             child.getOutputStream().close();
             Future<byte[]> output=reader.submit(() -> {
                 try(InputStream stream=child.getInputStream()) {
-                    byte[] bytes=stream.readNBytes(65537);
+                    byte[] bytes=InputStreams.readNBytes(stream,65537);
                     if(bytes.length>65536) { stopper.stop(child); throw new IOException("Inactive package output exceeded limit"); }
                     return bytes;
                 }

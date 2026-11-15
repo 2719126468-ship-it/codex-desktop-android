@@ -1,5 +1,6 @@
 package com.ai.codex.install;
 
+import com.ai.codex.InputStreams;
 import android.app.*;
 import android.content.*;
 import android.os.*;
@@ -368,7 +369,7 @@ public final class CombinedPreparationProbeService extends Service {
     private static byte[] read(Path path,int limit) throws Exception {
         regular(path,limit);
         try(InputStream stream=Files.newInputStream(path,StandardOpenOption.READ,LinkOption.NOFOLLOW_LINKS)) {
-            byte[] value=stream.readNBytes(limit+1); if(value.length>limit) throw new IOException("Fixture file grew"); return value;
+            byte[] value=InputStreams.readNBytes(stream,limit+1); if(value.length>limit) throw new IOException("Fixture file grew"); return value;
         }
     }
     private static String hash(Path path,int limit) throws Exception { return InactivePreparationJournal.sha256(read(path,limit)); }
