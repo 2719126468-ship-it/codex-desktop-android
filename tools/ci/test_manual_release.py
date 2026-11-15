@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import shutil
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -17,6 +18,36 @@ SPEC = importlib.util.spec_from_file_location("release_candidate", release.ROOT 
 candidate = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(candidate)
 engine_builder = release.module("release_engine_builder", "tools/executor/build-gnu-engine.py")
+
+
+class WorkspacePermissionTests(unittest.TestCase):
+    def test_runner_owns_shared_output_parent_before_privileged_recipes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with patch.object(release, "ROOT", root), patch.object(release, "WORK", root / "work/manual-release"):
+                release.prepare_workspace()
+            for name in ("downloads", "downloads/engine-gnu-arm64", "downloads/engine-v8"):
+                target = root / name
+                if hasattr(os, "getuid"):
+                    self.assertEqual(target.stat().st_uid, os.getuid())
+                (target / "writable-probe").write_text("runner output")
+
+    def test_root_owned_recipe_children_do_not_block_engine_outputs(self):
+        if os.name != "posix" or not shutil.which("sudo") or os.getuid() == 0:
+            self.skipTest("Requires an ordinary Linux user with passwordless sudo")
+        if subprocess.run(["sudo", "-n", "true"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
+            self.skipTest("Requires passwordless sudo")
+        with tempfile.TemporaryDirectory(prefix="codex-ci-permissions-") as temporary:
+            root = Path(temporary)
+            with patch.object(release, "ROOT", root), patch.object(release, "WORK", root / "work/manual-release"):
+                release.prepare_workspace()
+                subprocess.run(["sudo", "-n", "mkdir", str(root / "downloads/install"), str(root / "downloads/gpu")], check=True)
+                self.assertEqual((root / "downloads/gpu").stat().st_uid, 0)
+                release.prepare_workspace()
+                evidence = root / "downloads/engine-gnu-arm64/new-build"
+                evidence.mkdir()
+                (evidence / "build-state.json").write_text("{}")
+                (root / "downloads/engine-v8/checksums").write_text("verified metadata")
 
 
 class RustEnvironmentTests(unittest.TestCase):

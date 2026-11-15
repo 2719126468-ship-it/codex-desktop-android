@@ -116,9 +116,19 @@ def engine_selection(requested, manifest, resolve):
     return result
 
 
+def prepare_workspace():
+    # Base-image and Mesa recipes use sudo. Create their shared parent as the
+    # runner first, so later unprivileged engine evidence/V8 caches stay writable.
+    for path in (WORK, ROOT / "downloads", ROOT / "downloads/engine-gnu-arm64", ROOT / "downloads/engine-v8"):
+        path.mkdir(parents=True, exist_ok=True)
+        if not os.access(path, os.W_OK | os.X_OK):
+            raise RuntimeError("Build output is not writable by the runner: " + str(path))
+
+
 def plan():
     if (WORK / "plan.json").exists():
         raise FileExistsError("Retain previous attempts; use a fresh checkout for another manual build")
+    prepare_workspace()
     manifest_path = ROOT / "recovery/engine/manifest.json"
     manifest = json.loads(manifest_path.read_text())
 
