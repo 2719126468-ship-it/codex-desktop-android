@@ -1,10 +1,6 @@
 # Codex Android
 
-<video src="img/2.mp4" controls playsinline preload="metadata" width="400">
-  <a href="img/2.mp4">观看 Codex Android 演示视频</a>
-</video>
-
-[▶ 打开演示视频：手机运行 Codex 并接入灵动岛](img/2.mp4)
+https://github.com/user-attachments/assets/106fb10e-1151-4f02-9a93-da7b29ec0529
 
 ![Codex 在一加 13 上的界面和本地命令执行预览](img/1.jpg)
 
