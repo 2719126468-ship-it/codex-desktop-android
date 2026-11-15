@@ -192,9 +192,11 @@ class PublicationTests(unittest.TestCase):
         (self.work / "release").mkdir()
         self.description = "A configured release note"
         self.value = {"releaseTag": "v123", "sourceCommit": "c" * 40, "apk": "full.apk",
-            "apkBytes": 1234, "apkSha256": "a" * 64, "description": self.description}
+            "apkBytes": 1234, "apkSha256": "a" * 64, "description": self.description,
+            "desktopVersion": "9.8.7", "engine": {"tag": "rust-v9.8.7"}}
         (self.work / "release/build-info.json").write_text(json.dumps(self.value))
-        self.env = patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_REPOSITORY": "owner/repo"})
+        self.env = patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_REPOSITORY": "owner/repo",
+            "GITHUB_STEP_SUMMARY": str(self.work / "step-summary.md")})
         self.env.start()
         self.addCleanup(self.env.stop)
         patched = patch.object(release, "WORK", self.work)
@@ -235,6 +237,8 @@ class PublicationTests(unittest.TestCase):
             self.assertEqual(json.loads((self.work / "publish-release.json").read_text()),
                              {"draft": False, "body": self.description})
             self.assertNotIn("--generate-notes", published)
+            summary = (self.work / "step-summary.md").read_text()
+            self.assertIn("Desktop: 9.8.7; backend: rust-v9.8.7", summary)
 
     def test_missing_draft_never_publishes_via_a_by_tag_lookup(self):
         with patch.object(release.subprocess, "run", return_value=subprocess.CompletedProcess([], 1)), \
