@@ -42,10 +42,10 @@ public final class PhoneRuntimeInstaller {
         if (inventory.length != release.getInt("inventoryBytes") || !hex.toString().equals(release.getString("inventorySha256")))
             throw new IOException("完整运行环境的文件清单校验失败。");
         RootfsTransaction.ArchiveSource source;
-        if (assets.contains("codex-phone-rootfs.tar.gz")) {
+        if (assets.contains("codex-phone-rootfs.tgz")) {
             // Stream the APK-owned archive directly. A full installer must not
             // need a second 1+ GB copy in shared storage or a file-manager grant.
-            source = () -> context.getAssets().open("phone-runtime/codex-phone-rootfs.tar.gz",
+            source = () -> context.getAssets().open("phone-runtime/codex-phone-rootfs.tgz",
                 android.content.res.AssetManager.ACCESS_STREAMING);
         } else {
             File external = context.getExternalFilesDir(null);

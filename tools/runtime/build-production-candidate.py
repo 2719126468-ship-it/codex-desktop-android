@@ -358,7 +358,15 @@ def verify_auxiliary_apk(apk, auxiliary):
             if not selected:
                 continue
             for name, row in selected["files"].items():
-                entry = archive.getinfo("assets/" + name)
+                # AGP expands .gz assets during merging. Only the APK transport
+                # name changes; authenticate the original compressed bytes.
+                packaged = ("phone-runtime/codex-phone-rootfs.tgz"
+                            if key == "phoneImageAssets" and name == "phone-runtime/codex-phone-rootfs.tar.gz"
+                            else name)
+                try:
+                    entry = archive.getinfo("assets/" + packaged)
+                except KeyError as error:
+                    raise ValueError("Packaged " + label + " is missing: " + packaged) from error
                 with archive.open(entry) as stream:
                     digest = hashlib.file_digest(stream, "sha256").hexdigest()
                 if entry.file_size != row["bytes"] or digest != row["sha256"]:

@@ -242,14 +242,26 @@ class FullImageTests(unittest.TestCase):
         apk = self.root / "full.apk"
         with ZipFile(apk, "w", compression=ZIP_STORED) as zipped:
             for path in self.phone.iterdir():
-                zipped.write(path, "assets/phone-runtime/" + path.name)
+                name = "codex-phone-rootfs.tgz" if path.name.endswith("tar.gz") else path.name
+                zipped.write(path, "assets/phone-runtime/" + name)
         candidate.verify_auxiliary_apk(apk, auxiliary)
         # A different archive with the same filename must be rejected.
         with ZipFile(apk, "w") as zipped:
             for path in self.phone.iterdir():
-                zipped.writestr("assets/phone-runtime/" + path.name,
+                name = "codex-phone-rootfs.tgz" if path.name.endswith("tar.gz") else path.name
+                zipped.writestr("assets/phone-runtime/" + name,
                     b"tampered" if path.name.endswith("tar.gz") else path.read_bytes())
         with self.assertRaisesRegex(ValueError, "Packaged phone image"):
+            candidate.verify_auxiliary_apk(apk, auxiliary)
+
+    def test_agp_expanded_archive_cannot_pass_full_apk_verification(self):
+        auxiliary = candidate.auxiliary_inputs(self.args)
+        apk = self.root / "expanded.apk"
+        with ZipFile(apk, "w") as zipped:
+            for path in self.phone.iterdir():
+                name = "codex-phone-rootfs.tar" if path.name.endswith("tar.gz") else path.name
+                zipped.write(path, "assets/phone-runtime/" + name)
+        with self.assertRaisesRegex(ValueError, "Packaged phone image is missing"):
             candidate.verify_auxiliary_apk(apk, auxiliary)
 
     def test_changed_archive_is_rejected_before_gradle(self):
