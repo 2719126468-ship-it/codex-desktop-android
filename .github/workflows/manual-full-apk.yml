@@ -1,57 +1,63 @@
 name: Build full APK (manual)
 run-name: Full APK / backend ${{ inputs.engine_ref }} / desktop ${{ inputs.desktop_version }}
 
-# Deliberately no push, pull_request, release, workflow_run, or schedule trigger.
+# No push, PR, release, workflow_run or scheduled build.
 on:
   workflow_dispatch:
     inputs:
       engine_ref:
-        description: 'Codex backend: latest, supported, or a version such as 0.169.0'
+        description: 'Codex backend: latest, supported, or an upstream version/tag'
         type: string
         default: latest
       desktop_version:
-        description: 'Linux ARM64 desktop: latest, or a version present in its signed package index'
+        description: 'Linux ARM64 desktop: latest or a version in its signed index'
         type: string
         default: latest
+      rust_toolchain:
+        description: 'Rust compiler for a new backend build: stable or an exact version'
+        type: string
+        default: stable
+      rebuild:
+        description: 'Bypass a completed component cache; normally reuse unchanged components'
+        type: choice
+        default: none
+        options: [none, base, mesa, engine, all]
       version_code:
         description: 'Android versionCode; blank = source versionCode + workflow run number'
         type: string
         required: false
-      rust_toolchain:
-        description: 'Rust compiler: stable, or an exact version if the selected backend requires one'
-        type: string
-        default: stable
       release_tag:
-        description: 'New Release tag; blank = v<versionCode>. Existing tags are never overwritten.'
+        description: 'New Release tag; blank = v<versionCode>. Existing releases are preserved.'
         type: string
         required: false
 
 permissions:
   contents: read
-
 concurrency:
   group: manual-full-apk
   cancel-in-progress: false
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  CARGO_HOME: ${{ github.workspace }}/work/ci/cache/cargo
+  RUSTUP_HOME: ${{ github.workspace }}/work/ci/cache/rustup
+  GRADLE_USER_HOME: ${{ github.workspace }}/work/manual-release/gradle-home
+  CARGO_PROFILE_RELEASE_DEBUG: '0'
 
 jobs:
-  full-apk:
+  plan:
+    name: Freeze versions and verify source
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
-    timeout-minutes: 360
-    permissions:
-      contents: write
-    env:
-      PYTHONDONTWRITEBYTECODE: '1'
-      CARGO_HOME: ${{ github.workspace }}/work/ci/cache/cargo
-      RUSTUP_HOME: ${{ github.workspace }}/work/ci/cache/rustup
-      GRADLE_USER_HOME: ${{ github.workspace }}/work/manual-release/gradle-home
-      CARGO_PROFILE_RELEASE_DEBUG: '0'
+    timeout-minutes: 15
+    outputs:
+      base_key: ${{ steps.keys.outputs.base_key }}
+      mesa_key: ${{ steps.keys.outputs.mesa_key }}
+      engine_key: ${{ steps.keys.outputs.engine_key }}
+      native_key: ${{ steps.keys.outputs.native_key }}
     steps:
-      - name: Check out selected source
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-
       - name: Check signing configuration
         env:
           SIGNING_CONFIGURED: ${{ secrets.CODEX_KEYSTORE_BASE64 != '' }}
@@ -60,9 +66,15 @@ jobs:
             echo '::error::Configure CODEX_KEYSTORE_BASE64 in repository Actions secrets. See docs/manual-release.md.'
             exit 1
           fi
-
+      - name: Verify source and release regressions
+        run: |
+          python3 -B tools/ci/check-source-integrity.py
+          python3 -B -m unittest discover -s tools/ci -p 'test_*release*.py' -v
+          python3 -B -m unittest discover -s tools/runtime -p 'test_candidate_build.py' -v
+          python3 -B -m unittest discover -s tools/install -p 'test_phone_image.py' -v
+          python3 -B -m unittest discover -s tools/install -p 'test_build_phone_image.py' -v
+          python3 -B -m unittest discover -s tools/install -p 'test_build_rootfs.py' -v
       - name: Freeze selected versions
-        id: plan
         env:
           INPUT_ENGINE_REF: ${{ inputs.engine_ref }}
           INPUT_DESKTOP_VERSION: ${{ inputs.desktop_version }}
@@ -70,94 +82,249 @@ jobs:
           INPUT_VERSION_CODE: ${{ inputs.version_code }}
           INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
         run: python3 -B tools/ci/manual_release.py plan
+      - name: Fingerprint independent build recipes
+        id: keys
+        run: python3 -B tools/ci/release_components.py keys
+      - name: Retain frozen plan for all jobs and retries
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-plan
+          path: |
+            work/manual-release/plan.json
+            work/manual-release/engine-selection/
+          retention-days: 3
+          overwrite: true
+          if-no-files-found: error
 
-      - name: Verify source and release regressions
+  client:
+    name: Authenticate desktop and check adapter
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: release-plan
+          path: work/manual-release
+      - run: python3 -B tools/ci/manual_release.py client
+      - run: python3 -B tools/ci/release_components.py pack client
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: component-client
+          path: work/manual-release/components/client
+          retention-days: 3
+          compression-level: 0
+          overwrite: true
+          if-no-files-found: error
+      - if: always()
+        uses: ./.github/actions/release-diagnostics
+
+  native:
+    name: Verify or reuse native baseline
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: release-plan
+          path: work/manual-release
+      - uses: ./.github/actions/release-component
+        with:
+          component: native
+          key: ${{ needs.plan.outputs.native_key }}
+
+  base:
+    name: Build or reuse Debian ARM64
+    needs: [plan, client, native]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: release-plan
+          path: work/manual-release
+      - uses: ./.github/actions/release-component
+        with:
+          component: base
+          key: ${{ needs.plan.outputs.base_key }}
+          rebuild: ${{ inputs.rebuild == 'base' || inputs.rebuild == 'all' }}
+
+  mesa:
+    name: Build or reuse Mesa Zink and Turnip
+    needs: [plan, client, native]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: release-plan
+          path: work/manual-release
+      - uses: ./.github/actions/release-component
+        with:
+          component: mesa
+          key: ${{ needs.plan.outputs.mesa_key }}
+          rebuild: ${{ inputs.rebuild == 'mesa' || inputs.rebuild == 'all' }}
+
+  engine:
+    name: Build or reuse selected Codex backend
+    needs: [plan, base]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: release-plan
+          path: work/manual-release
+      - uses: ./.github/actions/release-component
+        with:
+          component: engine
+          key: ${{ needs.plan.outputs.engine_key }}
+          rebuild: ${{ inputs.rebuild == 'engine' || inputs.rebuild == 'all' }}
+
+  image:
+    name: Assemble matching first-install environment
+    needs: [client, base, mesa, engine]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: release-plan
+          path: work/manual-release
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: component-client
+          path: work/manual-release/components/client
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: component-base
+          path: work/manual-release/components/base
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: component-mesa
+          path: work/manual-release/components/mesa
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: component-engine
+          path: work/manual-release/components/engine
+      - run: python3 -B tools/ci/manual_runner.py prepare
+      - name: Verify and import the selected components
         run: |
-          python3 -B tools/ci/check-source-integrity.py
-          python3 -B -m unittest discover -s tools/ci -p 'test_manual_release.py' -v
-          python3 -B -m unittest discover -s tools/runtime -p 'test_candidate_build.py' -v
-          python3 -B -m unittest discover -s tools/install -p 'test_phone_image.py' -v
-          python3 -B -m unittest discover -s tools/install -p 'test_build_phone_image.py' -v
-          python3 -B -m unittest discover -s tools/install -p 'test_build_rootfs.py' -v
+          python3 -B tools/ci/release_components.py unpack client
+          python3 -B tools/ci/release_components.py unpack base
+          python3 -B tools/ci/release_components.py unpack mesa
+          python3 -B tools/ci/release_components.py unpack engine
+          python3 -B tools/ci/manual_release.py engine-check
+      - run: python3 -B tools/ci/manual_release.py image
+      - run: python3 -B tools/ci/manual_runner.py compact
+      - run: python3 -B tools/ci/release_components.py pack image
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: component-image
+          path: work/manual-release/components/image
+          retention-days: 3
+          compression-level: 0
+          overwrite: true
+          if-no-files-found: error
+      - if: always()
+        uses: ./.github/actions/release-diagnostics
 
-      - name: Set up Java
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+  apk:
+    name: Build, sign and verify full APK
+    needs: image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: release-plan
+          path: work/manual-release
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: component-image
+          path: work/manual-release/components/image
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: component-engine
+          path: work/manual-release/components/engine
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: component-native
+          path: work/manual-release/components/native
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: '21'
-
-      - name: Prepare disposable Linux builder
-        run: python3 -B tools/ci/manual_runner.py prepare
-
-      - name: Cache Cargo downloads
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: |
-            work/ci/cache/cargo/registry
-            work/ci/cache/cargo/git
-          key: codex-cargo-${{ runner.os }}-${{ inputs.engine_ref }}-${{ hashFiles('recovery/engine/manifest.json') }}-${{ github.run_id }}
-          restore-keys: |
-            codex-cargo-${{ runner.os }}-${{ inputs.engine_ref }}-${{ hashFiles('recovery/engine/manifest.json') }}-
-
-      - name: Authenticate desktop package and check adapter
-        run: python3 -B tools/ci/manual_release.py client
-
-      - name: Download and verify native baseline before compilation
-        run: python3 -B tools/ci/manual_release.py baseline
-
-      - name: Build pristine Debian ARM64 environment
-        run: python3 -B tools/ci/manual_release.py base
-
-      - name: Build Mesa Zink and Turnip
-        run: python3 -B tools/ci/manual_release.py gpu
-
-      - name: Build selected Codex backend and Code Mode host
-        run: python3 -B tools/ci/manual_release.py engine
-
-      - name: Assemble matching clean first-install image
-        run: python3 -B tools/ci/manual_release.py image
-
-      - name: Reclaim intermediate build space
-        run: python3 -B tools/ci/manual_runner.py compact
-
-      - name: Install Android SDK and Gradle
-        run: python3 -B tools/ci/manual_runner.py android
-
-      - name: Recover verified native baseline
-        run: python3 -B tools/ci/manual_release.py native
-
-      - name: Build, sign and verify full APK
+      - run: python3 -B tools/ci/manual_runner.py prepare
+      - name: Verify and import APK inputs
+        run: |
+          python3 -B tools/ci/release_components.py unpack image
+          python3 -B tools/ci/release_components.py unpack engine
+          python3 -B tools/ci/release_components.py unpack native
+      - run: python3 -B tools/ci/manual_runner.py android
+      - run: python3 -B tools/ci/manual_release.py native
+      - name: Build using the original signing certificate
         env:
           CODEX_KEYSTORE_BASE64: ${{ secrets.CODEX_KEYSTORE_BASE64 }}
           CODEX_SIGNING_STORE_PASSWORD: ${{ secrets.CODEX_SIGNING_STORE_PASSWORD || 'android' }}
           CODEX_SIGNING_KEY_ALIAS: ${{ secrets.CODEX_SIGNING_KEY_ALIAS || 'androiddebugkey' }}
           CODEX_SIGNING_KEY_PASSWORD: ${{ secrets.CODEX_SIGNING_KEY_PASSWORD || 'android' }}
         run: python3 -B tools/ci/manual_release.py apk
-
-      - name: Publish verified APK with configured Release notes
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/ci/manual_release.py publish
-
-      - name: Retain small build diagnostics
-        if: always()
+      - name: Preserve verified APK before publication
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: manual-build-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
-          retention-days: 7
-          if-no-files-found: ignore
-          path: |
-            work/manual-release/plan.json
-            work/manual-release/logs/*.log
-            work/manual-release/candidate/build-report.json
-            work/manual-release/candidate/*.log
-            work/manual-release/candidate/*verification.json
-            downloads/engine-gnu-arm64/**/build-*.log
-            downloads/engine-gnu-arm64/**/toolchain.json
-            work/manual-release/phone-image/evidence/client-apt.log
-            work/manual-release/release/build-info.json
-            work/manual-release/release/SHA256SUMS
-
+          name: verified-full-apk
+          path: work/manual-release/release
+          retention-days: 3
+          compression-level: 0
+          overwrite: true
+          if-no-files-found: error
+      - if: always()
+        uses: ./.github/actions/release-diagnostics
       - name: Remove temporary signing file
         if: always()
         run: python3 -c 'import os,pathlib; (pathlib.Path(os.environ["RUNNER_TEMP"])/"codex-release.keystore").unlink(missing_ok=True)'
+
+  publish:
+    name: Publish the verified APK
+    needs: apk
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: verified-full-apk
+          path: work/manual-release/release
+      - name: Publish with configured Release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/ci/manual_release.py publish
+      - if: always()
+        uses: ./.github/actions/release-diagnostics

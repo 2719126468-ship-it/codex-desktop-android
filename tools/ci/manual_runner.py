@@ -60,7 +60,8 @@ def compact():
     # inactive rootfs trees are rebuildable and are never public release inputs.
     remove(WORK / "engine-target", private_build=True)
     remove(WORK / "client-check", private_build=True)
-    remove(Path(value["baseBuildDirectory"]), private_build=True)
+    if value.get("baseBuildDirectory"):
+        remove(Path(value["baseBuildDirectory"]), private_build=True)
     evidence = WORK / "phone-image/evidence/build-directory.txt"
     remove(Path(evidence.read_text().strip()), private_build=True)
     print(json.dumps({"freeBytesBeforeAndroid": shutil.disk_usage(ROOT).free}))

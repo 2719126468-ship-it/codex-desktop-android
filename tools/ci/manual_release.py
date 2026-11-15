@@ -70,6 +70,7 @@ def command(label, argv, *, cwd=ROOT, env=None, input=None):
         for line in process.stdout:
             print(line, end="", flush=True)
             log.write(line)
+        process.stdout.close()
         code = process.wait()
     print("::endgroup::", flush=True)
     if code:
@@ -354,13 +355,34 @@ def engine():
         "--state", build_state, "--libraries", libraries], env=env)
     command("engine-assets", [sys.executable, "-B", ROOT / "tools/executor/stage-gnu-engine-assets.py",
         "--state", build_state, "--output", WORK / "gnu-assets"])
-    version = run(["qemu-aarch64", "-L", Path(value["baseBuildDirectory"]) / "rootfs",
-                   Path(built["build"]) / "package/codex", "--version"], env=env)
-    if value["engine"]["tag"].removeprefix("rust-v") not in version:
-        raise ValueError("Built backend reports a different version")
+    version = engine_probe(libraries, Path(built["build"]) / "package/codex", value, env=env)
     value["engineBuildState"] = str(build_state)
     value["engineVersionOutput"] = version
     value["rustCompiler"] = run(["rustc", "-vV"], env=env)
+    save(WORK / "plan.json", value)
+
+
+def engine_probe(libraries, binary, value, env=None):
+    # Invoke the guest loader with the exact authenticated dependency closure.
+    # This works across jobs without retaining a root-owned bootstrap tree.
+    version = run(["qemu-aarch64", libraries / "ld-linux-aarch64.so.1", "--library-path", libraries,
+                   binary, "--version"], env=env)
+    if value["engine"]["tag"].removeprefix("rust-v") not in version:
+        raise ValueError("Built backend reports a different version")
+    return version
+
+
+def check_imported_engine():
+    value = state()
+    built = json.loads(Path(value["engineBuildState"]).read_text())
+    binaries = Path(built["build"]) / "package"
+    libraries = WORK / "assembly-gnu-libraries"
+    command("assembly-gnu-libraries", [sys.executable, "-B", ROOT / "tools/executor/collect-gnu-rootfs-libraries.py",
+        "--rootfs-archive", value["baseArchive"], "--rootfs-sha256", value["baseSha256"],
+        "--binaries", binaries, "--output", libraries])
+    command("assembly-engine-elf", [sys.executable, "-B", ROOT / "tools/executor/check-gnu-engine-elf.py",
+        "--binaries", binaries, "--libraries", libraries, "--output", WORK / "assembly-engine-compatibility.json"])
+    value["engineVersionOutput"] = engine_probe(libraries, binaries / "codex", value)
     save(WORK / "plan.json", value)
 
 
@@ -453,51 +475,112 @@ def apk():
     print(json.dumps({"apk": destination.name, "sha256": value["apkSha256"], "bytes": value["apkBytes"]}))
 
 
-def publish():
-    value = json.loads((WORK / "release/build-info.json").read_text())
-    env = os.environ
-    if env.get("GITHUB_EVENT_NAME") != "workflow_dispatch":
-        raise RuntimeError("Releases can only be published from an explicitly dispatched workflow")
-    repository = env["GITHUB_REPOSITORY"]
-    tag = value["releaseTag"]
-    # Refuse an existing release/tag instead of replacing an APK in place.
-    for endpoint in (f"repos/{repository}/releases/tags/{tag}", f"repos/{repository}/git/ref/tags/{tag}"):
-        probe = subprocess.run(["gh", "api", endpoint], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if probe.returncode == 0:
-            raise FileExistsError("Release/tag already exists; select a new tag")
-    files = [WORK / "release" / name for name in (value["apk"], "build-info.json", "SHA256SUMS")]
-    # Let gh upload against the ID returned during draft creation. The REST
-    # by-tag endpoint retrieves published releases and may not find a draft.
-    command("release-create", ["gh", "release", "create", tag, *files, "--repo", repository,
-        "--target", value["sourceCommit"], "--title", "Codex Android " + tag,
-        "--notes-file", ROOT / "config/android/release-notes.txt", "--draft"])
-    releases = json.loads(run(["gh", "api", f"repos/{repository}/releases?per_page=100"]))
-    matches = [item for item in releases if item["tag_name"] == tag and item["draft"]]
-    if len(matches) != 1:
-        raise ValueError("Could not identify the new draft; refusing publication")
-    metadata = matches[0]
-    assets = {item["name"]: item for item in metadata["assets"]}
-    apk_asset = assets.get(value["apk"], {})
-    if (apk_asset.get("size") != value["apkBytes"]
-            or apk_asset.get("digest") != "sha256:" + value["apkSha256"]):
-        raise ValueError("Uploaded APK digest/size differs; release remains draft")
-    publication = WORK / "publish-release.json"
-    save(publication, {"draft": False, "body": value["description"]})
-    result = json.loads(command("release-publish", ["gh", "api", "--method", "PATCH",
-        f"repos/{repository}/releases/{metadata['id']}", "--input", publication]))
-    if result["draft"] or (result["body"] or "").strip() != value["description"]:
-        raise ValueError("Published Release description/state differs")
+def upload_release_asset(repository, release_id, path):
+    """Stream one public output to its owned draft ID without loading it in RAM."""
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *args, **kwargs):
+            return None
+    endpoint = f"https://uploads.github.com/repos/{repository}/releases/{release_id}/assets?"
+    endpoint += urllib.parse.urlencode({"name": path.name})
+    with path.open("rb") as stream:
+        request = urllib.request.Request(endpoint, data=stream, method="POST", headers={
+            "Authorization": "Bearer " + os.environ["GH_TOKEN"], "Accept": "application/vnd.github+json",
+            "User-Agent": "codex-android-manual-build", "Content-Type": "application/octet-stream",
+            "Content-Length": str(path.stat().st_size)})
+        with urllib.request.build_opener(NoRedirect()).open(request, timeout=120) as response:
+            return json.load(response)
+
+
+def publication_summary(result, value):
     print(result["html_url"])
-    if env.get("GITHUB_STEP_SUMMARY"):
-        with Path(env["GITHUB_STEP_SUMMARY"]).open("a") as stream:
+    if os.environ.get("GITHUB_STEP_SUMMARY"):
+        with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as stream:
+            tag = value["releaseTag"]
             stream.write(f"[Download {tag}]({result['html_url']})\n\n"
                 f"Desktop: {value['desktopVersion']}; backend: {value['engine']['tag']}.\n\n"
                 "Native libraries reused from the verified baseline; fresh-device installation still requires validation.\n")
 
 
+def publish():
+    value = json.loads((WORK / "release/build-info.json").read_text())
+    env = os.environ
+    if env.get("GITHUB_EVENT_NAME") != "workflow_dispatch":
+        raise RuntimeError("Releases can only be published from an explicitly dispatched workflow")
+    repository, tag = env["GITHUB_REPOSITORY"], value["releaseTag"]
+    files = [WORK / "release" / name for name in (value["apk"], "build-info.json", "SHA256SUMS")]
+    expected = {path.name: {"size": path.stat().st_size, "digest": "sha256:" + digest(path)} for path in files}
+    if expected[value["apk"]] != {"size": value["apkBytes"], "digest": "sha256:" + value["apkSha256"]}:
+        raise ValueError("Verified APK differs before publication")
+    description = (ROOT / "config/android/release-notes.txt").read_text(encoding="utf-8").strip()
+    if description != value["description"]:
+        raise ValueError("Configured Release notes differ from the APK build record")
+    marker = "<!-- codex-manual-release:" + json.dumps({"runId": env["GITHUB_RUN_ID"],
+        "sourceCommit": value["sourceCommit"], "apkSha256": value["apkSha256"]}, sort_keys=True) + " -->"
+
+    def lookup():
+        rows = json.loads(run(["gh", "api", f"repos/{repository}/releases?per_page=100"]))
+        matches = [item for item in rows if item["tag_name"] == tag]
+        if len(matches) > 1:
+            raise ValueError("Ambiguous Release identity")
+        return matches[0] if matches else None
+
+    def assets_match(metadata):
+        assets = metadata["assets"]
+        return (len(assets) == len(expected) and {item["name"] for item in assets} == set(expected)
+                and all({"size": item.get("size"), "digest": item.get("digest")} == expected[item["name"]]
+                        for item in assets))
+
+    metadata = lookup()
+    if metadata and not metadata["draft"]:
+        if (metadata["target_commitish"] != value["sourceCommit"] or not assets_match(metadata)
+                or (metadata.get("body") or "").strip() != description):
+            raise FileExistsError("An existing published Release is preserved; select a new tag")
+        publication_summary(metadata, value)
+        return
+    if metadata is None:
+        probe = subprocess.run(["gh", "api", f"repos/{repository}/git/ref/tags/{tag}"],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if probe.returncode == 0:
+            raise FileExistsError("An existing tag is preserved; select a new tag")
+        notes = WORK / "draft-notes.txt"
+        notes.write_text(description + "\n\n" + marker + "\n", encoding="utf-8")
+        command("release-create", ["gh", "release", "create", tag, "--repo", repository,
+            "--target", value["sourceCommit"], "--title", "Codex Android " + tag,
+            "--notes-file", notes, "--draft"])
+        metadata = lookup()
+        if metadata is None:
+            raise ValueError("Could not identify the new draft; refusing publication")
+    if (not metadata["draft"] or metadata["target_commitish"] != value["sourceCommit"]
+            or marker not in (metadata.get("body") or "")):
+        raise FileExistsError("An existing draft is not owned by this build; it was preserved")
+    assets = {item["name"]: item for item in metadata["assets"]}
+    if len(assets) != len(metadata["assets"]) or not set(assets).issubset(expected):
+        raise ValueError("Unexpected draft assets; refusing publication")
+    for path in files:
+        existing = assets.get(path.name)
+        if existing and {"size": existing.get("size"), "digest": existing.get("digest")} == expected[path.name]:
+            continue
+        if existing:
+            command("release-remove-incomplete-asset", ["gh", "api", "--method", "DELETE",
+                    f"repos/{repository}/releases/assets/{existing['id']}"])
+        uploaded = upload_release_asset(repository, metadata["id"], path)
+        if {"size": uploaded.get("size"), "digest": uploaded.get("digest")} != expected[path.name]:
+            raise ValueError("Uploaded file digest/size differs; release remains draft")
+    metadata = json.loads(run(["gh", "api", f"repos/{repository}/releases/{metadata['id']}"]))
+    if not assets_match(metadata):
+        raise ValueError("Uploaded asset inventory differs; release remains draft")
+    publication = WORK / "publish-release.json"
+    save(publication, {"draft": False, "body": description})
+    result = json.loads(command("release-publish", ["gh", "api", "--method", "PATCH",
+        f"repos/{repository}/releases/{metadata['id']}", "--input", publication]))
+    if result["draft"] or (result["body"] or "").strip() != description:
+        raise ValueError("Published Release description/state differs")
+    publication_summary(result, value)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("stage", choices=("plan", "client", "baseline", "base", "gpu", "engine", "image", "native", "apk", "publish"))
+    parser.add_argument("stage", choices=("plan", "client", "baseline", "base", "gpu", "engine", "engine-check", "image", "native", "apk", "publish"))
     stage = parser.parse_args().stage
     {"plan": plan, "client": acquire_client, "baseline": acquire_native_baseline, "base": base, "gpu": gpu, "engine": engine,
-     "image": image, "native": recover_native, "apk": apk, "publish": publish}[stage]()
+     "engine-check": check_imported_engine, "image": image, "native": recover_native, "apk": apk, "publish": publish}[stage]()

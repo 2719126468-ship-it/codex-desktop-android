@@ -263,21 +263,64 @@ class PublicationTests(unittest.TestCase):
         self.work = Path(self.temp.name)
         (self.work / "release").mkdir()
         self.description = "A configured release note"
+        (self.work / "config/android").mkdir(parents=True)
+        (self.work / "config/android/release-notes.txt").write_text(self.description)
+        (self.work / "release/full.apk").write_bytes(b"A" * 1234)
         self.value = {"releaseTag": "v123", "sourceCommit": "c" * 40, "apk": "full.apk",
-            "apkBytes": 1234, "apkSha256": "a" * 64, "description": self.description,
+            "apkBytes": 1234, "apkSha256": release.digest(self.work / "release/full.apk"), "description": self.description,
             "desktopVersion": "9.8.7", "engine": {"tag": "rust-v9.8.7"}}
         (self.work / "release/build-info.json").write_text(json.dumps(self.value))
+        (self.work / "release/SHA256SUMS").write_text(self.value["apkSha256"] + "  full.apk\n")
         self.env = patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_REPOSITORY": "owner/repo",
-            "GITHUB_STEP_SUMMARY": str(self.work / "step-summary.md")})
+            "GITHUB_RUN_ID": "12345", "GITHUB_STEP_SUMMARY": str(self.work / "step-summary.md")})
         self.env.start()
         self.addCleanup(self.env.stop)
-        patched = patch.object(release, "WORK", self.work)
+        for name in ("WORK", "ROOT"):
+            patched = patch.object(release, name, self.work)
+            patched.start()
+            self.addCleanup(patched.stop)
+        self.remote = None
+        self.calls, self.uploads, self.api_calls = [], [], []
+        for target, replacement in (("run", self.api), ("command", self.command), ("upload_release_asset", self.upload)):
+            patched = patch.object(release, target, side_effect=replacement)
+            patched.start()
+            self.addCleanup(patched.stop)
+        patched = patch.object(release.subprocess, "run", return_value=subprocess.CompletedProcess([], 1))
         patched.start()
         self.addCleanup(patched.stop)
 
-    def metadata(self, digest="a" * 64):
-        return {"id": 123, "tag_name": "v123", "draft": True,
-                "assets": [{"name": "full.apk", "size": 1234, "digest": "sha256:" + digest}]}
+    def api(self, argv):
+        endpoint = argv[2]
+        self.api_calls.append(endpoint)
+        if endpoint.endswith("releases?per_page=100"):
+            return json.dumps([self.remote] if self.remote else [])
+        self.assertEqual(endpoint, "repos/owner/repo/releases/123")
+        return json.dumps(self.remote)
+
+    def command(self, label, argv):
+        self.calls.append((label, list(map(str, argv))))
+        if label == "release-create":
+            self.remote = {"id": 123, "tag_name": "v123", "draft": True,
+                           "target_commitish": self.value["sourceCommit"], "assets": [],
+                           "body": (self.work / "draft-notes.txt").read_text(),
+                           "html_url": "https://github.com/owner/repo/releases/tag/v123"}
+        elif label == "release-publish":
+            self.remote.update(draft=False, body=json.loads((self.work / "publish-release.json").read_text())["body"])
+            return json.dumps(self.remote)
+        elif label == "release-remove-incomplete-asset":
+            asset_id = int(str(argv[-1]).rsplit("/", 1)[1])
+            self.remote["assets"] = [item for item in self.remote["assets"] if item["id"] != asset_id]
+        else:
+            self.fail("Unexpected publication mutation: " + label)
+        return ""
+
+    def upload(self, repository, release_id, path):
+        self.assertEqual((repository, release_id), ("owner/repo", 123))
+        self.uploads.append(path.name)
+        result = {"id": 10 + len(self.uploads), "name": path.name, "size": path.stat().st_size,
+                  "digest": "sha256:" + release.digest(path)}
+        self.remote["assets"].append(result)
+        return result
 
     def test_publication_is_refused_for_an_automatic_event(self):
         with patch.dict(os.environ, GITHUB_EVENT_NAME="push"), patch.object(release, "command") as command:
@@ -286,38 +329,92 @@ class PublicationTests(unittest.TestCase):
             command.assert_not_called()
 
     def test_existing_release_is_preserved(self):
-        with patch.object(release.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)):
-            with self.assertRaises(FileExistsError):
-                release.publish()
+        self.remote = {"tag_name": "v123", "draft": False, "target_commitish": "e" * 40, "assets": []}
+        with self.assertRaises(FileExistsError):
+            release.publish()
+        self.assertEqual(self.calls, [])
+        self.assertEqual(self.uploads, [])
+
+    def test_existing_unowned_draft_is_preserved(self):
+        self.remote = {"tag_name": "v123", "draft": True, "target_commitish": self.value["sourceCommit"],
+                       "assets": [], "body": self.description}
+        with self.assertRaisesRegex(FileExistsError, "not owned"):
+            release.publish()
+        self.assertEqual(self.calls, [])
+        self.assertEqual(self.uploads, [])
+
+    def test_existing_tag_is_preserved(self):
+        with patch.object(release.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)), \
+                self.assertRaises(FileExistsError):
+            release.publish()
+        self.assertEqual(self.calls, [])
 
     def test_bad_upload_digest_never_publishes_the_draft(self):
-        with patch.object(release.subprocess, "run", return_value=subprocess.CompletedProcess([], 1)), \
-                patch.object(release, "run", return_value=json.dumps([self.metadata("b" * 64)])), \
-                patch.object(release, "command") as command:
+        with patch.object(release, "upload_release_asset", return_value={"size": 1234, "digest": "sha256:" + "b" * 64}):
             with self.assertRaisesRegex(ValueError, "remains draft"):
                 release.publish()
-            self.assertNotIn("release-publish", [call.args[0] for call in command.call_args_list])
+        self.assertNotIn("release-publish", [name for name, _ in self.calls])
+        self.assertTrue(self.remote["draft"])
 
     def test_verified_upload_publishes_with_configured_notes(self):
-        result = {"draft": False, "body": self.description, "html_url": "https://github.com/owner/repo/releases/tag/v123"}
-        with patch.object(release.subprocess, "run", return_value=subprocess.CompletedProcess([], 1)), \
-                patch.object(release, "run", return_value=json.dumps([self.metadata()])), \
-                patch.object(release, "command", side_effect=lambda label, argv: json.dumps(result) if label == "release-publish" else "") as command:
-            release.publish()
-            published = next(call.args[1] for call in command.call_args_list if call.args[0] == "release-publish")
-            self.assertIn("repos/owner/repo/releases/123", published)
-            self.assertEqual(json.loads((self.work / "publish-release.json").read_text()),
-                             {"draft": False, "body": self.description})
-            self.assertNotIn("--generate-notes", published)
-            summary = (self.work / "step-summary.md").read_text()
-            self.assertIn("Desktop: 9.8.7; backend: rust-v9.8.7", summary)
+        release.publish()
+        published = next(argv for name, argv in self.calls if name == "release-publish")
+        self.assertIn("repos/owner/repo/releases/123", published)
+        self.assertEqual(json.loads((self.work / "publish-release.json").read_text()),
+                         {"draft": False, "body": self.description})
+        self.assertNotIn("--generate-notes", published)
+        self.assertEqual(self.remote["body"], self.description)
+        self.assertEqual(set(self.uploads), {"full.apk", "build-info.json", "SHA256SUMS"})
+        summary = (self.work / "step-summary.md").read_text()
+        self.assertIn("Desktop: 9.8.7; backend: rust-v9.8.7", summary)
 
     def test_missing_draft_never_publishes_via_a_by_tag_lookup(self):
-        with patch.object(release.subprocess, "run", return_value=subprocess.CompletedProcess([], 1)), \
-                patch.object(release, "run", return_value="[]"), patch.object(release, "command") as command:
+        with patch.object(release, "command"):
             with self.assertRaisesRegex(ValueError, "identify the new draft"):
                 release.publish()
-            self.assertNotIn("release-publish", [call.args[0] for call in command.call_args_list])
+        self.assertFalse(any("/releases/tags/" in endpoint for endpoint in self.api_calls))
+
+    def test_upload_interruption_reuses_the_apk_and_resumes_missing_assets(self):
+        def interrupted(repository, release_id, path):
+            if path.name == "build-info.json":
+                raise OSError("simulated interrupted upload")
+            return self.upload(repository, release_id, path)
+        with patch.object(release, "upload_release_asset", side_effect=interrupted), self.assertRaises(OSError):
+            release.publish()
+        self.assertTrue(self.remote["draft"])
+        release.publish()
+        self.assertEqual(self.uploads.count("full.apk"), 1)
+        self.assertEqual([name for name, _ in self.calls].count("release-create"), 1)
+        self.assertFalse(self.remote["draft"])
+
+    def test_partial_asset_on_this_runs_draft_is_replaced_before_resume(self):
+        def starter(repository, release_id, path):
+            self.remote["assets"].append({"id": 99, "name": path.name, "size": 0, "digest": None})
+            raise OSError("upload connection closed")
+        with patch.object(release, "upload_release_asset", side_effect=starter), self.assertRaises(OSError):
+            release.publish()
+        release.publish()
+        self.assertEqual([name for name, _ in self.calls].count("release-remove-incomplete-asset"), 1)
+        self.assertFalse(self.remote["draft"])
+
+    def test_published_release_is_recognized_if_the_patch_response_was_lost(self):
+        def interrupted(label, argv):
+            result = self.command(label, argv)
+            if label == "release-publish":
+                raise OSError("response lost after successful publication")
+            return result
+        with patch.object(release, "command", side_effect=interrupted), self.assertRaises(OSError):
+            release.publish()
+        release.publish()
+        self.assertEqual(len(self.uploads), 3)
+        self.assertEqual([name for name, _ in self.calls].count("release-publish"), 1)
+
+    def test_modified_apk_is_rejected_before_any_github_request(self):
+        (self.work / "release/full.apk").write_bytes(b"modified artifact")
+        with self.assertRaisesRegex(ValueError, "differs before publication"):
+            release.publish()
+        self.assertEqual(self.api_calls, [])
+        self.assertEqual(self.calls, [])
 
 
 if __name__ == "__main__":
