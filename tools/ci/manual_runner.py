@@ -100,7 +100,7 @@ def android():
         executable.chmod(0o755)
     manager = tools / "latest/bin/sdkmanager"
     command("android-licenses", [manager, f"--sdk_root={sdk}", "--licenses"], input="y\n" * 200)
-    command("android-sdk", [manager, f"--sdk_root={sdk}", "platforms;android-37", "build-tools;36.0.0",
+    command("android-sdk", [manager, f"--sdk_root={sdk}", "platforms;android-37.0", "build-tools;36.0.0",
         "ndk;29.0.14206865", "cmake;3.22.1"], input="y\n" * 200)
     # Android/Gradle versions follow the project's build configuration. Codex
     # backend and desktop versions are separately selected at dispatch time.
