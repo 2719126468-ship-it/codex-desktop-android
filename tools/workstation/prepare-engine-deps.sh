@@ -37,9 +37,18 @@ record={'schema':'codex.gnu-engine-dependencies.v1','target':'aarch64-unknown-li
 print('ARM64 OpenSSL dependencies ready:',prefix/'dependencies.json')
 PY
 base="$task_root/engine-base.git"
+manifest="${CODEX_ENGINE_MANIFEST:-$repo/recovery/engine/manifest.json}"
+selected_base=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["base"])' "$manifest")
+selected_tag=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["tag"])' "$manifest")
+upstream=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["upstream"])' "$manifest")
 if [[ ! -d "$base" ]]; then
-    git clone --bare --no-hardlinks "$repo/work/upstream/codex-engine" "$base"
+    git clone --bare --single-branch --branch "$selected_tag" "$upstream" "$base"
 fi
-git -C "$base" update-ref refs/heads/android-build-base d32063f96c2dff1dc96af839b3952abb6acfeda4
+if ! git -C "$base" cat-file -e "$selected_base^{commit}" 2>/dev/null \
+    || ! git -C "$base" cat-file -e "$selected_tag^{commit}" 2>/dev/null; then
+    git -C "$base" fetch "$upstream" "refs/tags/$selected_tag:refs/tags/$selected_tag"
+fi
+[[ "$(git -C "$base" rev-parse "$selected_tag^{commit}")" == "$selected_base" ]]
+git -C "$base" update-ref refs/heads/android-build-base "$selected_base"
 git -C "$base" symbolic-ref HEAD refs/heads/android-build-base
 git -C "$base" rev-parse HEAD

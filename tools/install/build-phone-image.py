@@ -27,7 +27,7 @@ def run(args, **kwargs):
     subprocess.run(list(map(str, args)), check=True, **kwargs)
 
 
-def authenticated_client(upstream, output):
+def authenticated_client(upstream, output, expected_version=None):
     """The pinned official signing identity authenticates index and package bytes."""
     verified = subprocess.check_output([
         "gpgv", "--status-fd", "1", "--keyring", str(upstream / "repository-key.gpg"),
@@ -42,6 +42,8 @@ def authenticated_client(upstream, output):
         raise ValueError("Official ARM64 package index is not bound by the signature")
     records = [client.deb822(record) for record in index.split(b"\n\n") if record.strip()]
     records = [record for record in records if record.get("package") == "chatgpt" and record.get("architecture") == "arm64"]
+    if expected_version:
+        records = [record for record in records if record.get("version") == expected_version]
     if len(records) != 1:
         raise ValueError("Official package index is ambiguous")
     record = records[0]
@@ -67,10 +69,16 @@ def install_guest_sources(root):
         target.write_bytes((ROOT / source).read_bytes().replace(b"\r\n", b"\n"))
         target.chmod(0o600 if target.name in ("initialize_keyring.py", "supervise_keyring.py") else mode)
     for name in ("install-workspace-provider.py", "codex-workspace-provider.cjs",
-                 "workspace-node-check.cjs", "workspace-python-check.py", "workspace-render-check.py"):
+                 "workspace-node-check.cjs", "workspace-python-check.py", "workspace-render-check.py",
+                 "codex_phone_profile.py", "install_phone_mcp.py", "codex_native_dialogs.py",
+                 "codex-phone-dialogs.css"):
         target = root / "usr/local/lib/codex" / name
         target.write_bytes((ROOT / "tools/runtime" / name).read_bytes().replace(b"\r\n", b"\n"))
         target.chmod(0o644)
+    pulse = root / "usr/local/share/codex/pulseaudio.pa"
+    pulse.parent.mkdir(parents=True, exist_ok=True)
+    pulse.write_bytes((ROOT / "config/pulseaudio/codex-pulse.pa").read_bytes().replace(b"\r\n", b"\n"))
+    pulse.chmod(0o644)
 
 
 def engine_inputs(args):
@@ -106,7 +114,8 @@ def assemble(args):
     evidence.mkdir()
     if image.digest(args.base) != args.base_sha256 or image.digest(args.gpu) != args.gpu_sha256:
         raise ValueError("Explicit base/GPU release input digest differs")
-    package_source, descriptor = authenticated_client(args.official_input, evidence)
+    package_source, descriptor = authenticated_client(args.official_input, evidence,
+        getattr(args, "client_version", None))
     work = Path(tempfile.mkdtemp(prefix="codex-phone-image-", dir="/var/tmp"))
     root = work / "rootfs"
     root.mkdir()
@@ -152,6 +161,10 @@ def assemble(args):
     print("Official client installed and revalidated; waiting for the separate GNU engine package", flush=True)
     state, engine = engine_inputs(args)
     install_guest_sources(root)
+    # Check the actual selected client before publishing an installable image.
+    # Future versions are selected by metadata, but still need a compatible adapter.
+    run([sys.executable, "-B", ROOT / "tools/runtime/install-workspace-provider.py",
+         "--asar", root / "usr/lib/chatgpt/resources/app.asar", "--state", work / "adapter-check", "--check"])
     with tarfile.open(args.gpu, "r:gz") as archive:
         if any(not x.name.startswith("opt/codex-gpu/mesa-26.2.2-codex5") for x in archive.getmembers()):
             raise ValueError("GPU payload has an unexpected prefix")
@@ -186,6 +199,9 @@ def assemble(args):
         "client": descriptor, "enginePackageSha256": state["packageSha256"],
         "accountIncluded": False, "keyringIncluded": False, "androidExecuted": False}
     (assets / "release.json").write_bytes(image.canonical(release))
+    if getattr(args, "embed_archive", False):
+        # Both outputs share a build filesystem. Keep one archive's disk blocks.
+        os.link(archive, assets / archive.name)
     shutil.copy2(args.engine_state, evidence / "engine-build-state.json")
     (evidence / "source-files.json").write_bytes(image.canonical({
         str(p.relative_to(ROOT)): image.digest(p) for p in [Path(__file__), ROOT / "tools/install/phone_image.py",
@@ -200,4 +216,6 @@ if __name__ == "__main__":
     for name in ("base-sha256", "gpu-sha256"):
         parser.add_argument("--" + name, required=True)
     parser.add_argument("--wait-engine-seconds", type=int, default=0)
+    parser.add_argument("--client-version", help="Version selected from the authenticated ARM64 repository index")
+    parser.add_argument("--embed-archive", action="store_true", help="Include the archive in assets/ for a self-contained APK")
     assemble(parser.parse_args())

@@ -280,7 +280,8 @@ def auxiliary_inputs(args, descriptor=None, paths=None):
         if set(files) != expected:
             raise ValueError("GNU engine assets must contain the complete matched pair only")
         manifest = strict_json((selected / "gnu-engine/manifest.json").read_bytes())
-        recovery = strict_json((ROOT / "recovery/engine/manifest.json").read_bytes())
+        recovery_path = getattr(args, "engine_manifest", None) or ROOT / "recovery/engine/manifest.json"
+        recovery = strict_json(recovery_path.read_bytes())
         if (manifest.get("schema") != "codex.gnu-engine.payload.v1"
                 or manifest.get("target") != "aarch64-unknown-linux-gnu"
                 or manifest.get("sourceBase") != recovery["base"]
@@ -295,6 +296,35 @@ def auxiliary_inputs(args, descriptor=None, paths=None):
                 raise ValueError("GNU engine bytes differ from their manifest")
         result["gnuEngineAssets"] = {"path": path_record(selected), "files": files,
             "version": manifest["version"], "sourceBase": manifest["sourceBase"]}
+        result["engineManifest"] = {"path": path_record(recovery_path), "sha256": digest_file(recovery_path)}
+    phone = getattr(args, "phone_image_assets", None)
+    if phone is not None:
+        phone = phone.resolve(strict=True)
+        files = inventory(phone)
+        required = {"phone-runtime/release.json", "phone-runtime/inventory.json",
+                    "phone-runtime/codex-phone-rootfs.tar.gz"}
+        if set(files) != required:
+            raise ValueError("Full phone image assets require the archive, descriptor and inventory only")
+        release = strict_json((phone / "phone-runtime/release.json").read_bytes())
+        index = files["phone-runtime/inventory.json"]
+        archive = files["phone-runtime/codex-phone-rootfs.tar.gz"]
+        if (release.get("format") != "codex.phone-image.v1"
+                or release.get("archive") != "codex-phone-rootfs.tar.gz"
+                or release.get("accountIncluded") is not False or release.get("keyringIncluded") is not False
+                or index["sha256"] != release.get("inventorySha256") or index["bytes"] != release.get("inventoryBytes")
+                or archive["sha256"] != release["spec"]["sha256"]
+                or archive["bytes"] != release["spec"]["compressedBytes"]):
+            raise ValueError("Full phone image differs from its trusted descriptor")
+        result["phoneImageAssets"] = {"path": path_record(phone), "files": files}
+    code, name = getattr(args, "version_code", None), getattr(args, "version_name", None)
+    if code is not None:
+        if not 1 <= code <= 2100000000:
+            raise ValueError("Android version code is outside its supported range")
+        result["versionCode"] = code
+    if name is not None:
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.+_\-]{0,99}", name):
+            raise ValueError("Invalid Android version name")
+        result["versionName"] = name
     reused_apk = getattr(args, 'reuse_native_apk', None)
     if reused_apk is not None:
         if descriptor is None or paths is None:
@@ -322,13 +352,17 @@ def auxiliary_inputs(args, descriptor=None, paths=None):
 
 
 def verify_auxiliary_apk(apk, auxiliary):
-    selected = auxiliary.get("gnuEngineAssets")
-    if selected:
-        with ZipFile(apk) as archive:
+    with ZipFile(apk) as archive:
+        for key, label in (("gnuEngineAssets", "GNU engine"), ("phoneImageAssets", "phone image")):
+            selected = auxiliary.get(key)
+            if not selected:
+                continue
             for name, row in selected["files"].items():
-                data = archive.read("assets/" + name)
-                if len(data) != row["bytes"] or hashlib.sha256(data).hexdigest() != row["sha256"]:
-                    raise ValueError("Packaged GNU engine differs from its selected input: " + name)
+                entry = archive.getinfo("assets/" + name)
+                with archive.open(entry) as stream:
+                    digest = hashlib.file_digest(stream, "sha256").hexdigest()
+                if entry.file_size != row["bytes"] or digest != row["sha256"]:
+                    raise ValueError("Packaged " + label + " differs from its selected input: " + name)
 
 
 def command_for(descriptor, paths, *, reuse_native=False):
@@ -383,6 +417,12 @@ def build_candidate(args):
         options += ["--init-script", str(descriptor_path(script["path"]))]
     if "gnuEngineAssets" in auxiliary:
         options.append("-PcodexGnuEngineAssets=" + str(descriptor_path(auxiliary["gnuEngineAssets"]["path"])))
+    if "phoneImageAssets" in auxiliary:
+        options += ["-PcodexPhoneImageAssets=" + str(descriptor_path(auxiliary["phoneImageAssets"]["path"])),
+                    "-PcodexEmbedPhoneImage=true"]
+    for key in ("versionCode", "versionName"):
+        if key in auxiliary:
+            options.append("-Pcodex" + key[0].upper() + key[1:] + "=" + str(auxiliary[key]))
     command[1:1] = options
     if args.preflight_only:
         return {"preflight": "PASS", "output": str(output), "package": package, "auxiliaryInputs": auxiliary,
@@ -481,6 +521,10 @@ def parser():
     build.add_argument("--signing-keystore", type=Path)
     build.add_argument("--signing-cert-sha256")
     build.add_argument("--gnu-engine-assets", type=Path, help="Complete staged controller/Code Mode pair matching recovery/engine/manifest.json")
+    build.add_argument("--engine-manifest", type=Path, help="Selected version/commit manifest for the GNU engine pair")
+    build.add_argument("--phone-image-assets", type=Path, help="Complete embedded first-install archive, inventory and descriptor")
+    build.add_argument("--version-code", type=int)
+    build.add_argument("--version-name")
     build.add_argument("--gradle-init-script", type=Path, action="append", default=[], help="Explicit local Gradle adapter; hashed and rechecked as a build input")
     build.add_argument("--native-update", action="store_true", help="Select the current application-origin native update content contract, not the legacy diagnostic fixture contract")
     build.add_argument("--reuse-native-apk", type=Path, help="Exact signed installed APK providing every reused native/Python input; original producer paths are not treated as local build receipts")

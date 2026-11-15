@@ -1,0 +1,155 @@
+name: Build full APK (manual)
+run-name: Full APK / backend ${{ inputs.engine_ref }} / desktop ${{ inputs.desktop_version }}
+
+# Deliberately no push, pull_request, release, workflow_run, or schedule trigger.
+on:
+  workflow_dispatch:
+    inputs:
+      engine_ref:
+        description: 'Codex backend: latest, supported, or a version such as 0.169.0'
+        type: string
+        default: latest
+      desktop_version:
+        description: 'Linux ARM64 desktop: latest, or a version present in its signed package index'
+        type: string
+        default: latest
+      version_code:
+        description: 'Android versionCode; blank = source versionCode + workflow run number'
+        type: string
+        required: false
+      rust_toolchain:
+        description: 'Rust compiler: stable, or an exact version if the selected backend requires one'
+        type: string
+        default: stable
+      release_tag:
+        description: 'New Release tag; blank = v<versionCode>. Existing tags are never overwritten.'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: manual-full-apk
+  cancel-in-progress: false
+
+jobs:
+  full-apk:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    permissions:
+      contents: write
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_HOME: ${{ github.workspace }}/work/ci/cache/cargo
+      RUSTUP_HOME: ${{ github.workspace }}/work/ci/cache/rustup
+      GRADLE_USER_HOME: ${{ github.workspace }}/work/manual-release/gradle-home
+      CARGO_PROFILE_RELEASE_DEBUG: '0'
+    steps:
+      - name: Check out selected source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Check signing configuration
+        env:
+          SIGNING_CONFIGURED: ${{ secrets.CODEX_KEYSTORE_BASE64 != '' }}
+        run: |
+          if [[ "$SIGNING_CONFIGURED" != true ]]; then
+            echo '::error::Configure CODEX_KEYSTORE_BASE64 in repository Actions secrets. See docs/manual-release.md.'
+            exit 1
+          fi
+
+      - name: Freeze selected versions
+        id: plan
+        env:
+          INPUT_ENGINE_REF: ${{ inputs.engine_ref }}
+          INPUT_DESKTOP_VERSION: ${{ inputs.desktop_version }}
+          INPUT_RUST_TOOLCHAIN: ${{ inputs.rust_toolchain }}
+          INPUT_VERSION_CODE: ${{ inputs.version_code }}
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+        run: python3 -B tools/ci/manual_release.py plan
+
+      - name: Verify source and release regressions
+        run: |
+          python3 -B tools/ci/check-source-integrity.py
+          python3 -B -m unittest discover -s tools/ci -p 'test_manual_release.py' -v
+          python3 -B -m unittest discover -s tools/runtime -p 'test_candidate_build.py' -v
+          python3 -B -m unittest discover -s tools/install -p 'test_phone_image.py' -v
+          python3 -B -m unittest discover -s tools/install -p 'test_build_phone_image.py' -v
+
+      - name: Set up Java
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Prepare disposable Linux builder
+        run: python3 -B tools/ci/manual_runner.py prepare
+
+      - name: Cache Cargo downloads
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            work/ci/cache/cargo/registry
+            work/ci/cache/cargo/git
+          key: codex-cargo-${{ runner.os }}-${{ inputs.engine_ref }}-${{ hashFiles('recovery/engine/manifest.json') }}-${{ github.run_id }}
+          restore-keys: |
+            codex-cargo-${{ runner.os }}-${{ inputs.engine_ref }}-${{ hashFiles('recovery/engine/manifest.json') }}-
+
+      - name: Authenticate desktop package and check adapter
+        run: python3 -B tools/ci/manual_release.py client
+
+      - name: Build pristine Debian ARM64 environment
+        run: python3 -B tools/ci/manual_release.py base
+
+      - name: Build Mesa Zink and Turnip
+        run: python3 -B tools/ci/manual_release.py gpu
+
+      - name: Build selected Codex backend and Code Mode host
+        run: python3 -B tools/ci/manual_release.py engine
+
+      - name: Assemble matching clean first-install image
+        run: python3 -B tools/ci/manual_release.py image
+
+      - name: Reclaim intermediate build space
+        run: python3 -B tools/ci/manual_runner.py compact
+
+      - name: Install Android SDK and Gradle
+        run: python3 -B tools/ci/manual_runner.py android
+
+      - name: Recover verified native baseline
+        run: python3 -B tools/ci/manual_release.py native
+
+      - name: Build, sign and verify full APK
+        env:
+          CODEX_KEYSTORE_BASE64: ${{ secrets.CODEX_KEYSTORE_BASE64 }}
+          CODEX_SIGNING_STORE_PASSWORD: ${{ secrets.CODEX_SIGNING_STORE_PASSWORD || 'android' }}
+          CODEX_SIGNING_KEY_ALIAS: ${{ secrets.CODEX_SIGNING_KEY_ALIAS || 'androiddebugkey' }}
+          CODEX_SIGNING_KEY_PASSWORD: ${{ secrets.CODEX_SIGNING_KEY_PASSWORD || 'android' }}
+        run: python3 -B tools/ci/manual_release.py apk
+
+      - name: Publish verified APK with configured Release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/ci/manual_release.py publish
+
+      - name: Retain small build diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: manual-build-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            work/manual-release/plan.json
+            work/manual-release/logs/*.log
+            work/manual-release/candidate/build-report.json
+            work/manual-release/candidate/*verification.json
+            work/manual-release/release/build-info.json
+            work/manual-release/release/SHA256SUMS
+
+      - name: Remove temporary signing file
+        if: always()
+        run: python3 -c 'import os,pathlib; (pathlib.Path(os.environ["RUNNER_TEMP"])/"codex-release.keystore").unlink(missing_ok=True)'

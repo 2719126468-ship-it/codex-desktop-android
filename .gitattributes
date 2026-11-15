@@ -1,6 +1,11 @@
 *.sh text eol=lf
 *.gdb text eol=lf
 *.patch text eol=lf
+*.yml text eol=lf
+tools/ci/manual_*.py text eol=lf
+tools/ci/test_manual_release.py text eol=lf
+tools/recovery/restore-engine.py text eol=lf
+tools/executor/build-gnu-engine.py text eol=lf
 # Application-origin build admission compares these sources with frozen bytes.
 tools/executor/runas-runtime/native-bootstrap.c text eol=lf
 tools/executor/runas-runtime/build-bootstrap-windows.py text eol=lf

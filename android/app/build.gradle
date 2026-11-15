@@ -8,8 +8,8 @@ android {
         applicationId 'com.ai.codex'
         minSdk 30
         targetSdk 37
-        versionCode 60
-        versionName '0.2.0-dev-ime-refresh'
+        versionCode providers.gradleProperty('codexVersionCode').map { it.toInteger() }.getOrElse(60)
+        versionName providers.gradleProperty('codexVersionName').getOrElse('0.2.0-dev-ime-refresh')
         testInstrumentationRunner 'com.ai.codex.recovery.HardCrashInstrumentation'
         ndk { abiFilters 'arm64-v8a' }
     }
@@ -71,6 +71,13 @@ if (phoneImageAssets.isPresent()) {
         throw new GradleException('Complete phone image release assets do not match their inventory')
     }
     android.sourceSets.main.assets.srcDir(supplied)
+    if (providers.gradleProperty('codexEmbedPhoneImage').getOrElse('false').toBoolean()) {
+        def archive = new File(supplied, 'phone-runtime/codex-phone-rootfs.tar.gz')
+        if (!archive.isFile() || archive.length() != release.spec.compressedBytes)
+            throw new GradleException('The full APK requires its matching embedded rootfs archive')
+        // gzip is already compressed. Keep it streamable inside a large APK.
+        android.androidResources.noCompress.add('gz')
+    }
 }
 
 // Explicit reviewed deployment only. Merely linking the transport must never

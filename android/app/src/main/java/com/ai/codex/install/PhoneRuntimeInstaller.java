@@ -40,10 +40,20 @@ public final class PhoneRuntimeInstaller {
         for (byte b : digest.digest(inventory)) hex.append(String.format(Locale.ROOT, "%02x", b & 255));
         if (inventory.length != release.getInt("inventoryBytes") || !hex.toString().equals(release.getString("inventorySha256")))
             throw new IOException("完整运行环境的文件清单校验失败。");
-        File external = context.getExternalFilesDir(null);
-        if (external == null) throw new IOException("无法访问运行环境安装文件。");
-        Path archive = external.toPath().resolve("codex-phone-rootfs.tar.gz");
-        RootfsTransaction.ArchiveSource source = () -> Files.newInputStream(archive, LinkOption.NOFOLLOW_LINKS);
+        RootfsTransaction.ArchiveSource source;
+        if (assets.contains("codex-phone-rootfs.tar.gz")) {
+            // Stream the APK-owned archive directly. A full installer must not
+            // need a second 1+ GB copy in shared storage or a file-manager grant.
+            source = () -> context.getAssets().open("phone-runtime/codex-phone-rootfs.tar.gz",
+                android.content.res.AssetManager.ACCESS_STREAMING);
+        } else {
+            File external = context.getExternalFilesDir(null);
+            if (external == null) throw new IOException("无法访问运行环境安装文件。");
+            Path archive = external.toPath().resolve("codex-phone-rootfs.tar.gz");
+            if (!Files.isRegularFile(archive, LinkOption.NOFOLLOW_LINKS))
+                throw new IOException("缺少 Linux 环境包，请安装包含运行环境的完整 APK。");
+            source = () -> Files.newInputStream(archive, LinkOption.NOFOLLOW_LINKS);
+        }
         PowerManager.WakeLock wake = context.getSystemService(PowerManager.class)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Codex:initial-install");
         wake.acquire();

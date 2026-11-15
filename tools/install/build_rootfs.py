@@ -38,7 +38,7 @@ PACKAGES = (
     "libglib2.0-0t64", "libnspr4", "libpango-1.0-0", "libstdc++6", "libudev1",
     "libusb-1.0-0", "libx11-6", "libx11-xcb1", "libxcb1", "libxcomposite1",
     "libxdamage1", "libxext6", "libxfixes3", "libxkbcommon0", "libxrandr2",
-    "libvulkan1", "mesa-vulkan-drivers",
+    "libvulkan1", "mesa-vulkan-drivers", "pulseaudio", "pulseaudio-utils",
 )
 
 

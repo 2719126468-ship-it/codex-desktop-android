@@ -21,7 +21,6 @@ import tempfile
 
 
 PROJECT = Path(__file__).resolve().parents[2]
-BASE = "d32063f96c2dff1dc96af839b3952abb6acfeda4"
 TARGET = "aarch64-unknown-linux-gnu"
 BINARIES = ("codex", "codex-code-mode-host")
 OPENSSL_VERSION = "3.6.3"
@@ -162,13 +161,13 @@ def files(root: Path, *, checkout: bool = False) -> list[dict]:
     return entries
 
 
-def verified_checkout(checkout: Path, snapshot: Path) -> Path:
+def verified_checkout(checkout: Path, snapshot: Path, base: str) -> Path:
     """Reuse Cargo paths only when they exactly reproduce the recovery export."""
     checkout = checkout.expanduser().resolve(strict=True)
     if not (checkout / ".git").is_file():
         raise RuntimeError("--verified-checkout requires a linked Git worktree")
     native_storage(checkout, "Verified source checkout")
-    if run(["git", "-C", checkout, "rev-parse", "HEAD"]) != BASE:
+    if run(["git", "-C", checkout, "rev-parse", "HEAD"]) != base:
         raise RuntimeError("Verified checkout has the wrong upstream base")
     if files(checkout, checkout=True) != files(snapshot):
         raise RuntimeError("Verified checkout differs from the reconstructed recovery export")
@@ -213,12 +212,14 @@ def prepare(args) -> None:
     }
     args.build_root = Path(storage["buildRoot"]["path"])
     args.target_dir = Path(storage["targetDirectory"]["path"])
-    export = PROJECT / "recovery/engine"
-    manifest = json.loads((export / "manifest.json").read_text())
+    manifest_path = args.recovery_manifest.resolve(strict=True)
+    export = manifest_path.parent
+    manifest = json.loads(manifest_path.read_text())
+    base = manifest["base"]
     patch = export / manifest["patch"]
-    if manifest["base"] != BASE or sha(patch) != manifest["sha256"]:
+    if not re.fullmatch(r"[0-9a-f]{40}", base) or sha(patch) != manifest["sha256"]:
         raise RuntimeError("Recovery source identity mismatch")
-    if run(["git", "-C", args.engine, "rev-parse", "HEAD"]) != BASE:
+    if run(["git", "-C", args.engine, "rev-parse", "HEAD"]) != base:
         raise RuntimeError("Engine repository does not have the pinned base")
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     build = args.build_root / f"{stamp}-{manifest['sha256'][:12]}"
@@ -230,7 +231,7 @@ def prepare(args) -> None:
     archive = build / "upstream.tar"
     with archive.open("wb") as stream:
         subprocess.run(["git", "-C", str(args.engine), "-c", "core.autocrlf=false",
-                        "-c", "core.eol=lf", "archive", BASE], stdout=stream, check=True)
+                        "-c", "core.eol=lf", "archive", base], stdout=stream, check=True)
     with tarfile.open(archive) as stream:
         stream.extractall(source, filter="data")
     # A source snapshot deliberately has no Git index and never modifies the
@@ -247,7 +248,7 @@ def prepare(args) -> None:
     save(evidence / "SOURCES.json", files(source))
     canonical_source = source
     if args.verified_checkout:
-        source = verified_checkout(args.engine, canonical_source)
+        source = verified_checkout(args.engine, canonical_source, base)
 
     # Reuse the official source-package verifier, retaining archive and binding
     # together. Cached downloads are rechecked against upstream's SHA manifest.
@@ -265,7 +266,7 @@ def prepare(args) -> None:
     save(evidence / "DEPENDENCY-CHECKS.json", dependency_checks)
     save(evidence / "DEPENDENCIES.json", files(args.dependencies / "openssl"))
     state = {
-        "schema": "codex.gnu-engine-build.v1", "sourceBase": BASE,
+        "schema": "codex.gnu-engine-build.v1", "sourceBase": base,
         "patchSha256": manifest["sha256"], "target": TARGET, "profile": "release",
         "source": str(source), "evidence": str(evidence), "build": str(build),
         "sourceMode": "verified-checkout" if args.verified_checkout else "frozen-snapshot",
@@ -304,7 +305,12 @@ def prepare(args) -> None:
 
 def validate(state: dict) -> Path:
     evidence = Path(state["evidence"])
-    if state["schema"] != "codex.gnu-engine-build.v1" or state["sourceBase"] != BASE:
+    recovery = json.loads((evidence / "recovery-manifest.json").read_text())
+    if (state["schema"] != "codex.gnu-engine-build.v1"
+            or not re.fullmatch(r"[0-9a-f]{40}", state["sourceBase"])
+            or state["sourceBase"] != recovery["base"]
+            or state["patchSha256"] != recovery["sha256"]
+            or sha(evidence / "engine.patch") != recovery["sha256"]):
         raise RuntimeError("Unsupported build identity")
     if sha(Path(__file__)) != state["builderSha256"]:
         raise RuntimeError("Builder changed since preparation; use the preserved builder or prepare again")
@@ -316,7 +322,7 @@ def validate(state: dict) -> Path:
             raise RuntimeError(f"Manifest changed: {name}")
     source = Path(state["source"])
     is_checkout = state.get("sourceMode") == "verified-checkout"
-    if is_checkout and run(["git", "-C", source, "rev-parse", "HEAD"]) != BASE:
+    if is_checkout and run(["git", "-C", source, "rev-parse", "HEAD"]) != state["sourceBase"]:
         raise RuntimeError("Verified checkout base changed")
     if files(source, checkout=is_checkout) != json.loads((evidence / "SOURCES.json").read_text()):
         raise RuntimeError("Frozen source changed")
@@ -399,7 +405,7 @@ def package(args, state: dict) -> None:
         shutil.copyfile(evidence / name, stage / name)
     package_files = files(stage)
     save(stage / "manifest.json", {"kind": "separate-gnu-engine-payload", "target": TARGET,
-        "sourceBase": BASE, "patchSha256": state["patchSha256"], "files": package_files,
+        "sourceBase": state["sourceBase"], "patchSha256": state["patchSha256"], "files": package_files,
         "androidExecution": False, "liveUiQualified": False,
         "cliContract": "codex app-server [arguments]; native runtime requires production launcher injection"})
     # Symbols are preserved separately, outside the phone payload.
@@ -419,6 +425,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("prepare", "build", "package"))
     parser.add_argument("--engine", type=Path, default=PROJECT / "work/worktrees/CodexEngine")
+    parser.add_argument("--recovery-manifest", type=Path, default=PROJECT / "recovery/engine/manifest.json",
+                        help="Selected upstream tag, commit and integration patch; no version is compiled into this builder")
     parser.add_argument("--verified-checkout", action="store_true",
                         help="Build in --engine only after an exact comparison with the reconstructed recovery export")
     parser.add_argument("--build-root", type=Path, default=Path("/opt/codex/engine-gnu-arm64/builds"))

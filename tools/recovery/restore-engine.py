@@ -9,11 +9,13 @@ import subprocess
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--destination", required=True, type=Path)
+    parser.add_argument("--manifest", type=Path,
+                        default=Path(__file__).resolve().parents[2] / "recovery/engine/manifest.json")
     args = parser.parse_args()
     if args.destination.exists():
         raise RuntimeError("Destination already exists; no current engine work will be overwritten")
-    records = Path(__file__).resolve().parents[2] / "recovery/engine"
-    manifest = json.loads((records / "manifest.json").read_text(encoding="utf-8"))
+    records = args.manifest.resolve(strict=True).parent
+    manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
     patch = records / manifest["patch"]
     if hashlib.sha256(patch.read_bytes()).hexdigest() != manifest["sha256"]:
         raise RuntimeError("Engine recovery patch checksum failed")
