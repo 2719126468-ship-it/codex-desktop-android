@@ -291,6 +291,14 @@ def gpu():
     save(WORK / "plan.json", value)
 
 
+def rust_environment(toolchain):
+    # A cache miss is normal on the first hosted build. rustup creates its own
+    # home but does not necessarily create CARGO_HOME before Cargo first runs.
+    for key in ("CARGO_HOME", "RUSTUP_HOME"):
+        Path(os.environ[key]).expanduser().mkdir(parents=True, exist_ok=True)
+    return dict(os.environ, RUSTUP_TOOLCHAIN=toolchain)
+
+
 def engine():
     selected = WORK / "engine-selection/manifest.json"
     command("restore-engine", [sys.executable, "-B", ROOT / "tools/recovery/restore-engine.py",
@@ -298,7 +306,7 @@ def engine():
     # Some upstream release tags retain an older rust-toolchain.toml than the
     # MSRV of their locked dependencies. Select this explicitly at dispatch.
     toolchain = state()["rustToolchain"]
-    env = dict(os.environ, RUSTUP_TOOLCHAIN=toolchain)
+    env = rust_environment(toolchain)
     command("rust-toolchain", ["rustup", "toolchain", "install", toolchain, "--profile", "minimal", "--target", TARGET], env=env)
     builder = module("manual_gnu_builder", "tools/executor/build-gnu-engine.py")
     deps = WORK / "engine-deps"
@@ -356,11 +364,22 @@ def image():
     command("image-owner", ["sudo", "chown", "-R", f"{os.getuid()}:{os.getgid()}", WORK / "phone-image"])
 
 
-def recover_native():
+def acquire_native_baseline():
     value = state()
     baseline = value["nativeBaseline"]
     apk = WORK / "native-baseline.apk"
-    fetch(baseline["url"], apk, expected=baseline["sha256"])
+    if apk.exists():
+        if digest(apk) != baseline["sha256"]:
+            raise ValueError("Previously downloaded native baseline SHA-256 differs")
+    else:
+        fetch(baseline["url"], apk, expected=baseline["sha256"])
+    print("Native baseline download verified", flush=True)
+    return apk
+
+
+def recover_native():
+    baseline = state()["nativeBaseline"]
+    apk = acquire_native_baseline()
     sdk = Path(os.environ["ANDROID_HOME"])
     command("recover-native", [sys.executable, "-B", ROOT / "tools/workstation/recover-apk-inputs.py",
         "--apk", apk, "--apk-sha256", baseline["sha256"], "--cert-sha256", baseline["certificateSha256"],
@@ -468,7 +487,7 @@ def publish():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("stage", choices=("plan", "client", "base", "gpu", "engine", "image", "native", "apk", "publish"))
+    parser.add_argument("stage", choices=("plan", "client", "baseline", "base", "gpu", "engine", "image", "native", "apk", "publish"))
     stage = parser.parse_args().stage
-    {"plan": plan, "client": acquire_client, "base": base, "gpu": gpu, "engine": engine,
+    {"plan": plan, "client": acquire_client, "baseline": acquire_native_baseline, "base": base, "gpu": gpu, "engine": engine,
      "image": image, "native": recover_native, "apk": apk, "publish": publish}[stage]()

@@ -101,6 +101,9 @@ jobs:
       - name: Authenticate desktop package and check adapter
         run: python3 -B tools/ci/manual_release.py client
 
+      - name: Download and verify native baseline before compilation
+        run: python3 -B tools/ci/manual_release.py baseline
+
       - name: Build pristine Debian ARM64 environment
         run: python3 -B tools/ci/manual_release.py base
 

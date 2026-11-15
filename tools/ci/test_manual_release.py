@@ -19,6 +19,47 @@ SPEC.loader.exec_module(candidate)
 engine_builder = release.module("release_engine_builder", "tools/executor/build-gnu-engine.py")
 
 
+class RustEnvironmentTests(unittest.TestCase):
+    def test_first_build_initializes_missing_cache_homes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cargo, rustup = root / "cache/cargo", root / "cache/rustup"
+            with patch.dict(os.environ, CARGO_HOME=str(cargo), RUSTUP_HOME=str(rustup)):
+                env = release.rust_environment("stable")
+            self.assertTrue(cargo.resolve(strict=True).is_dir())
+            self.assertTrue(rustup.resolve(strict=True).is_dir())
+            self.assertEqual(env["RUSTUP_TOOLCHAIN"], "stable")
+            self.assertEqual(env["CARGO_HOME"], str(cargo))
+
+    def test_existing_cache_contents_are_preserved(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cargo, rustup = root / "cargo", root / "rustup"
+            cargo.mkdir()
+            cached = cargo / "retained-package"
+            cached.write_bytes(b"existing package")
+            with patch.dict(os.environ, CARGO_HOME=str(cargo), RUSTUP_HOME=str(rustup)):
+                release.rust_environment("1.99.1")
+            self.assertEqual(cached.read_bytes(), b"existing package")
+
+
+class NativeBaselineTests(unittest.TestCase):
+    def test_cached_baseline_is_rechecked_and_tampering_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            work = Path(temporary)
+            apk = work / "native-baseline.apk"
+            apk.write_bytes(b"reviewed APK input")
+            selected = {"nativeBaseline": {"url": "https://example.com/input.apk", "sha256": release.digest(apk)}}
+            with patch.object(release, "WORK", work), patch.object(release, "state", return_value=selected), \
+                    patch.object(release, "fetch") as fetch:
+                self.assertEqual(release.acquire_native_baseline(), apk)
+                fetch.assert_not_called()
+                apk.write_bytes(b"tampered APK input")
+                with self.assertRaisesRegex(ValueError, "SHA-256 differs"):
+                    release.acquire_native_baseline()
+                fetch.assert_not_called()
+
+
 class EngineManifestTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
