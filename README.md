@@ -1,10 +1,25 @@
 # Codex Android
 
+[![点击观看 B 站视频：手机运行完整版 Codex 并接入灵动岛！](https://i0.hdslb.com/bfs/archive/596983e0cce34c53f3352af09d8db45310ae93a3.jpg)](https://www.bilibili.com/video/BV1XPsH6jEZV/)
+
+[▶ 在 B 站观看演示：手机运行完整版 Codex 并接入灵动岛！](https://www.bilibili.com/video/BV1XPsH6jEZV/)
+
 ![Codex 在一加 13 上的界面和本地命令执行预览](img/1.jpg)
 
 Codex Android 是基于 FoldGPT 的独立适配项目，把 Linux ARM64 版 ChatGPT 桌面客户端带到 Android 上。它提供简体中文界面、启动全屏、共享存储项目，以及带屏幕边缘提示的前台手机操控。
 
 **本项目只在一加 13（Android 17、ARM64）上做过实机测试，其他手机能否运行没有保证。仓库只提供源码，不计划发布 Release APK。**
+
+## 功能亮点
+
+- **把 Codex 桌面工作区带到手机上**：使用 Linux ARM64 桌面客户端，在手机上进行项目对话、阅读代码、修改文件和执行命令。
+- **手机本地开发环境**：Debian 运行环境与本地执行器配合，支持拉取项目、安装依赖和编译构建；可访问已授权的共享存储项目，适合随身继续开发。
+- **ColorOS 17 灵动岛实时状态**：Codex 工作时展示思考、命令执行、文件修改等状态；操控手机时显示“看屏幕”“点击”“输入”等具体动作，无需一直停留在应用内查看。
+- **通过 MCP 操控手机**：授权无障碍服务后，Codex 可读屏、点击、滑动和输入；提供任务状态悬浮窗，以及暂停、继续、接管和停止操作。
+- **屏幕边缘动态光效**：手机操控期间以连续渐变光效提示工作状态，配合悬浮窗与灵动岛，让当前操作更直观。
+- **高刷新率与中文输入**：解除桌面固定 60Hz 限制，随系统实际显示模式同步刷新率；提供简体中文界面，并优化系统输入法、焦点保持和键盘遮挡适配。
+
+灵动岛展示由系统决定，实际帧率受系统设置、温控和负载影响。项目命令与桌面渲染在手机上运行，模型推理由在线服务完成。[实时状态与光效说明](docs/live-status-and-edge-glow.md) · [兼容性与验证范围](docs/compatibility.md)
 
 ## 架构
 
@@ -12,7 +27,7 @@ Codex Android 是基于 FoldGPT 的独立适配项目，把 Linux ARM64 版 Chat
 - **桌面与本地执行**使用 PRoot 提供 Debian 用户空间，运行 Linux ARM64 桌面客户端。适配后的 Codex `app-server` 通过 Android 原生执行器运行项目命令、访问工作区。模型推理由在线服务完成。
 - **手机操控**通过本机 MCP 接入 Codex。前台读屏、点击和输入由 Android 无障碍服务执行，Root 功能单独授权。
 
-当前源码对应应用 `com.ai.codex` 的开发版，升级目标为桌面客户端 `26.1111.21308` 和 Codex `rust-v0.169.0`。versionCode 60 的本地 APK 已用原证书签名构建，在 v59 的统一通知图标、连续边缘光效和普通工作状态识别基础上，修复输入法临时失焦误关闭及桌面窗口的刷新率投票。用户已确认 v60 的键盘和前台高刷测试正常。[光效与实时状态](docs/live-status-and-edge-glow.md) · [架构文档](docs/architecture.md) · [后端版本与补丁清单](recovery/engine/manifest.json)
+当前开发版应用 ID 为 `com.ai.codex`，versionCode 为 `60`，适配目标为桌面客户端 `26.1111.21308` 和 Codex `rust-v0.169.0`。[架构文档](docs/architecture.md) · [后端版本与补丁清单](recovery/engine/manifest.json)
 
 ## 使用 Agent 部署
 
