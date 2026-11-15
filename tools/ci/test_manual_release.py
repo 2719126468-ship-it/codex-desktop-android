@@ -202,7 +202,8 @@ class PublicationTests(unittest.TestCase):
         self.addCleanup(patched.stop)
 
     def metadata(self, digest="a" * 64):
-        return {"assets": [{"name": "full.apk", "size": 1234, "digest": "sha256:" + digest}]}
+        return {"id": 123, "tag_name": "v123", "draft": True,
+                "assets": [{"name": "full.apk", "size": 1234, "digest": "sha256:" + digest}]}
 
     def test_publication_is_refused_for_an_automatic_event(self):
         with patch.dict(os.environ, GITHUB_EVENT_NAME="push"), patch.object(release, "command") as command:
@@ -217,7 +218,7 @@ class PublicationTests(unittest.TestCase):
 
     def test_bad_upload_digest_never_publishes_the_draft(self):
         with patch.object(release.subprocess, "run", return_value=subprocess.CompletedProcess([], 1)), \
-                patch.object(release, "run", return_value=json.dumps(self.metadata("b" * 64))), \
+                patch.object(release, "run", return_value=json.dumps([self.metadata("b" * 64)])), \
                 patch.object(release, "command") as command:
             with self.assertRaisesRegex(ValueError, "remains draft"):
                 release.publish()
@@ -226,12 +227,21 @@ class PublicationTests(unittest.TestCase):
     def test_verified_upload_publishes_with_configured_notes(self):
         result = {"draft": False, "body": self.description, "html_url": "https://github.com/owner/repo/releases/tag/v123"}
         with patch.object(release.subprocess, "run", return_value=subprocess.CompletedProcess([], 1)), \
-                patch.object(release, "run", side_effect=[json.dumps(self.metadata()), json.dumps(result)]), \
-                patch.object(release, "command") as command:
+                patch.object(release, "run", return_value=json.dumps([self.metadata()])), \
+                patch.object(release, "command", side_effect=lambda label, argv: json.dumps(result) if label == "release-publish" else "") as command:
             release.publish()
             published = next(call.args[1] for call in command.call_args_list if call.args[0] == "release-publish")
-            self.assertIn("--notes-file", published)
+            self.assertIn("repos/owner/repo/releases/123", published)
+            self.assertEqual(json.loads((self.work / "publish-release.json").read_text()),
+                             {"draft": False, "body": self.description})
             self.assertNotIn("--generate-notes", published)
+
+    def test_missing_draft_never_publishes_via_a_by_tag_lookup(self):
+        with patch.object(release.subprocess, "run", return_value=subprocess.CompletedProcess([], 1)), \
+                patch.object(release, "run", return_value="[]"), patch.object(release, "command") as command:
+            with self.assertRaisesRegex(ValueError, "identify the new draft"):
+                release.publish()
+            self.assertNotIn("release-publish", [call.args[0] for call in command.call_args_list])
 
 
 if __name__ == "__main__":

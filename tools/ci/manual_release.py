@@ -436,19 +436,26 @@ def publish():
         probe = subprocess.run(["gh", "api", endpoint], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if probe.returncode == 0:
             raise FileExistsError("Release/tag already exists; select a new tag")
-    command("release-create", ["gh", "release", "create", tag, "--repo", repository, "--target", value["sourceCommit"],
-        "--title", "Codex Android " + tag, "--notes-file", ROOT / "config/android/release-notes.txt", "--draft"])
     files = [WORK / "release" / name for name in (value["apk"], "build-info.json", "SHA256SUMS")]
-    command("release-upload", ["gh", "release", "upload", tag, "--repo", repository, *files])
-    metadata = json.loads(run(["gh", "api", f"repos/{repository}/releases/tags/{tag}"]))
+    # Let gh upload against the ID returned during draft creation. The REST
+    # by-tag endpoint retrieves published releases and may not find a draft.
+    command("release-create", ["gh", "release", "create", tag, *files, "--repo", repository,
+        "--target", value["sourceCommit"], "--title", "Codex Android " + tag,
+        "--notes-file", ROOT / "config/android/release-notes.txt", "--draft"])
+    releases = json.loads(run(["gh", "api", f"repos/{repository}/releases?per_page=100"]))
+    matches = [item for item in releases if item["tag_name"] == tag and item["draft"]]
+    if len(matches) != 1:
+        raise ValueError("Could not identify the new draft; refusing publication")
+    metadata = matches[0]
     assets = {item["name"]: item for item in metadata["assets"]}
     apk_asset = assets.get(value["apk"], {})
     if (apk_asset.get("size") != value["apkBytes"]
             or apk_asset.get("digest") != "sha256:" + value["apkSha256"]):
         raise ValueError("Uploaded APK digest/size differs; release remains draft")
-    command("release-publish", ["gh", "release", "edit", tag, "--repo", repository, "--draft=false",
-        "--notes-file", ROOT / "config/android/release-notes.txt"])
-    result = json.loads(run(["gh", "api", f"repos/{repository}/releases/tags/{tag}"]))
+    publication = WORK / "publish-release.json"
+    save(publication, {"draft": False, "body": value["description"]})
+    result = json.loads(command("release-publish", ["gh", "api", "--method", "PATCH",
+        f"repos/{repository}/releases/{metadata['id']}", "--input", publication]))
     if result["draft"] or (result["body"] or "").strip() != value["description"]:
         raise ValueError("Published Release description/state differs")
     print(result["html_url"])
