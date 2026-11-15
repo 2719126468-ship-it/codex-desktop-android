@@ -1,8 +1,10 @@
 # Codex Android
 
-[![点击观看 B 站视频：手机运行完整版 Codex 并接入灵动岛！](https://i0.hdslb.com/bfs/archive/596983e0cce34c53f3352af09d8db45310ae93a3.jpg)](https://www.bilibili.com/video/BV1XPsH6jEZV/)
+<video src="img/2.mp4" controls playsinline preload="metadata" width="400">
+  <a href="img/2.mp4">观看 Codex Android 演示视频</a>
+</video>
 
-[▶ 在 B 站观看演示：手机运行完整版 Codex 并接入灵动岛！](https://www.bilibili.com/video/BV1XPsH6jEZV/)
+[▶ 打开演示视频：手机运行 Codex 并接入灵动岛](img/2.mp4)
 
 ![Codex 在一加 13 上的界面和本地命令执行预览](img/1.jpg)
 
