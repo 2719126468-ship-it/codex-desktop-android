@@ -149,7 +149,11 @@ jobs:
             work/manual-release/plan.json
             work/manual-release/logs/*.log
             work/manual-release/candidate/build-report.json
+            work/manual-release/candidate/*.log
             work/manual-release/candidate/*verification.json
+            downloads/engine-gnu-arm64/**/build-*.log
+            downloads/engine-gnu-arm64/**/toolchain.json
+            work/manual-release/phone-image/evidence/client-apt.log
             work/manual-release/release/build-info.json
             work/manual-release/release/SHA256SUMS
 
