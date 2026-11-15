@@ -12,6 +12,7 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
+import android.hardware.display.DisplayManager;
 import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Handler;
@@ -78,6 +79,17 @@ public class LorieView extends SurfaceView implements InputStub {
     private float inputSourceLeft = 0.f, inputSourceTop = 0.f;
     private float inputSourceWidth = 0.f, inputSourceHeight = 0.f;
     private boolean dimensionsFrozen = false;
+    private boolean surfaceRateCleared;
+    private int reportedRefreshRate;
+    private DisplayManager displayManager;
+    private final DisplayManager.DisplayListener refreshListener = new DisplayManager.DisplayListener() {
+        @Override public void onDisplayAdded(int id) { }
+        @Override public void onDisplayRemoved(int id) { }
+        @Override public void onDisplayChanged(int id) {
+            Display display = getDisplay();
+            if (display != null && display.getDisplayId() == id) syncRefreshRate();
+        }
+    };
     boolean commitedText = false;
     private final InputConnection mConnection = new BaseInputConnection(this, false) {
         private CharSequence currentComposingText = null;
@@ -282,7 +294,7 @@ public class LorieView extends SurfaceView implements InputStub {
         }
     };
     private final SurfaceHolder.Callback mSurfaceCallback = new SurfaceHolder.Callback() {
-        @Override public void surfaceCreated(@NonNull SurfaceHolder holder) {}
+        @Override public void surfaceCreated(@NonNull SurfaceHolder holder) { surfaceRateCleared = false; }
 
         @Override public void surfaceChanged(@NonNull SurfaceHolder holder, int f, int width, int height) {
             LorieView.this.surfaceChanged(mNativeContext, holder.getSurface());
@@ -291,6 +303,7 @@ public class LorieView extends SurfaceView implements InputStub {
 
             Log.d("SurfaceChangedListener", "Surface was changed: " + width + "x" + height);
             updateViewport();
+            syncRefreshRate();
         }
 
         @Override public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
@@ -319,7 +332,18 @@ public class LorieView extends SurfaceView implements InputStub {
     }
 
     @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        displayManager = getContext().getSystemService(DisplayManager.class);
+        if (displayManager != null) displayManager.registerDisplayListener(refreshListener, new Handler(Looper.getMainLooper()));
+        if (Build.VERSION.SDK_INT >= 35) setRequestedFrameRate(REQUESTED_FRAME_RATE_CATEGORY_HIGH);
+        post(this::syncRefreshRate);
+    }
+
+    @Override
     protected void onDetachedFromWindow() {
+        if (displayManager != null) displayManager.unregisterDisplayListener(refreshListener);
+        displayManager = null;
         super.onDetachedFromWindow();
         nativeDestroy(mNativeContext);
         mNativeContext = 0;
@@ -415,7 +439,8 @@ public class LorieView extends SurfaceView implements InputStub {
 
     private void sendWindowChange() {
         String name;
-        int framerate = (int) (getDisplay() != null ? getDisplay().getRefreshRate() : 30);
+        int framerate = DisplayRefreshRate.x11(currentRefreshRate());
+        if (mNativeContext == 0 || framerate == 0) return;
 
         if (getDisplay() == null || getDisplay().getDisplayId() == Display.DEFAULT_DISPLAY)
             name = "builtin";
@@ -425,6 +450,42 @@ public class LorieView extends SurfaceView implements InputStub {
             name = "external";
 
         sendWindowChange(mNativeContext, p.x, p.y, framerate, name);
+        reportedRefreshRate = framerate;
+    }
+
+    private float currentRefreshRate() {
+        Display display = getDisplay();
+        return display == null ? 0 : DisplayRefreshRate.current(display.getMode().getRefreshRate(), display.getRefreshRate());
+    }
+
+    /** Refresh changes need not resize the surface (e.g. 60 -> 90 -> 120 Hz). */
+    private void syncRefreshRate() {
+        if (mNativeContext == 0 || !isAttachedToWindow()) return;
+        float rate = isShown() ? currentRefreshRate() : 0;
+        Surface surface = getHolder().getSurface();
+        if (Build.VERSION.SDK_INT >= 30 && surface.isValid() && !surfaceRateCleared) {
+            try {
+                // Voting for the old current rate anchors the window at 60 Hz.
+                // The host chooses the display preference; this surface has no fixed vote.
+                if (Build.VERSION.SDK_INT >= 31)
+                    surface.setFrameRate(0, Surface.FRAME_RATE_COMPATIBILITY_DEFAULT, Surface.CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS);
+                else surface.setFrameRate(0, Surface.FRAME_RATE_COMPATIBILITY_DEFAULT);
+                surfaceRateCleared = true;
+            } catch (IllegalStateException | IllegalArgumentException error) {
+                Log.w("Lorie", "Display refresh request unavailable", error);
+            }
+        }
+        if (rate > 0 && p.x > 0 && p.y > 0 && DisplayRefreshRate.x11(rate) != reportedRefreshRate) {
+            sendWindowChange();
+            Log.i("Lorie", "X11 refresh follows display: " + rate + " Hz");
+        }
+    }
+
+    @Override protected void onWindowVisibilityChanged(int visibility) {
+        super.onWindowVisibilityChanged(visibility);
+        if (Build.VERSION.SDK_INT >= 35) setRequestedFrameRate(visibility == VISIBLE
+                ? REQUESTED_FRAME_RATE_CATEGORY_HIGH : REQUESTED_FRAME_RATE_CATEGORY_DEFAULT);
+        syncRefreshRate();
     }
 
     @Keep

@@ -25,6 +25,65 @@ DEBUG_CLASSES = (b"RootfsProbeService", b"ProotStorageProbeService", b"NativeRun
                  b"CodexProbeService", b"LandlockProbeReceiver")
 
 
+def verify_native_update(apk):
+    """Current app-origin executor update, separate from legacy fixture APKs.
+
+    The candidate builder also runs verify-production-apk.py for every native
+    digest, Python data file and source import closure. This function checks
+    the surrounding runtime, paired GNU engine and compiled application classes.
+    """
+    with apk.open('rb') as source:
+        digest = hashlib.file_digest(source, 'sha256').hexdigest()
+    with zipfile.ZipFile(apk) as archive:
+        names = archive.namelist()
+        if len(names) != len(set(names)):
+            raise ValueError('Duplicate APK entries')
+        required = {'lib/arm64-v8a/' + name for name in RUNTIME | {'libcodex-device-files.so', 'libcodex_tools_launcher.so'}}
+        required |= {'assets/' + name for name in ('codex-executor-deployment.json', 'codex-executor-manifest.json',
+            'codex-executor-evidence.json', 'codex-executor-qualification.json', 'codex-app-launch-build.json',
+            'codex-python-runtime.json', 'bionic-python/lib/python3.14/os.py',
+            'codex-tools/install-workspace-provider.py', 'gnu-engine/manifest.json')}
+        required.add('res/xml-v33/phone_accessibility_service.xml')
+        if not required.issubset(names):
+            raise ValueError('Native update runtime assets are incomplete: ' + str(sorted(required - set(names))))
+        deployment = json.loads(archive.read('assets/codex-executor-deployment.json'))
+        if (deployment.get('schema') != 'codex.native.deployment.v2'
+                or deployment.get('launchOrigin') != 'android-app' or deployment.get('packageName') != 'com.ai.codex'):
+            raise ValueError('Native update requires the application-origin executor contract')
+        manifest = json.loads(archive.read('assets/gnu-engine/manifest.json'))
+        rows = manifest.get('files', [])
+        if (manifest.get('schema') != 'codex.gnu-engine.payload.v1'
+                or manifest.get('target') != 'aarch64-unknown-linux-gnu' or len(rows) != 2
+                or {row.get('name') for row in rows} != {'codex-native', 'codex-code-mode-host'}):
+            raise ValueError('Native update GNU engine pair is incomplete')
+        expected_engine = {'assets/gnu-engine/manifest.json'}
+        for row in rows:
+            name = 'assets/gnu-engine/' + row['name']
+            expected_engine.add(name)
+            hasher, size, header = hashlib.sha256(), 0, b''
+            with archive.open(name) as stream:
+                while block := stream.read(1024 * 1024):
+                    if not header:
+                        header = block[:20]
+                    hasher.update(block)
+                    size += len(block)
+            if (len(header) != 20 or header[:7] != b'\x7fELF\x02\x01\x01'
+                    or int.from_bytes(header[18:20], 'little') != 183):
+                raise ValueError('Native update GNU engine is not ARM64 ELF: ' + row['name'])
+            if size != row.get('bytes') or hasher.hexdigest() != row.get('sha256'):
+                raise ValueError('Native update GNU engine differs from its manifest: ' + row['name'])
+        if {n for n in names if n.startswith('assets/gnu-engine/') and not n.endswith('/')} != expected_engine:
+            raise ValueError('Unexpected GNU engine asset')
+        dex = b''.join(archive.read(name) for name in names if name.endswith('.dex'))
+        for name in (b'Lcom/ai/codex/LiveNotifications;', b'Lcom/ai/codex/phone/PhoneControl;',
+                     b'Lcom/termux/x11/CodexRuntimeService;'):
+            if name not in dex:
+                raise ValueError('Native update application class is missing: ' + name.decode())
+    return {'apk_sha256': digest, 'variant': 'debug-native-update', 'native_update_contents': 'PASS',
+            'gnuEngineVersion': manifest.get('version'), 'legacyDiagnosticFixturesQualified': False,
+            'deviceQualified': False, 'limit': 'Current native update contents; legacy diagnostic fixtures and phone behavior are separate'}
+
+
 def verify(apk, debug):
     with apk.open("rb") as source:
         digest = hashlib.file_digest(source, "sha256").hexdigest()
@@ -154,5 +213,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("apk", type=Path)
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--native-update", action="store_true", help="Current application-origin update contract; does not claim legacy native diagnostic fixtures")
     args = parser.parse_args()
-    print(json.dumps(verify(args.apk, args.debug), indent=2))
+    if args.native_update and not args.debug:
+        parser.error('--native-update currently selects the debug update variant')
+    print(json.dumps(verify_native_update(args.apk) if args.native_update else verify(args.apk, args.debug), indent=2))

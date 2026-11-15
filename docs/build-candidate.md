@@ -5,6 +5,30 @@ It does not install anything on a phone or reconstruct a complete fresh Linux
 runtime. Fresh installation remains gated by the
 [device validation checklist](compatibility.md#设备验收).
 
+For the current application-origin update, add `--native-update` and
+`--gnu-engine-assets` to the build command. The latter must be the complete
+controller/Code Mode pair produced by `stage-gnu-engine-assets.py`, matching the
+version and base in `recovery/engine/manifest.json`. The builder inventories the
+pair and verifies its actual APK bytes. This contract still runs the full native
+executor, Python data and source-closure verifier; historical native diagnostic
+fixtures have their separate legacy contract and are not claimed by this mode.
+
+A source-only handoff without `.git` is supported with a filesystem source
+snapshot and `gitHead: null`. Explicit `--gradle-init-script` adapters are hashed,
+recorded and rechecked. `GRADLE_USER_HOME` can select an existing Linux-native cache.
+Keep the SDK platform itself on Linux too: its resource tree contains thousands
+of small files, making repeated Windows/WSL boundary scans expensive.
+
+`tools/workstation/recover-apk-inputs.py` can recover unchanged native inputs from
+an explicitly pinned installed APK after checking its signature and complete
+native inventory. It records `nativeRebuilt: false`; this is reused input
+provenance, not a new native build or phone qualification.
+For that reuse path, supply `--reuse-native-apk` and
+`--reuse-native-apk-sha256`. The builder checks the APK signature against the
+original update certificate and compares every selected native/Python input
+with that exact APK. The original producer's build-receipt paths stay in its
+provenance and are not interpreted as files on this workstation.
+
 Use Python 3.11 or later, JDK 21, Gradle 9.7.1, Android SDK API 37, build-tools
 36.0.0, NDK 29.0.14206865 and CMake 3.22.1. Gradle source compatibility is Java 17.
 All staging and output belong under this checkout's `work/` or `downloads/`.

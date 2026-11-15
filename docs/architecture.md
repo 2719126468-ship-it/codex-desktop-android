@@ -11,7 +11,7 @@ Codex Android 将 Linux ARM64 桌面客户端、本地命令执行和 Android �
 
 ## 客户端与运行时
 
-应用 ID 为 `com.ai.codex`。当前适配 Linux ARM64 桌面客户端 `26.1103.31037` 和基于 `rust-v0.167.0` 的 Codex 后端。桌面客户端从上游单独获取，兼容适配与版本绑定。升级时需核对新客户端的启动入口和工作区适配。GNU app-server 与匹配的 Code Mode host 成对构建。 [后端清单](../recovery/engine/manifest.json) · [构建指南](build.md)
+应用 ID 为 `com.ai.codex`。当前源码升级目标为 Linux ARM64 桌面客户端 `26.1111.21308` 和基于 `rust-v0.169.0` 的 Codex 后端；versionCode 57 的本地签名 APK 已构建，内含配对的新后端，设备验收尚未进行。桌面客户端从上游单独获取，兼容适配与版本绑定，新版桌面尚未安装到手机。GNU app-server 与匹配的 Code Mode host 成对构建。 [后端清单](../recovery/engine/manifest.json) · [构建指南](build.md)
 
 一加 13 配置允许直板机直接显示桌面，首次桌面缩放为 150%。客户端可以自行调整缩放，主窗口启动时请求 F11 全屏。关闭显示窗口和停止 Linux 会话是两个操作，显式停止由运行服务负责处理。 [设备配置](../android/app/src/main/res/values/codex_device_profile.xml) · [兼容性](compatibility.md)
 

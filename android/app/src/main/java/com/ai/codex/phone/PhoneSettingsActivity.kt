@@ -34,6 +34,12 @@ class PhoneSettingsActivity : AppCompatActivity() {
         text("无障碍：" + if(control.a11yEnabledInSettings()) "已开启" else "未开启")
         button("打开无障碍设置") { startActivity(control.accessibilitySettingsIntent()) }
         button("允许通知 / 管理应用权限") { startActivity(control.appDetailsIntent()) }
+        if (android.os.Build.VERSION.SDK_INT >= 36) {
+            val liveSettings = android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_PROMOTION_SETTINGS)
+                .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, packageName)
+            if (liveSettings.resolveActivity(packageManager) != null)
+                button("灵动岛 / 实时活动设置") { startActivity(liveSettings) }
+        }
         button("读一下当前屏幕（不会发给模型）") { work { val out=control.testScreen(); runOnUiThread { show("读屏结果",Json.write(out)) }; null } }
         text("确认方式",21)
         val modes = arrayOf("关键步骤先询问", "本任务可免确认", "始终免确认")
@@ -84,9 +90,10 @@ class PhoneSettingsActivity : AppCompatActivity() {
                 }
             }
         }
-        text("当前任务",21);text(Json.write(control.tasks.snapshot().toMap()))
-        button("暂停 / 继续") { control.onPauseChanged(!control.tasks.isPaused);render() }
-        button("停止手机操控任务") { control.stopTask("用户在设置中停止");render() }
+        val shownTask = control.liveTask()
+        text("当前任务",21);text(shownTask?.let { "${it.id} · ${it.line ?: it.app.orEmpty()}" } ?: "没有正在进行的手机任务")
+        button("暂停 / 继续") { shownTask?.let { control.pauseTask(it.id, !it.paused) };render() }
+        button("停止手机操控任务") { shownTask?.let { control.stopShownTask("用户在设置中停止", it.id) };render() }
         button("查看操作记录") { show("操作记录",Json.write(control.log.toMaps(300))) }
         button("返回 Codex") {startActivity(EntryRoutes.openApp(this));finish()}
         text("来源：ccch1mneyyy/dsh-Go，AGPL-3.0；相关第三方声明保留在源码与安装包中。",14)

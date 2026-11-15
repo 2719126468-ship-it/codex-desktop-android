@@ -9,6 +9,9 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.util.Log;
 import android.view.View;
+import android.view.Display;
+import android.view.WindowManager;
+import com.termux.x11.DisplayRefreshRate;
 import android.widget.Toast;
 import com.termux.x11.CodexRuntimeService;
 import com.termux.x11.CodexDisplayActivity;
@@ -78,6 +81,10 @@ public final class CodexActivity extends CodexDisplayActivity {
     }
     @Override public void onResume() {
         super.onResume();
+        preferDisplayRefresh(true);
+        // Let Android's current display policy supply high-refresh VSYNC, with no 60 Hz vote.
+        if (android.os.Build.VERSION.SDK_INT >= 35)
+            getWindow().getDecorView().setRequestedFrameRate(View.REQUESTED_FRAME_RATE_CATEGORY_HIGH);
         resumed = true;
         com.ai.codex.phone.PhoneControl.get(this).getPrompts().attachActivity(this, this);
         visible = true;
@@ -93,6 +100,9 @@ public final class CodexActivity extends CodexDisplayActivity {
         refreshDisplayPolicy();
     }
     @Override public void onPause() {
+        preferDisplayRefresh(false);
+        if (android.os.Build.VERSION.SDK_INT >= 35)
+            getWindow().getDecorView().setRequestedFrameRate(View.REQUESTED_FRAME_RATE_CATEGORY_DEFAULT);
         resumed = false;
         visible = false;
         imeBridge.pause(this);
@@ -112,8 +122,32 @@ public final class CodexActivity extends CodexDisplayActivity {
         if (hasFocus) refreshDisplayPolicy();
     }
     private void refreshDisplayPolicy() {
+        if (resumed) preferDisplayRefresh(true);
         if (posture != null) posture.refreshDisplay();
         onPostureChanged(posture == null ? CodexPostureController.State.UNAVAILABLE : posture.getState());
+    }
+    private void preferDisplayRefresh(boolean active) {
+        WindowManager.LayoutParams attributes = getWindow().getAttributes();
+        int preferred = 0;
+        Display display = getDisplay();
+        if (active && display != null && display.isValid()) {
+            Display.Mode currentMode = display.getMode();
+            Display.Mode[] modes = display.getSupportedModes();
+            int[] widths = new int[modes.length], heights = new int[modes.length];
+            float[] rates = new float[modes.length];
+            for (int i = 0; i < modes.length; i++) {
+                widths[i] = modes[i].getPhysicalWidth(); heights[i] = modes[i].getPhysicalHeight();
+                rates[i] = modes[i].getRefreshRate();
+            }
+            int index = DisplayRefreshRate.fastestAtSize(currentMode.getPhysicalWidth(), currentMode.getPhysicalHeight(), widths, heights, rates);
+            if (index >= 0) preferred = modes[index].getModeId();
+        }
+        // Release on Activity pause, not IME/window focus changes.
+        if (attributes.preferredDisplayModeId != preferred || attributes.preferredRefreshRate != 0) {
+            attributes.preferredDisplayModeId = preferred;
+            attributes.preferredRefreshRate = 0;
+            getWindow().setAttributes(attributes);
+        }
     }
     private boolean canHandleDisplayTransition() {
         PowerManager power = getSystemService(PowerManager.class);

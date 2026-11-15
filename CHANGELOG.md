@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-11-15 — IME stability and desktop high refresh
+
+- Keep a retained editor open through transient Electron visibility/context changes; validate passive hide requests using focus metadata and reject stale replies after a newer user gesture. Outside taps and native Activity pause still dismiss normally.
+- Clear the X11 surface's self-locking current-rate vote. While the desktop Activity is resumed, prefer the fastest mode at the same physical resolution and release the preference on pause. X11 continues following the actual selected display mode.
+- Add transient-context, user-intent race and resolution-preserving refresh selection regressions.
+- Bundle and refresh both guest IME files during existing-container startup, so APK updates also deploy the bridge fix.
+
+## 2026-11-15 — Live work detection and continuous glow
+
+- Use the launcher's transparent mark for every notification; remove action-dependent system icons and the obsolete two-bar mark.
+- Recognize suffixed rollout filenames while retaining the canonical thread ID. Handle current `response_item` tool calls and `item_completed` events so ordinary checkout/build work is observed too.
+- Replace the five outline bands with a continuous GPU falloff and spatial dithering on Android 13+, retaining the 50 dp stroke and 900 ms cycle. Older Android uses a finer 64-layer fallback.
+- Follow display mode refresh changes in the X11 surface without requiring a resize. Request Android's high-refresh scheduling category while visible, clear it on pause, and remove the old beam's fixed frame throttle.
+
+## 2026-11-14 — Phone effects and readable live actions
+
+- Restore the original screen-edge glow through the current overlay lifecycle, with twice the stroke widths and a 900 ms rotation period (previously 9 seconds).
+- Use the overlay's action text in the phone live card, with current app, recent steps, pause/continue and task-bound stop controls.
+- Prefer phone activity over the general Codex live notification across the separate runtime process; restore general work status when the phone task ends.
+- Show complete compact action phrases and full expanded details instead of sliding five-character fragments. Use action-specific notification icons where supported by the system.
+- Keep the ColorOS presentation on the standard Android Live Updates path; the separate OML service template is not embedded in this native app.
+
+## 2026-11-14 — Workstation handoff and live status source update
+
+- Target Linux ARM64 desktop `26.1111.21308` and GNU Codex `0.169.0`; preserve the prior device qualification as a separate baseline.
+- Update the vendored native dsh-Go driver and adapt its ownership, focus input and visual interfaces to the Codex host.
+- Request system Live Updates for real Codex work and phone control, scroll the compact status, and bind stop actions to the original phone task.
+- Disable the extra Xfwm compositor while retaining Electron's GPU rendering and the window manager.
+- Build the paired GNU backend and local versionCode 57 APK in WSL using the original signing certificate. Include the Android 13+ accessibility input-method configuration required by focus input. Desktop installation, system island behavior and performance still await device qualification.
+
 ## 2026-10-20 — Supply-chain hardening
 
 - Checkout without persisted credentials; GitHub Actions stay pinned by commit SHA; zizmor clean

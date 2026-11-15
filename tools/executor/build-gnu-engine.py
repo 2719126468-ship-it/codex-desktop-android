@@ -21,7 +21,7 @@ import tempfile
 
 
 PROJECT = Path(__file__).resolve().parents[2]
-BASE = "086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a"
+BASE = "d32063f96c2dff1dc96af839b3952abb6acfeda4"
 TARGET = "aarch64-unknown-linux-gnu"
 BINARIES = ("codex", "codex-code-mode-host")
 OPENSSL_VERSION = "3.6.3"

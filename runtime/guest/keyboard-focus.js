@@ -1,5 +1,5 @@
 (() => {
-  const key = '__codexImeV5';
+  const key = '__codexImeV6';
   if (globalThis[key]) {
     globalThis[key].resync();
     return 'already-installed';
@@ -74,8 +74,9 @@
   }, {capture: true, signal});
   document.addEventListener('visibilitychange', () => {
     clearTimeout(pending);
-    if (document.visibilityState === 'visible') reportCurrent('resume');
-    else report(false, 'hidden');
+    // Native IME/X11 layout can briefly hide the web contents while its editor
+    // is retained. Native Activity pause handles actually leaving the app.
+    reportCurrent(document.visibilityState === 'visible' ? 'resume' : 'hidden');
   }, {signal});
   window.addEventListener('focus', () => {
     clearTimeout(pending);
@@ -86,10 +87,11 @@
   window.addEventListener('blur', () => {
     clearTimeout(pending);
     pending = setTimeout(() => {
-      if (!document.hasFocus()) report(false, 'window-blur');
+      if (!document.hasFocus()) reportCurrent('window-blur');
     }, 0);
   }, {signal});
   const instance = {
+    editing: () => editable(active()),
     resync: () => reportCurrent('attach'),
     dispose: () => {
       disposed = true;

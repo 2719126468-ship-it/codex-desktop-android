@@ -14,6 +14,7 @@ import socket
 import urllib.request
 
 import websockets
+from websockets.exceptions import ConnectionClosed
 
 LOG = logging.getLogger("codex.ime")
 HOOK = Path(__file__).with_name("keyboard-focus.js").read_text(encoding="utf-8")
@@ -47,19 +48,82 @@ def targets():
 class Keyboard:
     """Serialize native calls and prevent stale frame blur from hiding a new field."""
 
-    def __init__(self, apply=apply_keyboard):
+    def __init__(self, apply=apply_keyboard, focus_probe=None, hide_delay=0.15):
         self.apply = apply
         self.owner = None
         self.queue = asyncio.Queue()
+        self.focus_probe = focus_probe
+        self.hide_delay = hide_delay
+        self.revision = 0
+        self.pages = set()
+        self.hides = set()
+        self.closed = False
 
     def signal(self, source, visible, reason):
+        if self.closed:
+            return
+        if (not visible and reason != "pointer"
+                and source == self.owner and self.focus_probe is not None):
+            task = asyncio.create_task(self.confirm_hide(source, reason, self.revision))
+            self.hides.add(task)
+            task.add_done_callback(self.hides.discard)
+            return
         if visible:
             self.owner = source
         elif source != self.owner and reason != "pointer":
             return
         else:
             self.owner = None
+        self.revision += 1
         self.queue.put_nowait((visible, reason))
+
+    async def confirm_hide(self, source, reason, revision):
+        # IME/X11 relayout can temporarily hide or replace the renderer. It is not
+        # an outside tap. Validate metadata before closing; never reopen from focus.
+        for attempt in range(2):
+            await asyncio.sleep(self.hide_delay)
+            if self.owner != source or self.revision != revision:
+                return
+            try:
+                retained = await asyncio.wait_for(self.focus_probe(source), 0.75)
+            except (OSError, RuntimeError, ValueError, asyncio.TimeoutError):
+                retained = None
+            if self.owner != source or self.revision != revision:
+                return
+            if retained is not None:
+                self.owner = retained
+                return
+        self.owner = None
+        self.revision += 1
+        self.queue.put_nowait((False, reason))
+
+    async def focused_source(self, owner):
+        pages = sorted(self.pages, key=lambda p: p.target["id"] != owner[0])
+        for page in pages:
+            contexts = sorted(list(page.contexts), key=lambda c: page.source(c) != owner)
+            for context in contexts:
+                source = page.source(context)
+                # The native IME may own platform focus; a retained owner editor
+                # is still valid even during a transient renderer visibility change.
+                expression = ("Boolean(globalThis.__codexImeHook?.editing?.())" if source == owner else
+                              "document.visibilityState === 'visible' && Boolean(globalThis.__codexImeHook?.editing?.())")
+                try:
+                    result = await page.call("Runtime.evaluate", {"expression": expression,
+                        "contextId": context, "returnByValue": True})
+                except (OSError, RuntimeError, ConnectionClosed):
+                    continue
+                if context in page.contexts and result.get("result", {}).get("value") is True:
+                    return source
+        return None
+
+    async def close(self):
+        self.closed = True
+        self.owner = None
+        self.revision += 1
+        pending = list(self.hides)
+        for task in pending:
+            task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
 
     def forget(self, source):
         if source == self.owner:
@@ -181,6 +245,7 @@ class Page:
     async def run(self):
         async with websockets.connect(self.target["webSocketDebuggerUrl"], max_size=2**20) as ws:
             self.ws = ws
+            self.keyboard.pages.add(self)
             reader = asyncio.create_task(self.read())
             try:
                 await self.call("Page.enable")
@@ -194,6 +259,7 @@ class Page:
                         return
                     await self.handle(event)
             finally:
+                self.keyboard.pages.discard(self)
                 for context in list(self.contexts):
                     self.forget(context)
                 reader.cancel()
@@ -204,6 +270,7 @@ async def main():
     int(os.environ["CODEX_IME_UID"])  # Fail early if the launcher omitted its UID.
     tasks = {}
     keyboard = Keyboard()
+    keyboard.focus_probe = keyboard.focused_source
     worker = asyncio.create_task(keyboard.run())
     try:
         while True:
@@ -227,6 +294,7 @@ async def main():
         for task in tasks.values():
             task.cancel()
         worker.cancel()
+        await keyboard.close()
         await asyncio.gather(*tasks.values(), worker, return_exceptions=True)
 
 

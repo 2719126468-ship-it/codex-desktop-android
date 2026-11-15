@@ -2,6 +2,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -59,5 +60,17 @@
         <service android:name="com.termux.x11.CodexRuntimeService" android:process=":runtime" android:exported="false" android:foregroundServiceType="specialUse">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Local Linux desktop workspace and active user tasks" />
         </service>
+        <activity android:name=".phone.background.BackgroundProbeActivity"
+            android:exported="true" android:permission="android.permission.INJECT_EVENTS"
+            android:process=":input_probe" android:launchMode="standard" android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density|uiMode"
+            android:theme="@android:style/Theme.Material.NoActionBar" />
+        <activity android:name=".phone.selfcheck.PhoneSelfCheckTargetActivity"
+            android:exported="false" android:launchMode="standard"
+            android:taskAffinity="${applicationId}.phone.selfcheck" android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+        <provider android:name="com.google.mlkit.common.internal.MlKitInitProvider"
+            android:authorities="${applicationId}.mlkitinitprovider" tools:node="remove" />
     </application>
 </manifest>

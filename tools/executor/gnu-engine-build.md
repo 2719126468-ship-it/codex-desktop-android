@@ -5,9 +5,36 @@ userspace GNU/PRoot existant. Sa cible est donc `aarch64-unknown-linux-gnu`.
 Ce binaire **n'est pas Bionic**. Les outils du modèle doivent être lancés par
 le backend Bionic distinct. Aucun de ces scripts n'utilise ADB ou le téléphone.
 
-## 2026-11-06：升级至 Codex 0.167.0
+## 2026-11-14：本机接手与 Codex 0.169.0
 
-当前构建器绑定官方 `rust-v0.167.0`，提交
+当前构建器绑定 `rust-v0.169.0`，提交
+`d32063f96c2dff1dc96af839b3952abb6acfeda4`。Android 恢复补丁同时适配了
+新的配置加载、环境访问器和 MCP 启动路径。工作区的 Cargo.lock 版本号已与
+Cargo.toml 同步，依赖来源和第三方版本没有因此重新选择。
+
+本机使用 WSL Ubuntu 的 `codex-build` 账户，工作树为
+`$HOME/src/codex-native-0169`，Cargo target 为
+`$HOME/codex-android/engine-target`。环境准备脚本在
+[`tools/workstation/`](../workstation/)；`build-engine.sh` 只构建 GNU ARM64
+控制器和对应 Code Mode host，不构建或安装 APK。
+
+从 Windows 项目目录对应的 WSL 路径运行：
+
+```sh
+bash tools/workstation/build-engine.sh "$PWD"
+```
+
+需要使用既有网络代理时，通过该次调用的 `CODEX_BUILD_PROXY` 环境变量显式传入。
+实际状态文件路径写入 `work/engine-build-state.txt`，每次编译日志独立保留。
+状态中的 `buildCompleted` 和 `packageCompleted` 分别说明编译和静态兼容检查/
+归档是否完成，不能将旧版本的设备验证沿用到新产物。
+
+配套客户端目标为 Linux ARM64 `26.1111.21308`。覆盖升级前需核对原签名，
+设备验证范围见[兼容性说明](../../docs/compatibility.md)。
+
+## 2026-11-06：升级至 Codex 0.167.0（历史记录）
+
+该次构建器绑定官方 `rust-v0.167.0`，提交
 `086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a`。手机原生执行、共享目录配置
 和设备桥保持现有边界；配套桌面前端升级至 Linux ARM64 `26.1103.31037`。
 当前实机验证范围见 [兼容性与验证](../../docs/compatibility.md)。

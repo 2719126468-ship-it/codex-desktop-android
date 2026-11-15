@@ -69,7 +69,9 @@ python3 -u /usr/local/lib/codex/codex_ime.py > "$HOME/.local/state/codex-ime.log
 ime_pid=$!
 # A window manager implements maximize, modal dialogs and display-size changes.
 # Starting the application alone leaves these X11 requests unhandled.
-xfwm4 > "$HOME/.local/state/codex-wm.log" 2>&1 &
+# Electron already composites its content. A second fullscreen compositor adds
+# another presentation stage under PRoot; keep the window manager for geometry.
+xfwm4 --compositor=off > "$HOME/.local/state/codex-wm.log" 2>&1 &
 wm_pid=$!
 # Start user-space PulseAudio server for native microphone and speaker bridging
 export PULSE_SERVER=127.0.0.1:4713

@@ -1,9 +1,9 @@
 {
   "upstream": "https://github.com/openai/codex.git",
-  "tag": "rust-v0.167.0",
-  "base": "086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a",
+  "tag": "rust-v0.169.0",
+  "base": "d32063f96c2dff1dc96af839b3952abb6acfeda4",
   "branch": "codex/android-native-engine",
   "patch": "engine.patch",
-  "sha256": "6b1389d58e430161b5da60148ce2dd13496b0a0d533793a6f8745d77738a8860",
+  "sha256": "41c1255a2273c12fa3bf09cf01c5d547e2636f6d5bea5dcd5717541cc435ae2d",
   "appliesToCleanBase": true
 }

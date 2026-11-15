@@ -27,6 +27,11 @@ counts and rejects empty collections. Some rootfs cases require root, a static
 compiler or WSL/Windows fixtures and explicitly skip when unavailable. Separate native and Android tests
 need their own compiled fixtures or a device; the host job does not run them.
 
+`tools/workstation/check-android-source.sh` accepts the
+checkout and an explicit reviewed runtime JNI directory, then compiles app/test
+Java and Kotlin classes without APK packaging or signing. The backend-only
+`build-engine.sh` uses the separate Linux source tree and Cargo cache.
+
 ## Android toolchain
 
 The checked-in build configuration currently selects:
@@ -71,7 +76,7 @@ semantics; ordinary Windows paths cannot represent all NDK header names correctl
    must be obtained from its authorized upstream source and integrated with the
    matching version of the adapter. No user profile or authenticated image belongs
    in a public build artifact.
-5. **Codex backend.** Restore the pinned `rust-v0.167.0` source and Android
+5. **Codex backend.** Restore the pinned `rust-v0.169.0` source and Android
    integration patch, then build and stage the GNU ARM64 app-server and matching
    Code Mode host together. [Engine manifest](../recovery/engine/manifest.json) ·
    [GNU engine build recipe](../tools/executor/gnu-engine-build.md)
@@ -149,7 +154,7 @@ tool, not a normal-user setup step.
 The OnePlus 13 first-install image is prepared separately from the APK. The
 image builder takes the pinned Debian and Mesa inputs, completed GNU engine
 build state and signed OpenAI package inputs for Linux ARM64 client
-`26.1103.31037`. Use the inputs documented by the
+`26.1111.21308`. Use the inputs documented by the
 [image builder](../tools/install/build-phone-image.py).
 
 The builder produces `codex-phone-rootfs.tar.gz` and an `assets/phone-runtime`

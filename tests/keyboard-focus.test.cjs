@@ -25,7 +25,8 @@ const fixture = `
   <iframe id="child" srcdoc="<input id='child-input'>"></iframe>`;
 
 (async () => {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true,
+    ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ? {executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH} : {}) });
   const context = await browser.newContext({ hasTouch: true, viewport: { width: 1000, height: 1600 } });
   await context.route('**/*', route => route.abort());
   const page = await context.newPage();
@@ -66,6 +67,17 @@ const fixture = `
     assert.equal(signals.at(-1).visible, false, 'inert crosses the shadow host');
     await page.locator('#shadow-host').evaluate(node => node.removeAttribute('inert'));
 
+    await page.locator('#prompt').tap();
+    signals.length = 0;
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event('blur'));
+      Object.defineProperty(document, 'visibilityState', {configurable:true, value:'hidden'});
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await page.waitForTimeout(20);
+    assert.equal(signals.length, 0, 'transient window/page hiding cannot dismiss a retained editor');
+    assert.equal(await page.evaluate(() => globalThis.__codexImeHook.editing()), true);
+    await page.evaluate(() => delete document.visibilityState);
     await page.locator('#prompt').tap();
     signals.length = 0;
     await page.locator('#prompt').tap();
@@ -123,7 +135,7 @@ const fixture = `
     // Disposal removes anonymous listeners and pending callbacks; sequence IDs
     // remain increasing across installation so the daemon accepts the upgrade.
     const previousSequence = signals.filter(s => s.main).at(-1).sequence;
-    await page.evaluate(() => globalThis.__codexImeV5.dispose());
+    await page.evaluate(() => globalThis.__codexImeV6.dispose());
     signals.length = 0;
     await page.locator('#prompt').tap();
     await page.waitForTimeout(20);

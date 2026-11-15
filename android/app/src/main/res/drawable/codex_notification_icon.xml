@@ -1,7 +1,4 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp" android:height="24dp"
-    android:viewportWidth="24" android:viewportHeight="24">
-    <path android:fillColor="#FFFFFFFF"
-        android:pathData="M3,3h8v18H3z M13,3h8v18h-8z"
-        android:fillType="evenOdd" />
-</vector>
+<!-- Share the transparent foreground with the launcher; SystemUI supplies its own background. -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/chatgpt_desktop_mark"
+    android:gravity="fill" android:filter="true" android:antialias="true" />

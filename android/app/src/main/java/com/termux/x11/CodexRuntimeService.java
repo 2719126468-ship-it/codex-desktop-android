@@ -23,6 +23,7 @@ import com.ai.codex.KeyringVault;
 import com.ai.codex.CodexConversationMonitor;
 import com.ai.codex.CodexLocalTools;
 import com.ai.codex.ConversationActivity;
+import com.ai.codex.LiveNotifications;
 import com.ai.codex.PendingConnectorCallback;
 import com.ai.codex.install.GuestIdentity;
 import java.io.*;
@@ -40,6 +41,18 @@ public final class CodexRuntimeService extends Service {
     private String phase = "starting", phaseDetail = "";
     private long phaseAt = SystemClock.elapsedRealtimeNanos(), shutdownRequestedAt;
     private int activeResponses;
+    private final Map<String, String> responseStatus = new LinkedHashMap<>();
+    private long liveFrame;
+    private long liveTextSince;
+    private String liveText = "";
+    private final Runnable scrollLiveStatus = new Runnable() {
+        @Override public void run() {
+            if (destroyed || stopping || activeResponses == 0) return;
+            liveFrame++;
+            getSystemService(NotificationManager.class).notify(1, runtimeNotification());
+            mainHandler.postDelayed(this, LiveNotifications.SCROLL_MS);
+        }
+    };
     private volatile String sessionToken = "";
     private volatile FileObserver readyObserver;
     private volatile CodexConversationMonitor conversations;
@@ -74,6 +87,11 @@ public final class CodexRuntimeService extends Service {
     private final BroadcastReceiver statusQuery = new BroadcastReceiver() {
         @Override public void onReceive(Context context, Intent intent) { broadcastPhase(); }
     };
+    private final BroadcastReceiver phoneLiveChanged = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            if (!destroyed) getSystemService(NotificationManager.class).notify(1, runtimeNotification());
+        }
+    };
     @Override public void onCreate() {
         super.onCreate();
         audioBridge = new com.ai.codex.CodexAudioBridge(this);
@@ -90,6 +108,7 @@ public final class CodexRuntimeService extends Service {
         manager.createNotificationChannel(new NotificationChannel("workspace", "Codex 运行状态", NotificationManager.IMPORTANCE_LOW));
         manager.createNotificationChannel(new NotificationChannel("codex.conversations.v1", "对话", NotificationManager.IMPORTANCE_DEFAULT));
         ContextCompat.registerReceiver(this, statusQuery, new IntentFilter(ACTION_QUERY_STATUS), ContextCompat.RECEIVER_NOT_EXPORTED);
+        ContextCompat.registerReceiver(this, phoneLiveChanged, new IntentFilter(LiveNotifications.PHONE_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED);
     }
     @Override public IBinder onBind(Intent intent) { return null; }
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
@@ -258,11 +277,23 @@ public final class CodexRuntimeService extends Service {
             "stopping".equals(phase) ? "正在关闭 Codex…" :
             "error".equals(phase) ? "Codex 启动失败" :
             activeResponses == 1 ? "有一个对话正在进行" : activeResponses > 1 ? activeResponses + " 个对话正在进行" : "Codex 正在运行";
+        boolean working = "ready".equals(phase) && activeResponses > 0;
+        if (working && !responseStatus.isEmpty()) {
+            List<String> lines = new ArrayList<>(responseStatus.values());
+            text = lines.get((int) ((liveFrame / 12) % lines.size()));
+            if (activeResponses > 1) text = activeResponses + " 个任务 · " + text;
+        }
         PendingIntent stop = PendingIntent.getService(this, 1, new Intent(this, CodexRuntimeService.class).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE);
-        return new Notification.Builder(this, "workspace").setSmallIcon(com.ai.codex.R.drawable.codex_notification_icon)
+        Notification.Builder builder = new Notification.Builder(this, "workspace").setSmallIcon(com.ai.codex.R.drawable.codex_notification_icon)
             .setContentTitle("Codex").setContentText(text).setContentIntent(openIntent(null))
             .setVisibility(Notification.VISIBILITY_PRIVATE).setOnlyAlertOnce(true).setShowWhen(false)
-            .addAction(new Notification.Action.Builder(null, "安全退出", stop).build()).setOngoing(true).build();
+            .addAction(new Notification.Action.Builder(null, "安全退出", stop).build()).setOngoing(true);
+        builder.setPublicVersion(new Notification.Builder(this, "workspace")
+            .setSmallIcon(com.ai.codex.R.drawable.codex_notification_icon).setContentTitle("Codex")
+            .setContentText(working ? "Codex 正在工作" : "Codex 正在运行").build());
+        String nextLiveText = working ? text : "";
+        if (!nextLiveText.equals(liveText)) { liveText = nextLiveText; liveTextSince = liveFrame; }
+        return LiveNotifications.apply(builder, working && !LiveNotifications.phoneIsActive(this), text, liveFrame - liveTextSince).build();
     }
     private void broadcastPhase() {
         sendBroadcast(new Intent(ACTION_STATUS).setPackage(getPackageName()).putExtra("phase", phase)
@@ -289,11 +320,17 @@ public final class CodexRuntimeService extends Service {
         }
         if ("error".equals(next) && connectorCallbacks.cancelPending()) connectorHandoffFailed();
     }
-    private void responseChanged(String thread, String title, ConversationActivity.Change change, int active) {
+    private void responseChanged(String thread, String title, ConversationActivity.Change change, int active, String status) {
         activeResponses = active;
+        if (change == ConversationActivity.Change.STARTED || change == ConversationActivity.Change.UPDATED)
+            responseStatus.put(thread, status + " · " + title);
+        else responseStatus.remove(thread);
+        mainHandler.removeCallbacks(scrollLiveStatus);
+        if (active > 0) mainHandler.postDelayed(scrollLiveStatus, LiveNotifications.SCROLL_MS);
         NotificationManager manager = getSystemService(NotificationManager.class);
         manager.notify(1, runtimeNotification());
         if (change == ConversationActivity.Change.STARTED) { manager.cancel(thread, 2); return; }
+        if (change == ConversationActivity.Change.UPDATED) return;
         Notification publicVersion = new Notification.Builder(this, "codex.conversations.v1")
             .setSmallIcon(com.ai.codex.R.drawable.codex_notification_icon).setContentTitle("Codex").setContentText("有一个对话已更新").build();
         manager.notify(thread, 2, new Notification.Builder(this, "codex.conversations.v1")
@@ -359,8 +396,8 @@ public final class CodexRuntimeService extends Service {
     private void startObservers(File root, String guestHome, File temporary, String token,
             java.util.concurrent.CompletableFuture<Void> clientReady) throws Exception {
         CodexConversationMonitor monitor = new CodexConversationMonitor(new File(root, guestHome.substring(1) + "/.codex"),
-            (thread, title, change, active) -> mainHandler.post(() -> {
-                if (!destroyed && !stopping && sessionToken.equals(token)) responseChanged(thread, title, change, active);
+            (thread, title, change, active, status) -> mainHandler.post(() -> {
+                if (!destroyed && !stopping && sessionToken.equals(token)) responseChanged(thread, title, change, active, status);
             }));
         conversations = monitor;
         monitor.start().get(10, java.util.concurrent.TimeUnit.SECONDS);
@@ -403,6 +440,9 @@ public final class CodexRuntimeService extends Service {
         recovery.launching();
         if (!saveRecovery()) { beginShutdown(); return; }
         activeResponses = 0;
+        responseStatus.clear();
+        mainHandler.removeCallbacks(scrollLiveStatus);
+        liveFrame = 0;
         conversationCommand = null;
         conversationEnvironment = null;
         publishPhase("starting", "");
@@ -847,6 +887,7 @@ public final class CodexRuntimeService extends Service {
         if (audioBridge != null) audioBridge.stop();
         cancelPendingLaunch();
         unregisterReceiver(statusQuery);
+        unregisterReceiver(phoneLiveChanged);
         connectorCallbacks.cancelPending();
         interruptActivations();
         stopObservers();

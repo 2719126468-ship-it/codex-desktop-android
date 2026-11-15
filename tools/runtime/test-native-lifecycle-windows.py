@@ -64,8 +64,10 @@ def main():
             raise ValueError("JVM test dependency is not a file: " + str(found[0]))
         jars.append(str(found[0]))
     names = ("RuntimeExitGate", "NativeSessionObservation", "RuntimeShutdownGate", "RuntimeRecoveryPolicy",
-             "RuntimeOwnerWorker", "RuntimeActivations", "CodexWebUri", "ConversationActivity")
-    sources = [ROOT / ("android/app/src/" + tree + "/java/com/ai/codex/" + name + suffix + ".java")
+             "RuntimeOwnerWorker", "RuntimeActivations", "CodexWebUri", "ConversationActivity", "LiveNotificationText", "DisplayRefreshRate")
+    sources = [ROOT / ("vendor/termux-x11/lorie/src/main/java/com/termux/x11/DisplayRefreshRate.java"
+               if name == "DisplayRefreshRate" and tree == "main" else
+               "android/app/src/" + tree + "/java/com/ai/codex/" + name + suffix + ".java")
                for name in names for tree, suffix in (("main", ""), ("test", "Test"))]
     cp = os.pathsep.join(jars)
     def jdk_tool(name):

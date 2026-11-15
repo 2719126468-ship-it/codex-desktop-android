@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -140,6 +141,92 @@ class CandidateAdmissionTests(unittest.TestCase):
         build.write_bytes(b"changed")
         with self.assertRaisesRegex(ValueError, "support build differs"):
             candidate.command_for(descriptor, paths)
+
+    def test_source_only_handoff_snapshots_sources_and_ignores_generated_files(self):
+        self.put("android/app/src/main/Test.kt", b"source")
+        self.put("android/app/build/generated/Test.kt", b"generated")
+        self.put("android/local.properties", b"private workstation path")
+        self.put("vendor/termux-x11/lorie/Native.c", b"native source")
+        self.put("vendor/termux-x11/.git/config", b"git metadata")
+        with patch.object(candidate.subprocess, "check_output", side_effect=subprocess.CalledProcessError(128, "git")):
+            files = candidate.source_inventory()
+        self.assertEqual(set(files), {"android/app/src/main/Test.kt", "vendor/termux-x11/lorie/Native.c"})
+        self.put("android/app/src/main/Test.kt", b"changed")
+        with patch.object(candidate.subprocess, "check_output", side_effect=subprocess.CalledProcessError(128, "git")):
+            self.assertNotEqual(candidate.source_inventory(), files)
+
+    def gnu_assets(self):
+        self.put("recovery/engine/manifest.json", candidate.canonical({"base": "a" * 40, "tag": "rust-v0.169.0"}))
+        rows = []
+        for name in ("codex-native", "codex-code-mode-host"):
+            path = self.put("gnu/gnu-engine/" + name, name.encode())
+            rows.append({"name": name, "bytes": path.stat().st_size, "sha256": candidate.digest_file(path)})
+        self.put("gnu/gnu-engine/manifest.json", candidate.canonical({"schema": "codex.gnu-engine.payload.v1",
+            "target": "aarch64-unknown-linux-gnu", "sourceBase": "a" * 40, "version": "0.169.0", "files": rows}))
+        return argparse.Namespace(gnu_engine_assets=self.root / "gnu", gradle_init_script=[])
+
+    def test_gnu_pair_rejects_changed_bytes_and_other_version(self):
+        args = self.gnu_assets()
+        self.assertEqual(candidate.auxiliary_inputs(args)["gnuEngineAssets"]["version"], "0.169.0")
+        self.put("gnu/gnu-engine/codex-native", b"tampered")
+        with self.assertRaisesRegex(ValueError, "bytes differ"):
+            candidate.auxiliary_inputs(args)
+        self.put("recovery/engine/manifest.json", candidate.canonical({"base": "b" * 40, "tag": "rust-v0.169.0"}))
+        with self.assertRaisesRegex(ValueError, "version/base"):
+            candidate.auxiliary_inputs(args)
+
+    def test_packaged_gnu_pair_is_checked_against_actual_apk_bytes(self):
+        args = self.gnu_assets()
+        auxiliary = candidate.auxiliary_inputs(args)
+        apk = self.root / "gnu.apk"
+        with ZipFile(apk, "w") as archive:
+            for name in auxiliary["gnuEngineAssets"]["files"]:
+                archive.writestr("assets/" + name, b"changed")
+        with self.assertRaisesRegex(ValueError, "Packaged GNU engine differs"):
+            candidate.verify_auxiliary_apk(apk, auxiliary)
+
+    def reuse_fixture(self):
+        apk = self.root / 'installed.apk'
+        data = b'original native bytes'
+        with ZipFile(apk, 'w') as archive:
+            archive.writestr('lib/arm64-v8a/libproot.so', data)
+        descriptor = {'inputs': {name: {'files': {}} for name in candidate.PAYLOADS}}
+        descriptor['inputs']['runtimeJni']['files'] = {'arm64-v8a/libproot.so': {
+            'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}}
+        args = argparse.Namespace(gradle_init_script=[], gnu_engine_assets=None,
+            reuse_native_apk=apk, reuse_native_apk_sha256=candidate.digest_file(apk), signing_cert_sha256='2' * 64)
+        paths = {'jdk': self.root / 'jdk', 'sdkBuildTools': self.root / 'build-tools'}
+        return args, descriptor, paths
+
+    def test_reused_native_payload_must_match_the_signed_original_bytes(self):
+        args, descriptor, paths = self.reuse_fixture()
+        with patch.object(candidate.subprocess, 'check_output', return_value='Signer #1 certificate SHA-256 digest: ' + '2' * 64):
+            result = candidate.auxiliary_inputs(args, descriptor, paths)
+            self.assertFalse(result['reusedNativeInputs']['nativeRebuilt'])
+            descriptor['inputs']['runtimeJni']['files']['arm64-v8a/libproot.so']['sha256'] = '0' * 64
+            with self.assertRaisesRegex(ValueError, 'Packaged input differs'):
+                candidate.auxiliary_inputs(args, descriptor, paths)
+
+    def test_reused_native_apk_requires_both_pinned_digest_and_original_certificate(self):
+        args, descriptor, paths = self.reuse_fixture()
+        with patch.object(candidate.subprocess, 'check_output', return_value='Signer #1 certificate SHA-256 digest: ' + '3' * 64) as verify:
+            with self.assertRaisesRegex(ValueError, 'certificate differs'):
+                candidate.auxiliary_inputs(args, descriptor, paths)
+            args.reuse_native_apk_sha256 = '0' * 64
+            verify.reset_mock()
+            with self.assertRaisesRegex(ValueError, 'digest differs'):
+                candidate.auxiliary_inputs(args, descriptor, paths)
+            verify.assert_not_called()
+
+    def test_old_producer_paths_are_not_local_receipts_when_bytes_are_reused(self):
+        self.put('gradle/bin/gradle', b'gradle')
+        self.put('executor/assets/codex-executor-qualification.json', candidate.canonical({
+            'sourceBuildInputs': {'supportBuild': {'path': 'old-computer/missing', 'buildManifestSha256': '0' * 64}}}))
+        descriptor = {'gradle': 'gradle/bin/gradle', 'buildToolsVersion': '36.0.0'}
+        paths = {name: self.root / name for name in candidate.PAYLOADS}
+        with self.assertRaises(FileNotFoundError):
+            candidate.command_for(descriptor, paths)
+        self.assertFalse(any(x.startswith('-PcodexRuntimeSupportBuild=') for x in candidate.command_for(descriptor, paths, reuse_native=True)))
 
 
 if __name__ == "__main__":

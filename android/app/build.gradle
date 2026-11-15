@@ -8,8 +8,8 @@ android {
         applicationId 'com.ai.codex'
         minSdk 30
         targetSdk 37
-        versionCode 56
-        versionName '0.2.0-dev'
+        versionCode 60
+        versionName '0.2.0-dev-ime-refresh'
         testInstrumentationRunner 'com.ai.codex.recovery.HardCrashInstrumentation'
         ndk { abiFilters 'arm64-v8a' }
     }
@@ -32,6 +32,7 @@ dependencies {
     implementation 'dev.rikka.shizuku:provider:13.1.5'
     implementation 'androidx.window:window-java:1.5.0'
     implementation 'org.apache.commons:commons-compress:1.28.0'
+    implementation 'com.google.mlkit:text-recognition-chinese:16.0.1'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.json:json:20260719'
 }
@@ -172,6 +173,10 @@ def syncLocalToolsAssets = tasks.register('syncCodexToolsAssets', NativeFilesRpc
     from(rootProject.file('../tools/runtime/codex_native_dialogs.py')) { into 'codex-tools' }
     from(rootProject.file('../tools/runtime/codex-phone-dialogs.css')) { into 'codex-tools' }
     from(rootProject.file('../runtime/guest/codex-session.sh')) { into 'codex-tools' }
+    from(rootProject.file('../runtime/guest')) {
+        include 'codex_ime.py', 'keyboard-focus.js'
+        into 'codex-tools'
+    }
     from(rootProject.file('../tools/runtime')) {
         include 'workspace-node-check.cjs', 'workspace-python-check.py', 'workspace-render-check.py'
         into 'codex-tools'
@@ -357,5 +362,5 @@ tasks.named('preBuild').configure { dependsOn 'verifyRuntimeLibraries' }
 
 // Run the vendored phone-driver regression suite independently of legacy installer fixtures.
 if (providers.gradleProperty('codexPhoneTestsOnly').isPresent()) {
-    android.sourceSets.test.java.setSrcDirs(['src/test/java/com/ai/codex/phone'])
+    android.sourceSets.test.java.setSrcDirs(['src/test/java/com/ai/codex/phone', 'src/test/java/com/ai/codex/diagnostics'])
 }

@@ -13,18 +13,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.json.JSONObject;
 
 /** Watches the official local history without another Linux process or database write. */
 public final class CodexConversationMonitor implements AutoCloseable {
-    public interface Listener { void changed(String thread, String title, ConversationActivity.Change change, int active); }
-    private static final Pattern ROLLOUT = Pattern.compile("rollout-.*-([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})\\.jsonl");
+    public interface Listener { void changed(String thread, String title, ConversationActivity.Change change, int active, String status); }
     private static final int MAX_LINE = 8 * 1024 * 1024;
     private final ExecutorService worker = Executors.newSingleThreadExecutor(r -> new Thread(r, "Codex-conversations"));
     private final Map<File, FileObserver> watches = new HashMap<>();
     private final Map<File, Tail> tails = new HashMap<>();
+    private final Map<String, String> titles = new HashMap<>();
     private final ConversationActivity activity = new ConversationActivity();
     private final File home;
     private final Listener listener;
@@ -79,9 +77,8 @@ public final class CodexConversationMonitor implements AutoCloseable {
         }
     }
     private void read(File file, boolean baseline) {
-        Matcher match = ROLLOUT.matcher(file.getName());
-        if (closed || !match.matches() || Files.isSymbolicLink(file.toPath()) || !file.isFile()) return;
-        String thread = match.group(1);
+        String thread = ConversationActivity.threadFromRollout(file.getName());
+        if (closed || thread == null || Files.isSymbolicLink(file.toPath()) || !file.isFile()) return;
         Tail tail = tails.computeIfAbsent(file, key -> new Tail());
         try (RandomAccessFile input = new RandomAccessFile(file, "r")) {
             if (baseline) { tail.offset = input.length(); return; }
@@ -104,13 +101,19 @@ public final class CodexConversationMonitor implements AutoCloseable {
         } catch (Exception error) { Log.w("Codex-conversations", "History observation failed", error); }
     }
     private void event(String thread, String line) {
-        if (!line.contains("\"event_msg\"")) return;
+        if (!line.contains("\"event_msg\"") && !line.contains("\"response_item\"")) return;
         try {
             JSONObject record = new JSONObject(line);
             if (java.time.Instant.parse(record.getString("timestamp")).toEpochMilli() < since) return;
             ConversationActivity.Change change = activity.accept(thread, record);
-            if (change != ConversationActivity.Change.NONE && !closed)
-                listener.changed(thread, title(thread), change, activity.activeCount());
+            if (change != ConversationActivity.Change.NONE && !closed) {
+                String label = change == ConversationActivity.Change.UPDATED
+                    ? titles.computeIfAbsent(thread, this::title) : title(thread);
+                if (change == ConversationActivity.Change.STARTED) titles.put(thread, label);
+                listener.changed(thread, label, change, activity.activeCount(), activity.status(thread));
+                if (change == ConversationActivity.Change.COMPLETED || change == ConversationActivity.Change.INTERRUPTED)
+                    titles.remove(thread);
+            }
         } catch (org.json.JSONException | java.time.format.DateTimeParseException error) { Log.w("Codex-conversations", "Invalid history event"); }
     }
     private String title(String thread) {
@@ -149,7 +152,7 @@ public final class CodexConversationMonitor implements AutoCloseable {
     @Override public synchronized void close() {
         if (closed) return;
         closed = true;
-        worker.execute(() -> { for (FileObserver observer : watches.values()) observer.stopWatching(); watches.clear(); tails.clear(); });
+        worker.execute(() -> { for (FileObserver observer : watches.values()) observer.stopWatching(); watches.clear(); tails.clear(); titles.clear(); });
         worker.shutdown();
     }
 }

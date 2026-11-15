@@ -12,7 +12,7 @@ Codex Android 是基于 FoldGPT 的独立适配项目，把 Linux ARM64 版 Chat
 - **桌面与本地执行**使用 PRoot 提供 Debian 用户空间，运行 Linux ARM64 桌面客户端。适配后的 Codex `app-server` 通过 Android 原生执行器运行项目命令、访问工作区。模型推理由在线服务完成。
 - **手机操控**通过本机 MCP 接入 Codex。前台读屏、点击和输入由 Android 无障碍服务执行，Root 功能单独授权。
 
-当前源码对应应用 `com.ai.codex` 的开发版，适配桌面客户端 `26.1103.31037`，后端基于 Codex `rust-v0.167.0`。[架构文档](docs/architecture.md) · [后端版本与补丁清单](recovery/engine/manifest.json)
+当前源码对应应用 `com.ai.codex` 的开发版，升级目标为桌面客户端 `26.1111.21308` 和 Codex `rust-v0.169.0`。versionCode 60 的本地 APK 已用原证书签名构建，在 v59 的统一通知图标、连续边缘光效和普通工作状态识别基础上，修复输入法临时失焦误关闭及桌面窗口的刷新率投票。用户已确认 v60 的键盘和前台高刷测试正常。[光效与实时状态](docs/live-status-and-edge-glow.md) · [架构文档](docs/architecture.md) · [后端版本与补丁清单](recovery/engine/manifest.json)
 
 ## 使用 Agent 部署
 

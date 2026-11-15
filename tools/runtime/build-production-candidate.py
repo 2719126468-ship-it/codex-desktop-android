@@ -224,29 +224,122 @@ def admit_inputs(path, trusted_sha):
 
 
 def source_inventory():
-    roots = ("android", "tools", "runtime", "config", "plugins", "compat")
+    roots = ("android", "tools", "runtime", "config", "plugins", "compat", "third-party", "recovery")
     flags = ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"]
-    names = subprocess.check_output([*flags, "--", *roots], cwd=ROOT).decode().split("\0")
-    vendor_names = subprocess.check_output(flags, cwd=ROOT / "vendor/termux-x11").decode().split("\0")
+    def names_in(directory, selected=()):
+        try:
+            return subprocess.check_output([*flags, *(["--", *selected] if selected else [])],
+                cwd=directory, stderr=subprocess.DEVNULL).decode().split("\0")
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # Source-only handoffs have no Git metadata. Snapshot actual build
+            # sources while keeping generated outputs and private local inputs out.
+            excluded = {".git", ".gradle", ".kotlin", ".cxx", "build", "__pycache__", "node_modules"}
+            suffixes = (".pyc", ".class", ".log", ".so", ".apk", ".aab", ".jar", ".keystore", ".jks")
+            names = []
+            for start in selected or (".",):
+                for parent, dirs, files in os.walk(directory / start):
+                    dirs[:] = [d for d in dirs if d not in excluded
+                               and not (Path(parent) == ROOT / "android" and d == "native")]
+                    for name in files:
+                        if name == "local.properties" or name.startswith(".env") or name.endswith(suffixes):
+                            continue
+                        names.append((Path(parent) / name).relative_to(directory).as_posix())
+            return names
+    names = names_in(ROOT, roots)
+    vendor_names = names_in(ROOT / "vendor/termux-x11")
     names += ["vendor/termux-x11/" + name for name in vendor_names if name]
     rows = {}
     for name in sorted(set(names)):
         if name and (ROOT / name).is_file():
             rows[name] = {"bytes": (ROOT / name).stat().st_size, "sha256": digest_file(ROOT / name)}
     if not rows:
-        raise ValueError("No tracked build sources found")
+        raise ValueError("No build sources found")
     return rows
 
 
-def command_for(descriptor, paths):
+def git_head():
+    try:
+        return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT,
+            text=True, stderr=subprocess.DEVNULL).strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+
+
+def auxiliary_inputs(args, descriptor=None, paths=None):
+    result = {"initScripts": []}
+    for path in getattr(args, "gradle_init_script", []) or []:
+        path = path.resolve(strict=True)
+        if not path.is_file():
+            raise ValueError("Gradle init script must be a regular file")
+        result["initScripts"].append({"path": path_record(path), "bytes": path.stat().st_size, "sha256": digest_file(path)})
+    selected = getattr(args, "gnu_engine_assets", None)
+    if selected is not None:
+        selected = selected.resolve(strict=True)
+        files = inventory(selected)
+        expected = {"gnu-engine/manifest.json", "gnu-engine/codex-native", "gnu-engine/codex-code-mode-host"}
+        if set(files) != expected:
+            raise ValueError("GNU engine assets must contain the complete matched pair only")
+        manifest = strict_json((selected / "gnu-engine/manifest.json").read_bytes())
+        recovery = strict_json((ROOT / "recovery/engine/manifest.json").read_bytes())
+        if (manifest.get("schema") != "codex.gnu-engine.payload.v1"
+                or manifest.get("target") != "aarch64-unknown-linux-gnu"
+                or manifest.get("sourceBase") != recovery["base"]
+                or manifest.get("version") != recovery["tag"].removeprefix("rust-v")):
+            raise ValueError("GNU engine assets differ from the selected recovery version/base")
+        rows = manifest.get("files", [])
+        if len(rows) != 2 or {row.get("name") for row in rows} != {"codex-native", "codex-code-mode-host"}:
+            raise ValueError("GNU engine manifest lacks the matched pair")
+        for row in rows:
+            actual = files["gnu-engine/" + row["name"]]
+            if row.get("bytes") != actual["bytes"] or row.get("sha256") != actual["sha256"]:
+                raise ValueError("GNU engine bytes differ from their manifest")
+        result["gnuEngineAssets"] = {"path": path_record(selected), "files": files,
+            "version": manifest["version"], "sourceBase": manifest["sourceBase"]}
+    reused_apk = getattr(args, 'reuse_native_apk', None)
+    if reused_apk is not None:
+        if descriptor is None or paths is None:
+            raise ValueError('Reused APK verification requires the admitted payload/toolchain inputs')
+        reused_apk = reused_apk.resolve(strict=True)
+        expected = getattr(args, 'reuse_native_apk_sha256', None)
+        if not isinstance(expected, str) or not re.fullmatch('[0-9a-f]{64}', expected) or digest_file(reused_apk) != expected:
+            raise ValueError('The explicitly pinned reused APK digest differs')
+        certificate = (getattr(args, 'signing_cert_sha256', None) or '').replace(':', '').lower()
+        if not re.fullmatch('[0-9a-f]{64}', certificate):
+            raise ValueError('Reused APK inputs require the original update certificate identity')
+        java = paths['jdk'] / ('bin/java.exe' if os.name == 'nt' else 'bin/java')
+        signature = subprocess.check_output([str(java), '-jar', str(paths['sdkBuildTools'] / 'lib/apksigner.jar'),
+            'verify', '--verbose', '--print-certs', str(reused_apk)], text=True)
+        actual = re.findall(r'Signer #\d+ certificate SHA-256 digest: ([0-9a-fA-F]+)', signature)
+        if [value.lower() for value in actual] != [certificate]:
+            raise ValueError('Reused APK certificate differs from the original update identity')
+        # Every selected native/Python byte must come from this exact signed APK.
+        # Its old sourceBuildInputs describe the original producer; they are not
+        # local build receipts and are preserved unchanged rather than recreated.
+        verify_packaged_inputs(reused_apk, descriptor)
+        result['reusedNativeInputs'] = {'apk': path_record(reused_apk), 'apkSha256': expected,
+            'certificateSha256': certificate, 'nativeRebuilt': False, 'deviceQualified': False}
+    return result
+
+
+def verify_auxiliary_apk(apk, auxiliary):
+    selected = auxiliary.get("gnuEngineAssets")
+    if selected:
+        with ZipFile(apk) as archive:
+            for name, row in selected["files"].items():
+                data = archive.read("assets/" + name)
+                if len(data) != row["bytes"] or hashlib.sha256(data).hexdigest() != row["sha256"]:
+                    raise ValueError("Packaged GNU engine differs from its selected input: " + name)
+
+
+def command_for(descriptor, paths, *, reuse_native=False):
     command = [str(descriptor_path(descriptor["gradle"])), "--no-daemon", "--max-workers=2", "--no-parallel",
-               "-Dorg.gradle.jvmargs=-Xmx1g -Dfile.encoding=UTF-8", "-PcodexRequireExecutor=true",
+               "-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8", "-PcodexRequireExecutor=true",
                "-PcodexBuildToolsVersion=" + descriptor["buildToolsVersion"]]
     for prop, key in (("codexRuntimeJni", "runtimeJni"), ("codexX11Jni", "x11Jni"),
                       ("codexFrozenTransportJni", "transportJni"), ("codexDebugJni", "debugJni"), ("codexDebugAssets", "debugAssets")):
         command.append("-P" + prop + "=" + str(paths[key]))
     qualification = strict_json((paths["executor"] / "assets/codex-executor-qualification.json").read_bytes())
-    if "sourceBuildInputs" in qualification:
+    if "sourceBuildInputs" in qualification and not reuse_native:
         support = qualification["sourceBuildInputs"]["supportBuild"]
         build = descriptor_path(support["path"])
         if digest_file(build / "build.json") != support["buildManifestSha256"]:
@@ -281,9 +374,19 @@ def build_candidate(args):
         raise ValueError("Candidate must be an ASCII alphanumeric name")
     output = output_path(args.output)
     descriptor, paths, package = admit_inputs(args.inputs, args.inputs_sha256)
-    command = command_for(descriptor, paths)
+    auxiliary = auxiliary_inputs(args, descriptor, paths)
+    command = command_for(descriptor, paths, reuse_native='reusedNativeInputs' in auxiliary)
+    if getattr(args, 'native_update', False) and 'gnuEngineAssets' not in auxiliary:
+        raise ValueError('Native update builds require the explicit matched GNU engine assets')
+    options = []
+    for script in auxiliary["initScripts"]:
+        options += ["--init-script", str(descriptor_path(script["path"]))]
+    if "gnuEngineAssets" in auxiliary:
+        options.append("-PcodexGnuEngineAssets=" + str(descriptor_path(auxiliary["gnuEngineAssets"]["path"])))
+    command[1:1] = options
     if args.preflight_only:
-        return {"preflight": "PASS", "output": str(output), "package": package, "argv": command, "deviceQualified": False}
+        return {"preflight": "PASS", "output": str(output), "package": package, "auxiliaryInputs": auxiliary,
+                "argv": command, "deviceQualified": False}
     if not args.signing_keystore or not args.signing_cert_sha256:
         raise ValueError("Candidate builds require an explicit signing keystore and certificate SHA-256")
     key, cert = args.signing_keystore.resolve(strict=True), args.signing_cert_sha256.replace(":", "").lower()
@@ -294,17 +397,19 @@ def build_candidate(args):
     output.mkdir(exist_ok=False)
     write_new(output / "inputs.json", descriptor)
     write_new(output / "sources.json", sources)
+    write_new(output / "auxiliary-inputs.json", auxiliary)
     (output / "tmp").mkdir()
     env = dict(os.environ)
     env.update(JAVA_HOME=str(paths["jdk"]), ANDROID_HOME=str(descriptor_path(descriptor["sdk"])),
                ANDROID_SDK_ROOT=str(descriptor_path(descriptor["sdk"])),
                CODEX_SIGNING_KEYSTORE=str(key), CODEX_SIGNING_CERT_SHA256=cert,
-               GRADLE_USER_HOME=str(ROOT / "work/build-cache/gradle"),
+               GRADLE_USER_HOME=os.environ.get("GRADLE_USER_HOME", str(ROOT / "work/build-cache/gradle")),
                TEMP=str(output / "tmp"), TMP=str(output / "tmp"), TMPDIR=str(output / "tmp"))
     report = {"schema": "codex.candidate-build.v1", "candidate": args.candidate, "success": False,
               "inputDescriptorSha256": args.inputs_sha256, "sourceInventorySha256": digest_file(output / "sources.json"),
-              "gitHead": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+              "gitHead": git_head(), "auxiliaryInputsSha256": digest_file(output / "auxiliary-inputs.json"),
               "argv": command, "signingCertificateSha256": cert, "deviceQualified": False,
+              "contentsContract": "native-executor-update" if getattr(args, 'native_update', False) else "legacy-diagnostics",
               "scope": "Debug APK from existing pinned inputs; fresh install and bit-for-bit rebuild unqualified"}
     def run(name, argv):
         with (output / (name + ".log")).open("xb") as log:
@@ -322,14 +427,20 @@ def build_candidate(args):
         run("gradle-build", command)
         if source_inventory() != sources:
             raise ValueError("Sources changed during compilation; candidate not admitted")
+        if auxiliary_inputs(args, descriptor, paths) != auxiliary:
+            raise ValueError("Auxiliary build inputs changed during compilation")
         admit_inputs(args.inputs, args.inputs_sha256)
         staged = output / "unverified.apk"
         with staged.open("xb") as target, (ROOT / "android/app/build/outputs/apk/debug/app-debug.apk").open("rb") as source:
             shutil.copyfileobj(source, target)
         verify_packaged_inputs(staged, descriptor)
+        verify_auxiliary_apk(staged, auxiliary)
         run("executor-verification", [sys.executable, "-B", str(ROOT / "tools/executor/runas-runtime/verify-production-apk.py"),
             str(staged), "--output", str(output / "executor-verification.json")])
-        run("apk-contents", [sys.executable, "-B", str(ROOT / "tools/install/verify-apk-contents.py"), str(staged), "--debug"])
+        contents_command = [sys.executable, "-B", str(ROOT / "tools/install/verify-apk-contents.py"), str(staged), "--debug"]
+        if getattr(args, 'native_update', False):
+            contents_command.append('--native-update')
+        run("apk-contents", contents_command)
         run("apk-signature", [str(paths["sdkBuildTools"] / ("apksigner.bat" if os.name == "nt" else "apksigner")),
             "verify", "--verbose", "--print-certs", str(staged)])
         signature = (output / "apk-signature.log").read_text(encoding="utf-8")
@@ -369,6 +480,11 @@ def parser():
     build.add_argument("--output", type=Path, required=True, help="New directory beneath this project's work/ or downloads/")
     build.add_argument("--signing-keystore", type=Path)
     build.add_argument("--signing-cert-sha256")
+    build.add_argument("--gnu-engine-assets", type=Path, help="Complete staged controller/Code Mode pair matching recovery/engine/manifest.json")
+    build.add_argument("--gradle-init-script", type=Path, action="append", default=[], help="Explicit local Gradle adapter; hashed and rechecked as a build input")
+    build.add_argument("--native-update", action="store_true", help="Select the current application-origin native update content contract, not the legacy diagnostic fixture contract")
+    build.add_argument("--reuse-native-apk", type=Path, help="Exact signed installed APK providing every reused native/Python input; original producer paths are not treated as local build receipts")
+    build.add_argument("--reuse-native-apk-sha256", help="Independently retained SHA-256 of the installed APK selected for native input reuse")
     build.add_argument("--preflight-only", action="store_true", help="Read-only admission; do not create output or execute Gradle")
     return result
 

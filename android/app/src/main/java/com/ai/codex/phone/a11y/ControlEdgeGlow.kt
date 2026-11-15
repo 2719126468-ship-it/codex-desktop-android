@@ -19,6 +19,8 @@ import android.view.RoundedCorner
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
+import kotlin.math.exp
+import kotlin.math.roundToInt
 
 /** Decorative accessibility window. It never accepts focus, input or accessibility actions. */
 internal class ControlEdgeGlow(private val service: AccessibilityService) {
@@ -28,6 +30,17 @@ internal class ControlEdgeGlow(private val service: AccessibilityService) {
     private var destroyed = false
 
     val attached: Boolean get() = view?.isAttachedToWindow == true
+    val root: View? get() = view
+
+    // Keep the current overlay's task ownership and screenshot receipts.
+    fun attach(title: CharSequence, dark: Boolean, seed: Int, hidden: Boolean) {
+        captureHidden = hidden
+        setActive(true)
+    }
+    fun set(on: Boolean, paused: Boolean) = setActive(on && !paused)
+    fun setHidden(hidden: Boolean) = hideForCapture(hidden)
+    fun relayout() = refreshGeometry()
+    fun detach(animated: Boolean) = remove()
 
     fun setActive(active: Boolean) {
         if (!active || destroyed) {
@@ -86,13 +99,26 @@ internal class ControlEdgeGlow(private val service: AccessibilityService) {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeJoin = Paint.Join.ROUND
+            isDither = true
         }
         private var gradient: SweepGradient? = null
+        private val smooth = if (Build.VERSION.SDK_INT >= 33) runCatching { EdgeGlowShader33(density) }
+            .onFailure { Log.w("CodexEdgeGlow", "Continuous GPU glow unavailable", it) }.getOrNull() else null
         private var insets: WindowInsets? = null
-        private val widths = floatArrayOf(25f, 16f, 9f, 4f, 1.7f)
-        private val alphas = intArrayOf(8, 15, 32, 86, 232)
+        // Legacy Android fallback: 64 subpixel-width layers approximate the same falloff.
+        private val widths = FloatArray(64) { (64 - it) * 50f / 64f }
+        private val alphas = IntArray(64).also { values ->
+            var accumulated = 0.0
+            for (i in values.indices) {
+                val d = widths[i] / 2.0
+                val target = 0.8 * exp(-0.5 * (d / 1.7) * (d / 1.7)) + 0.2 * exp(-0.5 * (d / 10.0) * (d / 10.0))
+                values[i] = ((target - accumulated) / (1.0 - accumulated) * 255).roundToInt().coerceIn(0, 255)
+                accumulated = 1.0 - (1.0 - accumulated) * (1.0 - values[i] / 255.0)
+            }
+        }
 
         init {
+            if (Build.VERSION.SDK_INT >= 35) requestedFrameRate = REQUESTED_FRAME_RATE_CATEGORY_HIGH
             importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
             isClickable = false
             isFocusable = false
@@ -157,6 +183,7 @@ internal class ControlEdgeGlow(private val service: AccessibilityService) {
             contour.addRoundRect(bounds, floatArrayOf(
                 radii[0], radii[0], radii[1], radii[1], radii[2], radii[2], radii[3], radii[3],
             ), Path.Direction.CW)
+            smooth?.geometry(width, height, inset, radii)
             invalidate()
         }
 
@@ -164,17 +191,26 @@ internal class ControlEdgeGlow(private val service: AccessibilityService) {
             super.onDraw(canvas)
             val shader = gradient ?: return
             val animate = ValueAnimator.areAnimatorsEnabled()
-            val phase = if (animate) (SystemClock.uptimeMillis() % 9_000L) / 9_000f else 0f
+            val phase = if (animate) (SystemClock.uptimeMillis() % 900L) / 900f else 0f
+            smooth?.let {
+                it.phase(phase)
+                paint.shader = it.shader
+                paint.alpha = 255
+                paint.strokeWidth = 50f * density
+                canvas.drawPath(contour, paint)
+                if (animate && isShown) postInvalidateOnAnimation()
+                return
+            }
             rotation.setRotate(phase * 360f, width / 2f, height / 2f)
             shader.setLocalMatrix(rotation)
             paint.shader = shader
-            // Layered hardware strokes make a soft halo without a full-screen software blur.
+            // No full-screen software blur on older Android versions either.
             for (index in widths.indices) {
                 paint.strokeWidth = widths[index] * density
                 paint.alpha = alphas[index]
                 canvas.drawPath(contour, paint)
             }
-            if (animate && isShown) postInvalidateDelayed(40L)
+            if (animate && isShown) postInvalidateOnAnimation()
         }
 
         override fun onVisibilityChanged(changedView: View, visibility: Int) {

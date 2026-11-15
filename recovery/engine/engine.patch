@@ -1,6 +1,6 @@
 diff --git a/CODEX-INTEGRATION.md b/CODEX-INTEGRATION.md
 new file mode 100644
-index 0000000000000000000000000000000000000000..e322eee59947e59098b6ea71aa6c73378b05f750
+index 0000000..e322eee
 --- /dev/null
 +++ b/CODEX-INTEGRATION.md
 @@ -0,0 +1,332 @@
@@ -337,7 +337,7 @@ index 0000000000000000000000000000000000000000..e322eee59947e59098b6ea71aa6c7337
 +to those version lines: no registry/git package version, checksum or dependency
 +list changes. Keep this mechanical normalization separate from runtime changes.
 diff --git a/codex-rs/Cargo.lock b/codex-rs/Cargo.lock
-index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32f6369efd 100644
+index d719a52..41b3c11 100644
 --- a/codex-rs/Cargo.lock
 +++ b/codex-rs/Cargo.lock
 @@ -287,7 +287,7 @@ checksum = "2a4385e2e34eb35d6b3efe798b9eb88096925d87726c0798709bf56d9ed84af3"
@@ -345,7 +345,7 @@ index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32
  [[package]]
  name = "app_test_support"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "base64 0.22.1",
@@ -354,7 +354,7 @@ index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32
  [[package]]
  name = "codex-agent-extension"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-core",
@@ -363,7 +363,7 @@ index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32
  [[package]]
  name = "codex-agent-graph-store"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-protocol",
   "codex-state",
@@ -372,7 +372,7 @@ index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32
  [[package]]
  name = "codex-agent-identity"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "base64 0.22.1",
@@ -381,7 +381,7 @@ index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32
  [[package]]
  name = "codex-agent-message-board-client"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "chrono",
@@ -390,1141 +390,1151 @@ index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32
  [[package]]
  name = "codex-agent-message-board-extension"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
-  "codex-extension-api",
-  "codex-message-board",
-@@ -1972,7 +1972,7 @@ dependencies = [
+  "codex-agent-message-board-client",
+  "codex-config",
+@@ -1977,7 +1977,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "codex-agent-message-board-host"
+-version = "0.0.0"
++version = "0.169.0"
+ dependencies = [
+  "chrono",
+  "codex-agent-message-board-client",
+@@ -1994,7 +1994,7 @@ dependencies = [
  
  [[package]]
  name = "codex-agent-roles"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-config",
   "codex-file-system",
-@@ -1985,7 +1985,7 @@ dependencies = [
+@@ -2007,7 +2007,7 @@ dependencies = [
  
  [[package]]
  name = "codex-analytics"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-app-server-protocol",
-  "codex-git-utils",
-@@ -2008,7 +2008,7 @@ dependencies = [
+  "codex-features",
+@@ -2035,7 +2035,7 @@ dependencies = [
  
  [[package]]
  name = "codex-ansi-escape"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "ansi-to-tui",
   "pretty_assertions",
-@@ -2019,7 +2019,7 @@ dependencies = [
+@@ -2046,7 +2046,7 @@ dependencies = [
  
  [[package]]
  name = "codex-api"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "assert_matches",
-@@ -2057,7 +2057,7 @@ dependencies = [
+@@ -2084,7 +2084,7 @@ dependencies = [
  
  [[package]]
  name = "codex-app-server"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "app_test_support",
-@@ -2174,7 +2174,7 @@ dependencies = [
+@@ -2205,7 +2205,7 @@ dependencies = [
  
  [[package]]
  name = "codex-app-server-client"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-app-server",
   "codex-app-server-protocol",
-@@ -2202,7 +2202,7 @@ dependencies = [
+@@ -2238,7 +2238,7 @@ dependencies = [
  
  [[package]]
  name = "codex-app-server-daemon"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "blake3",
-@@ -2232,7 +2232,7 @@ dependencies = [
+@@ -2268,7 +2268,7 @@ dependencies = [
  
  [[package]]
  name = "codex-app-server-protocol"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-app-server-protocol-noop-macros",
-@@ -2266,11 +2266,11 @@ dependencies = [
+@@ -2303,11 +2303,11 @@ dependencies = [
  
  [[package]]
  name = "codex-app-server-protocol-noop-macros"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  
  [[package]]
  name = "codex-app-server-test-client"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "clap",
-@@ -2292,7 +2292,7 @@ dependencies = [
+@@ -2330,7 +2330,7 @@ dependencies = [
  
  [[package]]
  name = "codex-app-server-transport"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
+  "anyhow",
   "axum",
-  "base64 0.22.1",
-@@ -2335,7 +2335,7 @@ dependencies = [
+@@ -2378,7 +2378,7 @@ dependencies = [
  
  [[package]]
  name = "codex-apply-patch"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "assert_cmd",
-@@ -2355,7 +2355,7 @@ dependencies = [
+@@ -2398,7 +2398,7 @@ dependencies = [
  
  [[package]]
  name = "codex-arg0"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-apply-patch",
-@@ -2378,7 +2378,7 @@ dependencies = [
+@@ -2421,7 +2421,7 @@ dependencies = [
  
  [[package]]
  name = "codex-async-utils"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "pretty_assertions",
   "rand 0.9.3",
-@@ -2388,7 +2388,7 @@ dependencies = [
+@@ -2431,7 +2431,7 @@ dependencies = [
  
  [[package]]
  name = "codex-attachment-store"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "pretty_assertions",
   "serde",
-@@ -2398,7 +2398,7 @@ dependencies = [
+@@ -2441,7 +2441,7 @@ dependencies = [
  
  [[package]]
  name = "codex-aws-auth"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "aws-config",
   "aws-credential-types",
-@@ -2424,7 +2424,7 @@ dependencies = [
+@@ -2467,7 +2467,7 @@ dependencies = [
  
  [[package]]
  name = "codex-backend-client"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
-  "codex-api",
-@@ -2444,7 +2444,7 @@ dependencies = [
+  "base64 0.22.1",
+@@ -2494,7 +2494,7 @@ dependencies = [
  
  [[package]]
  name = "codex-backend-openapi-models"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "serde",
   "serde_json",
-@@ -2453,7 +2453,7 @@ dependencies = [
+@@ -2503,7 +2503,7 @@ dependencies = [
  
  [[package]]
  name = "codex-build-info"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-install-context",
   "pretty_assertions",
-@@ -2466,7 +2466,7 @@ dependencies = [
+@@ -2516,7 +2516,7 @@ dependencies = [
  
  [[package]]
  name = "codex-bwrap"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "cc",
   "libc",
-@@ -2475,7 +2475,7 @@ dependencies = [
+@@ -2525,7 +2525,7 @@ dependencies = [
  
  [[package]]
  name = "codex-chatgpt"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
-  "clap",
-@@ -2497,7 +2497,7 @@ dependencies = [
+  "base64 0.22.1",
+@@ -2553,7 +2553,7 @@ dependencies = [
  
  [[package]]
  name = "codex-cli"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "app_test_support",
-@@ -2601,7 +2601,7 @@ dependencies = [
+@@ -2658,7 +2658,7 @@ dependencies = [
  
  [[package]]
  name = "codex-client"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-http-client",
   "eventsource-stream",
-@@ -2615,7 +2615,7 @@ dependencies = [
+@@ -2672,7 +2672,7 @@ dependencies = [
  
  [[package]]
  name = "codex-cloud-client"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "async-stream",
-@@ -2639,7 +2639,7 @@ dependencies = [
+@@ -2698,7 +2698,7 @@ dependencies = [
  
  [[package]]
  name = "codex-cloud-config"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "base64 0.22.1",
   "chrono",
-@@ -2667,7 +2667,7 @@ dependencies = [
+@@ -2726,7 +2726,7 @@ dependencies = [
  
  [[package]]
  name = "codex-cloud-tasks"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
-  "chrono",
-@@ -2700,7 +2700,7 @@ dependencies = [
+  "base64 0.22.1",
+@@ -2768,7 +2768,7 @@ dependencies = [
  
  [[package]]
  name = "codex-cloud-tasks-client"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "chrono",
-@@ -2715,7 +2715,7 @@ dependencies = [
+@@ -2783,7 +2783,7 @@ dependencies = [
  
  [[package]]
  name = "codex-cloud-tasks-mock-client"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "chrono",
   "codex-cloud-tasks-client",
-@@ -2724,7 +2724,7 @@ dependencies = [
+@@ -2792,7 +2792,7 @@ dependencies = [
  
  [[package]]
  name = "codex-code-mode"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-code-mode-protocol",
   "codex-http-client",
-@@ -2748,7 +2748,7 @@ dependencies = [
+@@ -2816,7 +2816,7 @@ dependencies = [
  
  [[package]]
  name = "codex-code-mode-host"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "axum",
-@@ -2779,7 +2779,7 @@ dependencies = [
+@@ -2847,7 +2847,7 @@ dependencies = [
  
  [[package]]
  name = "codex-code-mode-protocol"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-protocol",
   "glob",
-@@ -2797,7 +2797,7 @@ dependencies = [
+@@ -2865,7 +2865,7 @@ dependencies = [
  
  [[package]]
  name = "codex-code-mode-runtime"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "base64 0.22.1",
   "codex-code-mode-protocol",
-@@ -2819,11 +2819,11 @@ dependencies = [
+@@ -2887,11 +2887,11 @@ dependencies = [
  
  [[package]]
  name = "codex-collaboration-mode-templates"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  
  [[package]]
  name = "codex-config"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "base64 0.22.1",
-@@ -2877,7 +2877,7 @@ dependencies = [
+@@ -2945,7 +2945,7 @@ dependencies = [
  
  [[package]]
  name = "codex-config-schema"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "clap",
-@@ -2886,7 +2886,7 @@ dependencies = [
+@@ -2954,7 +2954,7 @@ dependencies = [
  
  [[package]]
  name = "codex-connectors"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "arc-swap",
-@@ -2908,7 +2908,7 @@ dependencies = [
+@@ -2976,7 +2976,7 @@ dependencies = [
  
  [[package]]
  name = "codex-connectors-extension"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-connectors",
   "codex-core-plugins",
-@@ -2922,7 +2922,7 @@ dependencies = [
+@@ -2990,7 +2990,7 @@ dependencies = [
  
  [[package]]
  name = "codex-context-fragments"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-protocol",
   "codex-protocol-test-support",
-@@ -2933,7 +2933,7 @@ dependencies = [
+@@ -3001,7 +3001,7 @@ dependencies = [
  
  [[package]]
  name = "codex-core"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "arc-swap",
-@@ -3083,7 +3083,7 @@ dependencies = [
+@@ -3155,7 +3155,7 @@ dependencies = [
  
  [[package]]
  name = "codex-core-api"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-analytics",
   "codex-app-server-protocol",
-@@ -3106,7 +3106,7 @@ dependencies = [
+@@ -3179,7 +3179,7 @@ dependencies = [
  
  [[package]]
  name = "codex-core-plugin-common"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-utils-absolute-path",
   "semver",
-@@ -3117,7 +3117,7 @@ dependencies = [
+@@ -3190,7 +3190,7 @@ dependencies = [
  
  [[package]]
  name = "codex-core-plugins"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
-  "chrono",
-@@ -3174,7 +3174,7 @@ dependencies = [
+  "base64 0.22.1",
+@@ -3251,7 +3251,7 @@ dependencies = [
  
  [[package]]
  name = "codex-diagnostics"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "libc",
   "pretty_assertions",
-@@ -3182,7 +3182,7 @@ dependencies = [
+@@ -3259,7 +3259,7 @@ dependencies = [
  
  [[package]]
  name = "codex-direct-tool-timing"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-utils-critical-path",
   "pretty_assertions",
-@@ -3193,7 +3193,7 @@ dependencies = [
+@@ -3270,7 +3270,7 @@ dependencies = [
  
  [[package]]
  name = "codex-exec"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "assert_cmd",
-@@ -3246,7 +3246,7 @@ dependencies = [
+@@ -3324,7 +3324,7 @@ dependencies = [
  
  [[package]]
  name = "codex-exec-server"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "arc-swap",
-@@ -3319,7 +3319,7 @@ dependencies = [
+@@ -3396,7 +3396,7 @@ dependencies = [
  
  [[package]]
  name = "codex-exec-server-cli"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "assert_matches",
-@@ -3363,7 +3363,7 @@ dependencies = [
+@@ -3440,7 +3440,7 @@ dependencies = [
  
  [[package]]
  name = "codex-exec-server-protocol"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "base64 0.22.1",
   "codex-file-system",
-@@ -3381,7 +3381,7 @@ dependencies = [
+@@ -3458,7 +3458,7 @@ dependencies = [
  
  [[package]]
  name = "codex-exec-server-test-support"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-exec-server",
-@@ -3396,7 +3396,7 @@ dependencies = [
+@@ -3473,7 +3473,7 @@ dependencies = [
  
  [[package]]
  name = "codex-execpolicy"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "caseless",
-@@ -3416,7 +3416,7 @@ dependencies = [
+@@ -3493,7 +3493,7 @@ dependencies = [
  
  [[package]]
  name = "codex-experimental-api-macros"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "proc-macro2",
   "quote",
-@@ -3425,7 +3425,7 @@ dependencies = [
+@@ -3502,7 +3502,7 @@ dependencies = [
  
  [[package]]
  name = "codex-extension-api"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-api",
   "codex-config",
-@@ -3448,7 +3448,7 @@ dependencies = [
+@@ -3525,7 +3525,7 @@ dependencies = [
  
  [[package]]
  name = "codex-extension-items"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-utils-absolute-path",
   "pretty_assertions",
-@@ -3460,7 +3460,7 @@ dependencies = [
+@@ -3537,7 +3537,7 @@ dependencies = [
  
  [[package]]
  name = "codex-external-agent-migration"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "chrono",
   "codex-analytics",
-@@ -3491,7 +3491,7 @@ dependencies = [
+@@ -3568,7 +3568,7 @@ dependencies = [
  
  [[package]]
  name = "codex-features"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-network-proxy",
   "codex-protocol",
-@@ -3505,7 +3505,7 @@ dependencies = [
+@@ -3582,7 +3582,7 @@ dependencies = [
  
  [[package]]
  name = "codex-feedback"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "bytes",
-@@ -3533,7 +3533,7 @@ dependencies = [
+@@ -3610,7 +3610,7 @@ dependencies = [
  
  [[package]]
  name = "codex-file-search"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "clap",
-@@ -3549,7 +3549,7 @@ dependencies = [
+@@ -3626,7 +3626,7 @@ dependencies = [
  
  [[package]]
  name = "codex-file-system"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "bytes",
   "codex-protocol",
-@@ -3563,7 +3563,7 @@ dependencies = [
+@@ -3640,7 +3640,7 @@ dependencies = [
  
  [[package]]
  name = "codex-file-watcher"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "notify",
   "pretty_assertions",
-@@ -3574,7 +3574,7 @@ dependencies = [
+@@ -3651,7 +3651,7 @@ dependencies = [
  
  [[package]]
  name = "codex-git-attribution"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-backend-client",
   "codex-extension-api",
-@@ -3587,7 +3587,7 @@ dependencies = [
+@@ -3667,7 +3667,7 @@ dependencies = [
  
  [[package]]
  name = "codex-git-utils"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "chrono",
-@@ -3615,7 +3615,7 @@ dependencies = [
+@@ -3695,7 +3695,7 @@ dependencies = [
  
  [[package]]
  name = "codex-goal-extension"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "chrono",
-@@ -3640,7 +3640,7 @@ dependencies = [
+@@ -3720,7 +3720,7 @@ dependencies = [
  
  [[package]]
  name = "codex-guardian-context"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-context-fragments",
   "codex-history",
-@@ -3654,7 +3654,7 @@ dependencies = [
+@@ -3734,7 +3734,7 @@ dependencies = [
  
  [[package]]
  name = "codex-guardian-reviewer"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-analytics",
-@@ -3690,7 +3690,7 @@ dependencies = [
+@@ -3771,7 +3771,7 @@ dependencies = [
  
  [[package]]
  name = "codex-guardian-v2"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
-  "codex-analytics",
-@@ -3729,7 +3729,7 @@ dependencies = [
+  "base64 0.22.1",
+@@ -3813,7 +3813,7 @@ dependencies = [
  
  [[package]]
  name = "codex-guardian-v3"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
-  "codex-message-board",
-  "codex-protocol",
-@@ -3738,7 +3738,7 @@ dependencies = [
+  "anyhow",
+  "chrono",
+@@ -3844,7 +3844,7 @@ dependencies = [
  
  [[package]]
  name = "codex-history"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-protocol",
-@@ -3750,7 +3750,7 @@ dependencies = [
+@@ -3858,7 +3858,7 @@ dependencies = [
  
  [[package]]
  name = "codex-history-notes-extension"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-analytics",
   "codex-client",
-@@ -3776,7 +3776,7 @@ dependencies = [
+@@ -3884,7 +3884,7 @@ dependencies = [
  
  [[package]]
  name = "codex-home"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-extension-api",
   "codex-utils-absolute-path",
-@@ -3788,7 +3788,7 @@ dependencies = [
+@@ -3896,7 +3896,7 @@ dependencies = [
  
  [[package]]
  name = "codex-hooks"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "async-channel",
-@@ -3817,7 +3817,7 @@ dependencies = [
+@@ -3925,7 +3925,7 @@ dependencies = [
  
  [[package]]
  name = "codex-http-client"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "bytes",
   "codex-utils-cargo-bin",
-@@ -3857,7 +3857,7 @@ dependencies = [
+@@ -3965,7 +3965,7 @@ dependencies = [
  
  [[package]]
  name = "codex-image-generation-extension"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "base64 0.22.1",
   "codex-api",
-@@ -3889,7 +3889,7 @@ dependencies = [
+@@ -3997,7 +3997,7 @@ dependencies = [
  
  [[package]]
  name = "codex-install-context"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-utils-absolute-path",
   "codex-utils-home-dir",
-@@ -3902,7 +3902,7 @@ dependencies = [
+@@ -4010,7 +4010,7 @@ dependencies = [
  
  [[package]]
  name = "codex-keyring-store"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "keyring",
   "pretty_assertions",
-@@ -3913,7 +3913,7 @@ dependencies = [
+@@ -4021,7 +4021,7 @@ dependencies = [
  
  [[package]]
  name = "codex-linux-sandbox"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "clap",
   "codex-core",
-@@ -3942,7 +3942,7 @@ dependencies = [
+@@ -4053,7 +4053,7 @@ dependencies = [
  
  [[package]]
  name = "codex-lmstudio"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-core",
   "codex-http-client",
-@@ -3956,7 +3956,7 @@ dependencies = [
+@@ -4067,7 +4067,7 @@ dependencies = [
  
  [[package]]
  name = "codex-login"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "base64 0.22.1",
-@@ -4004,7 +4004,7 @@ dependencies = [
+@@ -4116,7 +4116,7 @@ dependencies = [
  
  [[package]]
  name = "codex-mcp"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "arc-swap",
-@@ -4049,7 +4049,7 @@ dependencies = [
+@@ -4167,7 +4167,7 @@ dependencies = [
  
  [[package]]
  name = "codex-mcp-extension"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "axum",
-@@ -4082,7 +4082,7 @@ dependencies = [
+@@ -4200,7 +4200,7 @@ dependencies = [
  
  [[package]]
  name = "codex-memories-extension"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-core",
   "codex-extension-api",
-@@ -4104,7 +4104,7 @@ dependencies = [
+@@ -4222,7 +4222,7 @@ dependencies = [
  
  [[package]]
  name = "codex-memories-read"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-protocol",
   "codex-shell-command",
-@@ -4114,7 +4114,7 @@ dependencies = [
+@@ -4232,7 +4232,7 @@ dependencies = [
  
  [[package]]
  name = "codex-memories-write"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
-  "chrono",
-@@ -4151,7 +4151,7 @@ dependencies = [
+  "base64 0.22.1",
+@@ -4271,7 +4271,7 @@ dependencies = [
  
  [[package]]
  name = "codex-mermaid"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "insta",
   "pretty_assertions",
-@@ -4160,7 +4160,7 @@ dependencies = [
+@@ -4280,7 +4280,7 @@ dependencies = [
  
  [[package]]
  name = "codex-message-board"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "base64 0.22.1",
   "caseless",
-@@ -4185,7 +4185,7 @@ dependencies = [
+@@ -4305,7 +4305,7 @@ dependencies = [
  
  [[package]]
  name = "codex-message-board-mcp"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
-  "codex-attachment-store",
-  "codex-message-board",
-@@ -4199,7 +4199,7 @@ dependencies = [
+  "anyhow",
+  "axum",
+@@ -4333,7 +4333,7 @@ dependencies = [
  
  [[package]]
  name = "codex-message-history"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-config",
   "memchr",
-@@ -4213,7 +4213,7 @@ dependencies = [
+@@ -4347,7 +4347,7 @@ dependencies = [
  
  [[package]]
  name = "codex-model-provider"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
+  "anyhow",
   "base64 0.22.1",
-  "chrono",
-@@ -4252,7 +4252,7 @@ dependencies = [
+@@ -4387,7 +4387,7 @@ dependencies = [
  
  [[package]]
  name = "codex-model-provider-info"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-client",
   "codex-http-client",
-@@ -4270,7 +4270,7 @@ dependencies = [
+@@ -4405,7 +4405,7 @@ dependencies = [
  
  [[package]]
  name = "codex-models-manager"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "chrono",
   "codex-http-client",
-@@ -4289,7 +4289,7 @@ dependencies = [
+@@ -4424,7 +4424,7 @@ dependencies = [
  
  [[package]]
  name = "codex-multi-env-copy-file"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-config",
-@@ -4315,7 +4315,7 @@ dependencies = [
+@@ -4450,7 +4450,7 @@ dependencies = [
  
  [[package]]
  name = "codex-mxc-sandbox"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-network-proxy",
-@@ -4336,7 +4336,7 @@ dependencies = [
+@@ -4471,7 +4471,7 @@ dependencies = [
  
  [[package]]
  name = "codex-network-proxy"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "aws-credential-types",
-@@ -4387,7 +4387,7 @@ dependencies = [
+@@ -4522,7 +4522,7 @@ dependencies = [
  
  [[package]]
  name = "codex-ollama"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "assert_matches",
   "async-stream",
-@@ -4407,7 +4407,7 @@ dependencies = [
+@@ -4542,7 +4542,7 @@ dependencies = [
  
  [[package]]
  name = "codex-otel"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "bytes",
   "chrono",
-@@ -4446,7 +4446,7 @@ dependencies = [
+@@ -4580,7 +4580,7 @@ dependencies = [
  
  [[package]]
  name = "codex-otel-trace-websocket"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "axum",
-@@ -4457,7 +4457,7 @@ dependencies = [
+@@ -4591,7 +4591,7 @@ dependencies = [
  
  [[package]]
  name = "codex-plugin"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-config",
   "codex-core-plugin-common",
-@@ -4472,7 +4472,7 @@ dependencies = [
+@@ -4606,7 +4606,7 @@ dependencies = [
  
  [[package]]
  name = "codex-plugin-host"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-utils-cargo-bin",
   "codex-utils-process",
-@@ -4489,7 +4489,7 @@ dependencies = [
+@@ -4623,7 +4623,7 @@ dependencies = [
  
  [[package]]
  name = "codex-process-hardening"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "libc",
   "pretty_assertions",
-@@ -4497,7 +4497,7 @@ dependencies = [
+@@ -4631,7 +4631,7 @@ dependencies = [
  
  [[package]]
  name = "codex-prompts"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-collaboration-mode-templates",
-@@ -4515,7 +4515,7 @@ dependencies = [
+@@ -4649,7 +4649,7 @@ dependencies = [
  
  [[package]]
  name = "codex-protocol"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "chardetng",
-@@ -4561,14 +4561,14 @@ dependencies = [
+@@ -4695,7 +4695,7 @@ dependencies = [
  
  [[package]]
  name = "codex-protocol-test-support"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-protocol",
- ]
+  "uuid",
+@@ -4703,7 +4703,7 @@ dependencies = [
  
  [[package]]
  name = "codex-queue-extension"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-core",
-@@ -4589,7 +4589,7 @@ dependencies = [
+@@ -4724,7 +4724,7 @@ dependencies = [
  
  [[package]]
  name = "codex-realtime-webrtc"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-build-info",
-@@ -4608,7 +4608,7 @@ dependencies = [
+@@ -4743,7 +4743,7 @@ dependencies = [
  
  [[package]]
  name = "codex-response-debug-context"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "base64 0.22.1",
   "codex-api",
-@@ -4619,7 +4619,7 @@ dependencies = [
+@@ -4754,7 +4754,7 @@ dependencies = [
  
  [[package]]
  name = "codex-responses-api-proxy"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "bytes",
-@@ -4643,7 +4643,7 @@ dependencies = [
+@@ -4778,7 +4778,7 @@ dependencies = [
  
  [[package]]
  name = "codex-rmcp-client"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "axum",
-@@ -4694,7 +4694,7 @@ dependencies = [
+@@ -4830,7 +4830,7 @@ dependencies = [
  
  [[package]]
  name = "codex-rollout"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "chrono",
-@@ -4727,7 +4727,7 @@ dependencies = [
+@@ -4863,7 +4863,7 @@ dependencies = [
  
  [[package]]
  name = "codex-rollout-trace"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-code-mode",
-@@ -4744,7 +4744,7 @@ dependencies = [
+@@ -4880,7 +4880,7 @@ dependencies = [
  
  [[package]]
  name = "codex-runtime-agent-instance"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "base64 0.22.1",
-  "codex-agent-identity",
-@@ -4770,7 +4770,7 @@ dependencies = [
+  "bytes",
+@@ -4909,7 +4909,7 @@ dependencies = [
  
  [[package]]
  name = "codex-sandboxing"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-mxc-sandbox",
-@@ -4798,7 +4798,7 @@ dependencies = [
+@@ -4937,7 +4937,7 @@ dependencies = [
  
  [[package]]
  name = "codex-secrets"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "age",
   "anyhow",
-@@ -4819,7 +4819,7 @@ dependencies = [
+@@ -4958,7 +4958,7 @@ dependencies = [
  
  [[package]]
  name = "codex-shell-command"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "base64 0.22.1",
-@@ -4842,7 +4842,7 @@ dependencies = [
+@@ -4981,7 +4981,7 @@ dependencies = [
  
  [[package]]
  name = "codex-skills"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-protocol",
   "codex-shell-command",
-@@ -4859,7 +4859,7 @@ dependencies = [
+@@ -4998,7 +4998,7 @@ dependencies = [
  
  [[package]]
  name = "codex-skills-extension"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "assert_matches",
   "blake3",
-@@ -4899,7 +4899,7 @@ dependencies = [
+@@ -5038,7 +5038,7 @@ dependencies = [
  
  [[package]]
  name = "codex-state"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "chrono",
-@@ -4928,7 +4928,7 @@ dependencies = [
+@@ -5067,7 +5067,7 @@ dependencies = [
  
  [[package]]
  name = "codex-stdio-to-uds"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-uds",
-@@ -4940,7 +4940,7 @@ dependencies = [
+@@ -5079,7 +5079,7 @@ dependencies = [
  
  [[package]]
  name = "codex-tcp-tunnel"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
-  "bytes",
-@@ -4961,7 +4961,7 @@ dependencies = [
+  "base64 0.22.1",
+@@ -5101,7 +5101,7 @@ dependencies = [
  
  [[package]]
  name = "codex-terminal-detection"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "pretty_assertions",
   "tracing",
-@@ -4969,7 +4969,7 @@ dependencies = [
+@@ -5109,7 +5109,7 @@ dependencies = [
  
  [[package]]
  name = "codex-test-binary-support"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-arg0",
   "tempfile",
-@@ -4977,7 +4977,7 @@ dependencies = [
+@@ -5117,7 +5117,7 @@ dependencies = [
  
  [[package]]
  name = "codex-thread-manager-sample"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "clap",
-@@ -4988,7 +4988,7 @@ dependencies = [
+@@ -5128,7 +5128,7 @@ dependencies = [
  
  [[package]]
  name = "codex-thread-store"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
+  "caseless",
   "chrono",
-  "codex-app-server-protocol",
-@@ -5019,7 +5019,7 @@ dependencies = [
+@@ -5161,7 +5161,7 @@ dependencies = [
  
  [[package]]
  name = "codex-tools"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "bitflags 2.13.1",
   "codex-attachment-store",
-@@ -5045,7 +5045,7 @@ dependencies = [
+@@ -5187,7 +5187,7 @@ dependencies = [
  
  [[package]]
  name = "codex-tui"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "app_test_support",
-@@ -5173,7 +5173,7 @@ dependencies = [
+@@ -5319,7 +5319,7 @@ dependencies = [
  
  [[package]]
  name = "codex-uds"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "async-io",
   "libc",
-@@ -5187,7 +5187,7 @@ dependencies = [
+@@ -5333,7 +5333,7 @@ dependencies = [
  
  [[package]]
  name = "codex-user-verification"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "base64 0.22.1",
   "block2",
-@@ -5208,7 +5208,7 @@ dependencies = [
+@@ -5354,7 +5354,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-absolute-path"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "dirs",
   "dunce",
-@@ -5222,14 +5222,14 @@ dependencies = [
+@@ -5368,14 +5368,14 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-approval-presets"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-protocol",
  ]
@@ -1532,43 +1542,43 @@ index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32
  [[package]]
  name = "codex-utils-audio"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "base64 0.22.1",
   "codex-protocol",
-@@ -5243,7 +5243,7 @@ dependencies = [
+@@ -5389,7 +5389,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-cache"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "lru",
   "sha1 0.10.6",
-@@ -5252,7 +5252,7 @@ dependencies = [
+@@ -5398,7 +5398,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-cargo-bin"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "assert_cmd",
   "runfiles",
-@@ -5261,7 +5261,7 @@ dependencies = [
+@@ -5407,7 +5407,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-cli"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "clap",
   "codex-protocol",
-@@ -5273,22 +5273,22 @@ dependencies = [
+@@ -5419,22 +5419,22 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-critical-path"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "pretty_assertions",
  ]
@@ -1576,26 +1586,26 @@ index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32
  [[package]]
  name = "codex-utils-elapsed"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  
  [[package]]
  name = "codex-utils-fuzzy-match"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  
  [[package]]
  name = "codex-utils-git-discovery"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-git-utils",
   "codex-utils-absolute-path",
-@@ -5301,14 +5301,14 @@ dependencies = [
+@@ -5447,14 +5447,14 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-head-tail-buffer"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "pretty_assertions",
  ]
@@ -1603,115 +1613,124 @@ index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32
  [[package]]
  name = "codex-utils-home-dir"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-utils-absolute-path",
   "dirs",
-@@ -5318,7 +5318,7 @@ dependencies = [
+@@ -5464,7 +5464,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-image"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "base64 0.22.1",
   "codex-utils-cache",
-@@ -5332,7 +5332,7 @@ dependencies = [
+@@ -5478,7 +5478,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-json-to-toml"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "pretty_assertions",
   "serde_json",
-@@ -5341,7 +5341,7 @@ dependencies = [
+@@ -5487,7 +5487,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "codex-utils-model-facing-id"
+-version = "0.0.0"
++version = "0.169.0"
+ dependencies = [
+  "blake3",
+  "pretty_assertions",
+@@ -5500,7 +5500,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-oss"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-core",
   "codex-lmstudio",
-@@ -5351,7 +5351,7 @@ dependencies = [
+@@ -5510,7 +5510,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-output-truncation"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-protocol",
   "codex-utils-string",
-@@ -5361,7 +5361,7 @@ dependencies = [
+@@ -5520,7 +5520,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-path"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-utils-absolute-path",
   "dunce",
-@@ -5372,7 +5372,7 @@ dependencies = [
+@@ -5531,7 +5531,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-path-uri"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "base64 0.22.1",
   "codex-utils-absolute-path",
-@@ -5388,7 +5388,7 @@ dependencies = [
+@@ -5547,7 +5547,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-plugins"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-exec-server",
   "codex-exec-server-protocol",
-@@ -5402,7 +5402,7 @@ dependencies = [
+@@ -5561,7 +5561,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-process"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "pretty_assertions",
   "tokio",
-@@ -5410,7 +5410,7 @@ dependencies = [
+@@ -5569,7 +5569,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-pty"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-utils-cargo-bin",
-@@ -5429,7 +5429,7 @@ dependencies = [
+@@ -5588,7 +5588,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-readiness"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "assert_matches",
   "thiserror 2.0.18",
-@@ -5439,7 +5439,7 @@ dependencies = [
+@@ -5598,7 +5598,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-redacted-string"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "schemars 0.8.22",
   "serde",
-@@ -5447,14 +5447,14 @@ dependencies = [
+@@ -5606,14 +5606,14 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-rustls-provider"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "rustls",
  ]
@@ -1719,25 +1738,25 @@ index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32
  [[package]]
  name = "codex-utils-sandbox-summary"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-protocol",
   "codex-utils-absolute-path",
-@@ -5464,7 +5464,7 @@ dependencies = [
+@@ -5623,7 +5623,7 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-sleep-inhibitor"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "core-foundation 0.9.4",
   "libc",
-@@ -5474,14 +5474,14 @@ dependencies = [
+@@ -5633,14 +5633,14 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-stream-parser"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "pretty_assertions",
  ]
@@ -1745,16 +1764,16 @@ index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32
  [[package]]
  name = "codex-utils-string"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "pretty_assertions",
   "regex-lite",
-@@ -5491,14 +5491,14 @@ dependencies = [
+@@ -5650,14 +5650,14 @@ dependencies = [
  
  [[package]]
  name = "codex-utils-template"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "pretty_assertions",
  ]
@@ -1762,70 +1781,70 @@ index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32
  [[package]]
  name = "codex-v8-poc"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "pretty_assertions",
   "v8",
-@@ -5506,7 +5506,7 @@ dependencies = [
+@@ -5665,7 +5665,7 @@ dependencies = [
  
  [[package]]
  name = "codex-voice-host"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-install-context",
-@@ -5533,7 +5533,7 @@ dependencies = [
+@@ -5692,7 +5692,7 @@ dependencies = [
  
  [[package]]
  name = "codex-web-search-extension"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-api",
   "codex-core",
-@@ -5557,7 +5557,7 @@ dependencies = [
+@@ -5716,7 +5716,7 @@ dependencies = [
  
  [[package]]
  name = "codex-websocket-auth"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "base64 0.22.1",
-@@ -5576,7 +5576,7 @@ dependencies = [
+@@ -5735,7 +5735,7 @@ dependencies = [
  
  [[package]]
  name = "codex-websocket-client"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-http-client",
   "codex-utils-rustls-provider",
-@@ -5592,7 +5592,7 @@ dependencies = [
+@@ -5751,7 +5751,7 @@ dependencies = [
  
  [[package]]
  name = "codex-windows-sandbox"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "base64 0.22.1",
-@@ -5622,7 +5622,7 @@ dependencies = [
+@@ -5782,7 +5782,7 @@ dependencies = [
  
  [[package]]
  name = "codex-windows-sandbox-service"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-cloud-config",
-@@ -5640,14 +5640,14 @@ dependencies = [
+@@ -5800,14 +5800,14 @@ dependencies = [
  
  [[package]]
  name = "codex-windows-sandbox-test-support"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "dirs",
  ]
@@ -1833,30 +1852,30 @@ index 2eae72dab578ac844d15ae8585f47ef2d1019607..ace2368771e8fff18b79d2578be34e32
  [[package]]
  name = "codex-workload-identity"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "codex-http-client",
   "pretty_assertions",
-@@ -5662,7 +5662,7 @@ dependencies = [
+@@ -5822,7 +5822,7 @@ dependencies = [
  
  [[package]]
  name = "codex-worktree"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "codex-git-utils",
-@@ -5915,7 +5915,7 @@ dependencies = [
+@@ -6075,7 +6075,7 @@ dependencies = [
  
  [[package]]
  name = "core_test_support"
 -version = "0.0.0"
-+version = "0.167.0"
++version = "0.169.0"
  dependencies = [
   "anyhow",
   "assert_cmd",
 diff --git a/codex-rs/agent-roles/src/lib.rs b/codex-rs/agent-roles/src/lib.rs
-index 0ad2a7bd9af739e8acdc2703267b3257a9872a14..a03a718a0ba28f0d303f29496adc794a45dfc17f 100644
+index 0ad2a7b..a03a718 100644
 --- a/codex-rs/agent-roles/src/lib.rs
 +++ b/codex-rs/agent-roles/src/lib.rs
 @@ -5,4 +5,6 @@ mod loader;
@@ -1867,7 +1886,7 @@ index 0ad2a7bd9af739e8acdc2703267b3257a9872a14..a03a718a0ba28f0d303f29496adc794a
  pub use loader::load_agent_roles;
 +pub use loader::load_agent_roles_with_project_fs;
 diff --git a/codex-rs/agent-roles/src/loader.rs b/codex-rs/agent-roles/src/loader.rs
-index a82649b8e10debe7a2b3c7e21e2e861d557ea3b7..f25cd53522fd6ff23b1bde5cd49f5ca6e0337a33 100644
+index a82649b..f25cd53 100644
 --- a/codex-rs/agent-roles/src/loader.rs
 +++ b/codex-rs/agent-roles/src/loader.rs
 @@ -4,7 +4,9 @@ use crate::agent_role_config::normalize_agent_role_description;
@@ -2078,7 +2097,7 @@ index a82649b8e10debe7a2b3c7e21e2e861d557ea3b7..f25cd53522fd6ff23b1bde5cd49f5ca6
                      continue;
                  }
 diff --git a/codex-rs/app-server/BUILD.bazel b/codex-rs/app-server/BUILD.bazel
-index 051a7dd8e4d30139a48e34c62f3af3eae7d11b8a..449563d3f4ccf3d050f8f3e1327140a9a2a748d8 100644
+index 051a7dd..449563d 100644
 --- a/codex-rs/app-server/BUILD.bazel
 +++ b/codex-rs/app-server/BUILD.bazel
 @@ -14,6 +14,7 @@ codex_rust_crate(
@@ -2091,7 +2110,7 @@ index 051a7dd8e4d30139a48e34c62f3af3eae7d11b8a..449563d3f4ccf3d050f8f3e1327140a9
          # even a single shard can be quite slow. When there is a legitimate
 diff --git a/codex-rs/app-server/src/bootstrap.rs b/codex-rs/app-server/src/bootstrap.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..f1e5350036d5c20350cbb7ab1921132c5258d385
+index 0000000..f1e5350
 --- /dev/null
 +++ b/codex-rs/app-server/src/bootstrap.rs
 @@ -0,0 +1,96 @@
@@ -2192,7 +2211,7 @@ index 0000000000000000000000000000000000000000..f1e5350036d5c20350cbb7ab1921132c
 +    }
 +}
 diff --git a/codex-rs/app-server/src/command_exec.rs b/codex-rs/app-server/src/command_exec.rs
-index c71aff3ddf22da4958d09351b9d70f05a68d9a4b..54849ef5e4a134f88a4713ff57c228cba304cb18 100644
+index c71aff3..54849ef 100644
 --- a/codex-rs/app-server/src/command_exec.rs
 +++ b/codex-rs/app-server/src/command_exec.rs
 @@ -44,6 +44,10 @@ use crate::outgoing_message::OutgoingMessageSender;
@@ -2208,7 +2227,7 @@ index c71aff3ddf22da4958d09351b9d70f05a68d9a4b..54849ef5e4a134f88a4713ff57c228cb
      sessions: Arc<Mutex<HashMap<ConnectionProcessId, CommandExecSession>>>,
 diff --git a/codex-rs/app-server/src/command_exec_executor.rs b/codex-rs/app-server/src/command_exec_executor.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..d8e88b5037e8e94d6e0a4325a90271a1f5a6caf7
+index 0000000..d8e88b5
 --- /dev/null
 +++ b/codex-rs/app-server/src/command_exec_executor.rs
 @@ -0,0 +1,361 @@
@@ -2575,7 +2594,7 @@ index 0000000000000000000000000000000000000000..d8e88b5037e8e94d6e0a4325a90271a1
 +mod tests;
 diff --git a/codex-rs/app-server/src/command_exec_executor_tests.rs b/codex-rs/app-server/src/command_exec_executor_tests.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..fbcddd72c2b05b1811e55ae9e7155761a798278b
+index 0000000..fbcddd7
 --- /dev/null
 +++ b/codex-rs/app-server/src/command_exec_executor_tests.rs
 @@ -0,0 +1,391 @@
@@ -2971,7 +2990,7 @@ index 0000000000000000000000000000000000000000..fbcddd72c2b05b1811e55ae9e7155761
 +    assert!(backend.params.lock().await.is_empty());
 +}
 diff --git a/codex-rs/app-server/src/config_manager.rs b/codex-rs/app-server/src/config_manager.rs
-index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d30a6e4298 100644
+index 3495e6c..5d1574d 100644
 --- a/codex-rs/app-server/src/config_manager.rs
 +++ b/codex-rs/app-server/src/config_manager.rs
 @@ -4,13 +4,18 @@ use codex_cloud_config::managed_config_bundle_loader;
@@ -3122,7 +3141,7 @@ index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d3
      pub(crate) fn user_config_path(&self) -> std::io::Result<AbsolutePathBuf> {
          self.loader_overrides.user_config_path(self.codex_home())
      }
-@@ -296,11 +392,12 @@ impl ConfigManager {
+@@ -300,11 +396,12 @@ impl ConfigManager {
          let layers = self
              .load_config_layers_for_cwd(AbsolutePathBuf::from_absolute_path(cwd)?)
              .await?;
@@ -3136,7 +3155,7 @@ index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d3
          )
          .await?;
          self.apply_network_policy(&mut config);
-@@ -325,11 +422,12 @@ impl ConfigManager {
+@@ -329,11 +426,12 @@ impl ConfigManager {
              .load_config_layers_for_cwd(AbsolutePathBuf::from_absolute_path(cwd)?)
              .await?;
          // Merge the retained provider definitions before resolving managed provider selection.
@@ -3150,7 +3169,7 @@ index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d3
          )
          .await?;
          self.apply_network_policy(&mut config);
-@@ -478,6 +576,24 @@ impl ConfigManager {
+@@ -461,6 +559,24 @@ impl ConfigManager {
          }
      }
  
@@ -3175,7 +3194,7 @@ index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d3
      pub(crate) async fn load_default_config(&self) -> std::io::Result<Config> {
          let mcp_ema_cancellation = self.capture_mcp_ema_cancellation();
          let mut loader_overrides = self.loader_overrides.clone();
-@@ -710,7 +826,32 @@ impl ConfigManager {
+@@ -685,7 +801,32 @@ impl ConfigManager {
                      .map(|(key, value)| (key, json_to_toml(value))),
              )
              .collect::<Vec<_>>();
@@ -3209,7 +3228,7 @@ index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d3
              .codex_home(self.codex_home.clone())
              .cli_overrides(merged_cli_overrides)
              .loader_overrides(self.loader_overrides.clone())
-@@ -718,10 +859,11 @@ impl ConfigManager {
+@@ -693,10 +834,11 @@ impl ConfigManager {
              .harness_overrides(typesafe_overrides)
              .fallback_cwd(fallback_cwd)
              .cloud_config_bundle(policy_load.cloud_config.clone())
@@ -3225,7 +3244,7 @@ index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d3
          self.check_application_policy_load(&policy_load)?;
          self.apply_network_policy(&mut config);
          self.apply_runtime_feature_enablement(&mut config);
-@@ -732,6 +874,24 @@ impl ConfigManager {
+@@ -707,6 +849,24 @@ impl ConfigManager {
          Ok(config)
      }
  
@@ -3250,7 +3269,7 @@ index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d3
      pub(crate) async fn load_config_layers_for_cwd(
          &self,
          cwd: AbsolutePathBuf,
-@@ -744,19 +904,38 @@ impl ConfigManager {
+@@ -719,19 +879,38 @@ impl ConfigManager {
          cwd: Option<AbsolutePathBuf>,
      ) -> std::io::Result<ConfigLayerStack> {
          let policy_load = self.refresh_application_network_policy().await?;
@@ -3260,7 +3279,7 @@ index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d3
 -            cwd,
 -            &self.current_cli_overrides(),
 -            codex_config::ConfigLoadOptions {
--                loader_overrides: self.loader_overrides.clone(),
+-                loader_overrides: self.loader_overrides().clone(),
 -                strict_config: self.strict_config,
 -                cloud_config_bundle: policy_load.cloud_config.clone(),
 -            },
@@ -3302,7 +3321,7 @@ index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d3
          let layers = result?;
          self.check_application_policy_load(&policy_load)?;
          Ok(layers)
-@@ -789,6 +968,19 @@ impl ConfigManager {
+@@ -764,6 +943,19 @@ impl ConfigManager {
          );
      }
  
@@ -3322,7 +3341,7 @@ index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d3
      fn apply_arg0_paths(&self, config: &mut Config) {
          config.codex_self_exe = self.arg0_paths.codex_self_exe.clone();
          config.codex_linux_sandbox_exe = self.arg0_paths.codex_linux_sandbox_exe.clone();
-@@ -858,7 +1050,19 @@ pub(crate) fn apply_runtime_feature_enablement(
+@@ -833,7 +1025,19 @@ pub(crate) fn apply_runtime_feature_enablement(
          .iter()
          .filter_map(|(name, enabled)| feature_for_key(name).map(|feature| (feature, *enabled)))
          .collect();
@@ -3343,7 +3362,7 @@ index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d3
      for (name, enabled) in runtime_feature_enablement {
          if protected_features.contains(name) {
              continue;
-@@ -866,7 +1070,7 @@ pub(crate) fn apply_runtime_feature_enablement(
+@@ -841,7 +1045,7 @@ pub(crate) fn apply_runtime_feature_enablement(
          let Some(feature) = feature_for_key(name) else {
              continue;
          };
@@ -3352,7 +3371,7 @@ index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d3
              warn!(
                  feature = name,
                  error = %err,
-@@ -875,3 +1079,7 @@ pub(crate) fn apply_runtime_feature_enablement(
+@@ -850,3 +1054,7 @@ pub(crate) fn apply_runtime_feature_enablement(
          }
      }
  }
@@ -3362,7 +3381,7 @@ index 461920b677da7a40530837e354d89190ad18550f..a21c1ae41f6c99964871c82d80cca8d3
 +mod project_tests;
 diff --git a/codex-rs/app-server/src/config_manager_project_tests.rs b/codex-rs/app-server/src/config_manager_project_tests.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..65c6f1a0bd66494b2d6d4a9d4a8b5c66ab9381d0
+index 0000000..65c6f1a
 --- /dev/null
 +++ b/codex-rs/app-server/src/config_manager_project_tests.rs
 @@ -0,0 +1,308 @@
@@ -3675,10 +3694,10 @@ index 0000000000000000000000000000000000000000..65c6f1a0bd66494b2d6d4a9d4a8b5c66
 +    Ok(())
 +}
 diff --git a/codex-rs/app-server/src/config_manager_service.rs b/codex-rs/app-server/src/config_manager_service.rs
-index 532494fc3ba5e6b664bc52e6881f0ca3f5d74d59..a71fdf74a51b289b4d52c0edb67a0bca7fcfddd9 100644
+index 25d51ed..4d240a2 100644
 --- a/codex-rs/app-server/src/config_manager_service.rs
 +++ b/codex-rs/app-server/src/config_manager_service.rs
-@@ -133,6 +133,15 @@ impl ConfigManager {
+@@ -137,6 +137,15 @@ impl ConfigManager {
          &self,
          params: ConfigReadParams,
      ) -> Result<ConfigReadResponse, ConfigManagerError> {
@@ -3694,7 +3713,7 @@ index 532494fc3ba5e6b664bc52e6881f0ca3f5d74d59..a71fdf74a51b289b4d52c0edb67a0bca
          let layers = match params.cwd.as_deref() {
              Some(cwd) => {
                  let cwd = AbsolutePathBuf::try_from(PathBuf::from(cwd)).map_err(|err| {
-@@ -200,7 +209,7 @@ impl ConfigManager {
+@@ -208,7 +217,7 @@ impl ConfigManager {
              }
          }
  
@@ -3705,7 +3724,7 @@ index 532494fc3ba5e6b664bc52e6881f0ca3f5d74d59..a71fdf74a51b289b4d52c0edb67a0bca
      pub(crate) async fn read_requirements(
 diff --git a/codex-rs/app-server/src/host_filesystem.rs b/codex-rs/app-server/src/host_filesystem.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..2f4d48a25aada6a4e31a26d7833369fc7236189a
+index 0000000..2f4d48a
 --- /dev/null
 +++ b/codex-rs/app-server/src/host_filesystem.rs
 @@ -0,0 +1,119 @@
@@ -3830,7 +3849,7 @@ index 0000000000000000000000000000000000000000..2f4d48a25aada6a4e31a26d7833369fc
 +}
 diff --git a/codex-rs/app-server/src/host_process.rs b/codex-rs/app-server/src/host_process.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..4d7aafebddc922ec483dc204bebcdde4f949a0ad
+index 0000000..4d7aafe
 --- /dev/null
 +++ b/codex-rs/app-server/src/host_process.rs
 @@ -0,0 +1,83 @@
@@ -3918,10 +3937,10 @@ index 0000000000000000000000000000000000000000..4d7aafebddc922ec483dc204bebcdde4
 +    }
 +}
 diff --git a/codex-rs/app-server/src/in_process.rs b/codex-rs/app-server/src/in_process.rs
-index 8073046e59f96292983a727fda970f747ca3a02e..fb352a682c04dbc8876ee5189566c1e58204d231 100644
+index 0b1859f..e06b172 100644
 --- a/codex-rs/app-server/src/in_process.rs
 +++ b/codex-rs/app-server/src/in_process.rs
-@@ -442,7 +442,8 @@ async fn start_uninitialized(mut args: InProcessStartArgs) -> IoResult<InProcess
+@@ -443,7 +443,8 @@ async fn start_uninitialized(mut args: InProcessStartArgs) -> IoResult<InProcess
          args.arg0_paths.clone(),
          args.thread_config_loader,
      )
@@ -3931,7 +3950,7 @@ index 8073046e59f96292983a727fda970f747ca3a02e..fb352a682c04dbc8876ee5189566c1e5
      // Keep the caller's project context independent of any fallback policy config.
      let startup_cwd =
          (!args.config.config_layer_stack.is_projectless()).then(|| args.config.cwd.to_path_buf());
-@@ -517,6 +518,8 @@ async fn start_uninitialized(mut args: InProcessStartArgs) -> IoResult<InProcess
+@@ -526,6 +527,8 @@ async fn start_uninitialized(mut args: InProcessStartArgs) -> IoResult<InProcess
                  startup_cwd,
                  config_manager,
                  environment_manager: args.environment_manager,
@@ -3941,10 +3960,10 @@ index 8073046e59f96292983a727fda970f747ca3a02e..fb352a682c04dbc8876ee5189566c1e5
                  log_db: args.log_db,
                  state_db: args.state_db,
 diff --git a/codex-rs/app-server/src/lib.rs b/codex-rs/app-server/src/lib.rs
-index b3aa3b978b07b23f6cb33ee560fc0929efd632fc..4108c435ce6ec5a7e0933d2d6d23bcb72d9f00a5 100644
+index 7a2892b..e7277f6 100644
 --- a/codex-rs/app-server/src/lib.rs
 +++ b/codex-rs/app-server/src/lib.rs
-@@ -101,6 +101,18 @@ mod app_server_tracing;
+@@ -104,6 +104,18 @@ mod app_server_tracing;
  mod attestation;
  mod auth_mode;
  mod bespoke_event_handling;
@@ -3963,7 +3982,7 @@ index b3aa3b978b07b23f6cb33ee560fc0929efd632fc..4108c435ce6ec5a7e0933d2d6d23bcb7
  mod code_mode_host;
  mod codex_home_metrics;
  mod command_exec;
-@@ -515,8 +527,15 @@ pub async fn run_main_with_transport_options(
+@@ -518,8 +530,15 @@ pub async fn run_main_with_transport_options(
      transport: AppServerTransport,
      session_source: SessionSource,
      auth: WebsocketAuthSettings,
@@ -3980,7 +3999,7 @@ index b3aa3b978b07b23f6cb33ee560fc0929efd632fc..4108c435ce6ec5a7e0933d2d6d23bcb7
      let cloud_skill_provider = match runtime_options.cloud_skills_snapshot {
          Some(path) => {
              let provider = tokio::task::spawn_blocking(move || {
-@@ -633,19 +652,26 @@ pub async fn run_main_with_transport_options(
+@@ -636,19 +655,26 @@ pub async fn run_main_with_transport_options(
      let environment_http_client_factory = config
          .http_client_factory()
          .with_network_policy(config.application_network_policy.clone());
@@ -4015,7 +4034,7 @@ index b3aa3b978b07b23f6cb33ee560fc0929efd632fc..4108c435ce6ec5a7e0933d2d6d23bcb7
  
      let otel = codex_core::otel_init::build_provider(
          &config,
-@@ -1015,6 +1041,8 @@ pub async fn run_main_with_transport_options(
+@@ -1036,6 +1062,8 @@ pub async fn run_main_with_transport_options(
              startup_cwd,
              config_manager,
              environment_manager,
@@ -4024,7 +4043,7 @@ index b3aa3b978b07b23f6cb33ee560fc0929efd632fc..4108c435ce6ec5a7e0933d2d6d23bcb7
              feedback: feedback.clone(),
              log_db,
              state_db: state_db.clone(),
-@@ -1113,6 +1141,11 @@ pub async fn run_main_with_transport_options(
+@@ -1135,6 +1163,11 @@ pub async fn run_main_with_transport_options(
                  }
  
                  tokio::select! {
@@ -4037,7 +4056,7 @@ index b3aa3b978b07b23f6cb33ee560fc0929efd632fc..4108c435ce6ec5a7e0933d2d6d23bcb7
                          snapshot_finished = true;
                      }
 diff --git a/codex-rs/app-server/src/main.rs b/codex-rs/app-server/src/main.rs
-index 9e527dea7010411526fa139cb76bca84060f14a2..6ef956db09d0f387fafce8c88fca85e59d3f141c 100644
+index 9e527de..6ef956d 100644
 --- a/codex-rs/app-server/src/main.rs
 +++ b/codex-rs/app-server/src/main.rs
 @@ -39,6 +39,9 @@ struct AppServerArgs {
@@ -4086,10 +4105,10 @@ index 9e527dea7010411526fa139cb76bca84060f14a2..6ef956db09d0f387fafce8c88fca85e5
          }
          Ok(())
 diff --git a/codex-rs/app-server/src/message_processor.rs b/codex-rs/app-server/src/message_processor.rs
-index c234acbc8b2a9e6cafaf1d88c433ee648ebcd49a..8682900589e293d15a84b1ce703db19247acd963 100644
+index 4bf10fc..7b56674 100644
 --- a/codex-rs/app-server/src/message_processor.rs
 +++ b/codex-rs/app-server/src/message_processor.rs
-@@ -265,6 +265,8 @@ pub(crate) struct MessageProcessorArgs {
+@@ -269,6 +269,8 @@ pub(crate) struct MessageProcessorArgs {
      pub(crate) startup_cwd: Option<std::path::PathBuf>,
      pub(crate) config_manager: ConfigManager,
      pub(crate) environment_manager: Arc<EnvironmentManager>,
@@ -4098,7 +4117,7 @@ index c234acbc8b2a9e6cafaf1d88c433ee648ebcd49a..8682900589e293d15a84b1ce703db192
      pub(crate) feedback: CodexFeedback,
      pub(crate) log_db: Option<LogDbLayer>,
      pub(crate) state_db: Option<StateDbHandle>,
-@@ -294,6 +296,8 @@ impl MessageProcessor {
+@@ -299,6 +301,8 @@ impl MessageProcessor {
              startup_cwd,
              config_manager,
              environment_manager,
@@ -4107,7 +4126,7 @@ index c234acbc8b2a9e6cafaf1d88c433ee648ebcd49a..8682900589e293d15a84b1ce703db192
              feedback,
              log_db,
              state_db,
-@@ -472,6 +476,7 @@ impl MessageProcessor {
+@@ -507,6 +511,7 @@ impl MessageProcessor {
          let process_exec_processor = ProcessExecRequestProcessor::new(
              outgoing.clone(),
              Arc::clone(&environment_manager_for_requests),
@@ -4115,7 +4134,7 @@ index c234acbc8b2a9e6cafaf1d88c433ee648ebcd49a..8682900589e293d15a84b1ce703db192
          );
          let feedback_processor = FeedbackRequestProcessor::new(
              auth_manager.clone(),
-@@ -603,6 +608,7 @@ impl MessageProcessor {
+@@ -635,6 +640,7 @@ impl MessageProcessor {
          let fs_processor = FsRequestProcessor::new(
              Arc::clone(&environment_manager_for_requests),
              FsWatchManager::new(outgoing.clone()),
@@ -4124,10 +4143,10 @@ index c234acbc8b2a9e6cafaf1d88c433ee648ebcd49a..8682900589e293d15a84b1ce703db192
          let windows_sandbox_processor = WindowsSandboxRequestProcessor::new(
              outgoing.clone(),
 diff --git a/codex-rs/app-server/src/message_processor_tracing_tests.rs b/codex-rs/app-server/src/message_processor_tracing_tests.rs
-index aeff494f090b4b14ca7bbabf70e5061e501e17be..4a1ab168754b1fa76a82cdca806153ba5bdefcd2 100644
+index 9f85ed0..503a622 100644
 --- a/codex-rs/app-server/src/message_processor_tracing_tests.rs
 +++ b/codex-rs/app-server/src/message_processor_tracing_tests.rs
-@@ -269,6 +269,8 @@ pub(super) async fn build_test_processor(
+@@ -272,6 +272,8 @@ pub(super) async fn build_test_processor(
          config,
          config_manager,
          environment_manager: Arc::new(EnvironmentManager::default_for_tests()),
@@ -4138,7 +4157,7 @@ index aeff494f090b4b14ca7bbabf70e5061e501e17be..4a1ab168754b1fa76a82cdca806153ba
          state_db: None,
 diff --git a/codex-rs/app-server/src/native_bootstrap.rs b/codex-rs/app-server/src/native_bootstrap.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..54ae8e4b9703275a02125a57d5f5d2c577d63e00
+index 0000000..54ae8e4
 --- /dev/null
 +++ b/codex-rs/app-server/src/native_bootstrap.rs
 @@ -0,0 +1,366 @@
@@ -4509,7 +4528,7 @@ index 0000000000000000000000000000000000000000..54ae8e4b9703275a02125a57d5f5d2c5
 +    }
 +}
 diff --git a/codex-rs/app-server/src/request_processors/command_exec_processor.rs b/codex-rs/app-server/src/request_processors/command_exec_processor.rs
-index 1d5c3c7056057512591ff64d952947495176fe75..0363f5ae6d6a0e5c440e4792de9e2d213c6e3046 100644
+index 1d5c3c7..0363f5a 100644
 --- a/codex-rs/app-server/src/request_processors/command_exec_processor.rs
 +++ b/codex-rs/app-server/src/request_processors/command_exec_processor.rs
 @@ -1,8 +1,14 @@
@@ -4708,10 +4727,10 @@ index 1d5c3c7056057512591ff64d952947495176fe75..0363f5ae6d6a0e5c440e4792de9e2d21
              .start(StartCommandExecParams {
                  outgoing,
 diff --git a/codex-rs/app-server/src/request_processors/config_processor.rs b/codex-rs/app-server/src/request_processors/config_processor.rs
-index 5a47e3e0f2679a96f203bfbb910bde78abeb584e..9d1248519ac84a54c8dfcbd5b87aa30c05558069 100644
+index 79453de..55c6cfa 100644
 --- a/codex-rs/app-server/src/request_processors/config_processor.rs
 +++ b/codex-rs/app-server/src/request_processors/config_processor.rs
-@@ -113,8 +113,28 @@ impl ConfigRequestProcessor {
+@@ -115,8 +115,28 @@ impl ConfigRequestProcessor {
          params: ConfigReadParams,
      ) -> Result<ConfigReadResponse, JSONRPCErrorError> {
          let fallback_cwd = params.cwd.as_ref().map(PathBuf::from);
@@ -4742,7 +4761,7 @@ index 5a47e3e0f2679a96f203bfbb910bde78abeb584e..9d1248519ac84a54c8dfcbd5b87aa30c
          for feature_key in SUPPORTED_EXPERIMENTAL_FEATURE_ENABLEMENT {
              let Some(feature) = feature_for_key(feature_key) else {
                  continue;
-@@ -130,7 +150,7 @@ impl ConfigRequestProcessor {
+@@ -132,7 +152,7 @@ impl ConfigRequestProcessor {
              if let Some(features) = features.as_object_mut() {
                  features.insert(
                      (*feature_key).to_string(),
@@ -4752,7 +4771,7 @@ index 5a47e3e0f2679a96f203bfbb910bde78abeb584e..9d1248519ac84a54c8dfcbd5b87aa30c
              }
          }
 diff --git a/codex-rs/app-server/src/request_processors/fs_processor.rs b/codex-rs/app-server/src/request_processors/fs_processor.rs
-index 5767af6124a0aec799f854aeb0d0daff1c7387e1..aa357f0184250e9eee695e6de76ac66ea213620a 100644
+index 5767af6..aa357f0 100644
 --- a/codex-rs/app-server/src/request_processors/fs_processor.rs
 +++ b/codex-rs/app-server/src/request_processors/fs_processor.rs
 @@ -37,20 +37,29 @@ use std::sync::Arc;
@@ -4886,10 +4905,10 @@ index 5767af6124a0aec799f854aeb0d0daff1c7387e1..aa357f0184250e9eee695e6de76ac66e
      }
  }
 diff --git a/codex-rs/app-server/src/request_processors/plugins.rs b/codex-rs/app-server/src/request_processors/plugins.rs
-index 159641f0bd93f9a69f28fb4afb4f5a0e171b8be0..7d381393f389377fa95dec5bbd7587660ca81953 100644
+index ed74f92..8f2405b 100644
 --- a/codex-rs/app-server/src/request_processors/plugins.rs
 +++ b/codex-rs/app-server/src/request_processors/plugins.rs
-@@ -1028,7 +1028,15 @@ impl PluginRequestProcessor {
+@@ -1054,7 +1054,15 @@ impl PluginRequestProcessor {
              marketplace_path.as_path().parent().map(Path::to_path_buf)
          });
  
@@ -4906,7 +4925,7 @@ index 159641f0bd93f9a69f28fb4afb4f5a0e171b8be0..7d381393f389377fa95dec5bbd758766
          let auth = match self.auth_manager.auth_with_http_client_factory().await {
              Some((auth, factory)) => {
                  config.application_network_policy = factory.network_policy().clone();
-@@ -1506,7 +1514,13 @@ impl PluginRequestProcessor {
+@@ -1542,7 +1550,13 @@ impl PluginRequestProcessor {
              }
          };
          let config_cwd = marketplace_path.as_path().parent().map(Path::to_path_buf);
@@ -4921,7 +4940,7 @@ index 159641f0bd93f9a69f28fb4afb4f5a0e171b8be0..7d381393f389377fa95dec5bbd758766
          let auth = match self.auth_manager.auth_with_http_client_factory().await {
              Some((auth, factory)) => {
                  config.application_network_policy = factory.network_policy().clone();
-@@ -1537,7 +1551,7 @@ impl PluginRequestProcessor {
+@@ -1573,7 +1587,7 @@ impl PluginRequestProcessor {
                  return Err(Self::plugin_install_error(err));
              }
          };
@@ -4931,7 +4950,7 @@ index 159641f0bd93f9a69f28fb4afb4f5a0e171b8be0..7d381393f389377fa95dec5bbd758766
                  // Keep the policy captured with this installation's auth snapshot.
                  reloaded_config.application_network_policy = config.application_network_policy;
 diff --git a/codex-rs/app-server/src/request_processors/process_exec_processor.rs b/codex-rs/app-server/src/request_processors/process_exec_processor.rs
-index e1f6b9d7ad22ace5a97a051476b627f06c738a4a..380f763e2de3e3c78986e0bc30e25a86dc901cc9 100644
+index e1f6b9d..380f763 100644
 --- a/codex-rs/app-server/src/request_processors/process_exec_processor.rs
 +++ b/codex-rs/app-server/src/request_processors/process_exec_processor.rs
 @@ -52,17 +52,20 @@ pub(crate) struct ProcessExecRequestProcessor {
@@ -5058,7 +5077,7 @@ index e1f6b9d7ad22ace5a97a051476b627f06c738a4a..380f763e2de3e3c78986e0bc30e25a86
      let stderr = stderr_handle.await.unwrap_or_default();
      outgoing
 diff --git a/codex-rs/app-server/src/request_processors/thread_lifecycle.rs b/codex-rs/app-server/src/request_processors/thread_lifecycle.rs
-index b9062d6e7a9d15ec5f79a7858993051bb7509e7a..bcb5bc10949a73f260f57afe5d83987dc585a8fa 100644
+index b9062d6..bcb5bc1 100644
 --- a/codex-rs/app-server/src/request_processors/thread_lifecycle.rs
 +++ b/codex-rs/app-server/src/request_processors/thread_lifecycle.rs
 @@ -17,6 +17,22 @@ use std::borrow::Cow;
@@ -5094,10 +5113,10 @@ index b9062d6e7a9d15ec5f79a7858993051bb7509e7a..bcb5bc10949a73f260f57afe5d83987d
                  thread_status_rx,
              ),
 diff --git a/codex-rs/app-server/src/request_processors/thread_processor.rs b/codex-rs/app-server/src/request_processors/thread_processor.rs
-index 36d9f435ae87a9d9b566f86da5e8d38cea5dc220..d709037c4ff6fd1bd86f9aa32a18b24be45e51dd 100644
+index 75761a2..f3c9815 100644
 --- a/codex-rs/app-server/src/request_processors/thread_processor.rs
 +++ b/codex-rs/app-server/src/request_processors/thread_processor.rs
-@@ -46,6 +46,9 @@ use codex_protocol::protocol::ThreadHistoryMode;
+@@ -54,6 +54,9 @@ use codex_thread_store::PendingDaybreakPreference;
  use codex_thread_store::PersistContext;
  use std::ops::ControlFlow;
  
@@ -5107,7 +5126,7 @@ index 36d9f435ae87a9d9b566f86da5e8d38cea5dc220..d709037c4ff6fd1bd86f9aa32a18b24b
  pub(super) const THREAD_LIST_DEFAULT_LIMIT: usize = 25;
  pub(super) const THREAD_LIST_MAX_LIMIT: usize = 100;
  const THREAD_LIST_MAX_EXCLUDED_IDS: usize = 100;
-@@ -1454,6 +1457,10 @@ impl ThreadRequestProcessor {
+@@ -1473,6 +1476,10 @@ impl ThreadRequestProcessor {
      ) -> Result<(), JSONRPCErrorError> {
          let thread_start_started_at = std::time::Instant::now();
          let requested_cwd = typesafe_overrides.cwd.clone();
@@ -5118,7 +5137,7 @@ index 36d9f435ae87a9d9b566f86da5e8d38cea5dc220..d709037c4ff6fd1bd86f9aa32a18b24b
          let mut config = config_manager
              .load_with_overrides(config_overrides.clone(), typesafe_overrides.clone())
              .await
-@@ -1481,17 +1488,14 @@ impl ThreadRequestProcessor {
+@@ -1500,17 +1507,14 @@ impl ThreadRequestProcessor {
              && !config.config_layer_stack.is_projectless()
              && effective_permissions_trust_project
          {
@@ -5140,7 +5159,7 @@ index 36d9f435ae87a9d9b566f86da5e8d38cea5dc220..d709037c4ff6fd1bd86f9aa32a18b24b
                  warn!(
                      "failed to persist trusted project state for {}; continuing with in-memory trust for this thread: {err}",
                      trust_target.display()
-@@ -1502,10 +1506,7 @@ impl ThreadRequestProcessor {
+@@ -1521,10 +1525,7 @@ impl ThreadRequestProcessor {
                      TomlValue::String("trusted".to_string()),
                  );
                  let mut projects = toml::map::Map::new();
@@ -5152,7 +5171,7 @@ index 36d9f435ae87a9d9b566f86da5e8d38cea5dc220..d709037c4ff6fd1bd86f9aa32a18b24b
                  cli_overrides_with_trust = current_cli_overrides
                      .iter()
                      .cloned()
-@@ -2474,6 +2475,9 @@ impl ThreadRequestProcessor {
+@@ -2493,6 +2494,9 @@ impl ThreadRequestProcessor {
              config.service_tier.clone_from(service_tier);
          }
          config.personality = settings.personality;
@@ -5162,7 +5181,7 @@ index 36d9f435ae87a9d9b566f86da5e8d38cea5dc220..d709037c4ff6fd1bd86f9aa32a18b24b
          let thread_id_string = thread_id.to_string();
          let stored_thread = self
              .read_stored_thread_for_resume(
-@@ -2496,12 +2500,18 @@ impl ThreadRequestProcessor {
+@@ -2515,12 +2519,18 @@ impl ThreadRequestProcessor {
              ..
          } = self
              .thread_manager
@@ -5188,7 +5207,7 @@ index 36d9f435ae87a9d9b566f86da5e8d38cea5dc220..d709037c4ff6fd1bd86f9aa32a18b24b
              .map_err(|err| internal_error(format!("error reloading thread after revert: {err}")))?;
 diff --git a/codex-rs/app-server/src/request_processors/thread_project_trust.rs b/codex-rs/app-server/src/request_processors/thread_project_trust.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..d19c2c3abd07b44a5c3fbc7a0cce97230d6573f1
+index 0000000..d19c2c3
 --- /dev/null
 +++ b/codex-rs/app-server/src/request_processors/thread_project_trust.rs
 @@ -0,0 +1,57 @@
@@ -5250,10 +5269,10 @@ index 0000000000000000000000000000000000000000..d19c2c3abd07b44a5c3fbc7a0cce9723
 +        .apply_blocking()
 +}
 diff --git a/codex-rs/app-server/src/request_processors/turn_processor.rs b/codex-rs/app-server/src/request_processors/turn_processor.rs
-index eeed287866855aa900f32015f43fba578109cece..657af02ee378e182b1dda164af1fac047e7c9d40 100644
+index 6a69cc8..bffe2e7 100644
 --- a/codex-rs/app-server/src/request_processors/turn_processor.rs
 +++ b/codex-rs/app-server/src/request_processors/turn_processor.rs
-@@ -898,8 +898,15 @@ impl TurnRequestProcessor {
+@@ -929,8 +929,15 @@ impl TurnRequestProcessor {
                      || snapshot.cwd().clone(),
                      |environment_requests| environment_requests.legacy_fallback_cwd.clone(),
                  );
@@ -5273,7 +5292,7 @@ index eeed287866855aa900f32015f43fba578109cece..657af02ee378e182b1dda164af1fac04
                      .map_err(|error| config_load_error(&error))?;
 diff --git a/codex-rs/app-server/tests/native_startup.rs b/codex-rs/app-server/tests/native_startup.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..c5fef4d5500fdbbc3e7c626fa44e294397561c60
+index 0000000..c5fef4d
 --- /dev/null
 +++ b/codex-rs/app-server/tests/native_startup.rs
 @@ -0,0 +1,152 @@
@@ -5431,7 +5450,7 @@ index 0000000000000000000000000000000000000000..c5fef4d5500fdbbc3e7c626fa44e2943
 +}
 diff --git a/codex-rs/app-server/tests/suite/v2/injected_command_exec.rs b/codex-rs/app-server/tests/suite/v2/injected_command_exec.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..9f06efae39a4d50012d5ea88f257410db890043f
+index 0000000..9f06efa
 --- /dev/null
 +++ b/codex-rs/app-server/tests/suite/v2/injected_command_exec.rs
 @@ -0,0 +1,281 @@
@@ -5718,7 +5737,7 @@ index 0000000000000000000000000000000000000000..9f06efae39a4d50012d5ea88f257410d
 +}
 diff --git a/codex-rs/app-server/tests/suite/v2/injected_host_files.rs b/codex-rs/app-server/tests/suite/v2/injected_host_files.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..178fb075cea25539ed8f2575b09cb63646fe4dc1
+index 0000000..178fb07
 --- /dev/null
 +++ b/codex-rs/app-server/tests/suite/v2/injected_host_files.rs
 @@ -0,0 +1,196 @@
@@ -5920,7 +5939,7 @@ index 0000000000000000000000000000000000000000..178fb075cea25539ed8f2575b09cb636
 +}
 diff --git a/codex-rs/app-server/tests/suite/v2/injected_host_process.rs b/codex-rs/app-server/tests/suite/v2/injected_host_process.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..8e797e911876d4f52ebfea640033377dcab97dd2
+index 0000000..8e797e9
 --- /dev/null
 +++ b/codex-rs/app-server/tests/suite/v2/injected_host_process.rs
 @@ -0,0 +1,172 @@
@@ -6098,7 +6117,7 @@ index 0000000000000000000000000000000000000000..8e797e911876d4f52ebfea640033377d
 +}
 diff --git a/codex-rs/app-server/tests/suite/v2/injected_host_process_fixture.rs b/codex-rs/app-server/tests/suite/v2/injected_host_process_fixture.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..c369e97a53fccd07523e65216f68e8761c94167d
+index 0000000..c369e97
 --- /dev/null
 +++ b/codex-rs/app-server/tests/suite/v2/injected_host_process_fixture.rs
 @@ -0,0 +1,91 @@
@@ -6195,7 +6214,7 @@ index 0000000000000000000000000000000000000000..c369e97a53fccd07523e65216f68e876
 +}
 diff --git a/codex-rs/app-server/tests/suite/v2/injected_local_runtime.rs b/codex-rs/app-server/tests/suite/v2/injected_local_runtime.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..ed63f29f772479229a1dc036ed944ac3bf84430a
+index 0000000..ed63f29
 --- /dev/null
 +++ b/codex-rs/app-server/tests/suite/v2/injected_local_runtime.rs
 @@ -0,0 +1,332 @@
@@ -6533,7 +6552,7 @@ index 0000000000000000000000000000000000000000..ed63f29f772479229a1dc036ed944ac3
 +}
 diff --git a/codex-rs/app-server/tests/suite/v2/injected_local_runtime_fixture.rs b/codex-rs/app-server/tests/suite/v2/injected_local_runtime_fixture.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..f43a58bf073448caac2c7df9ed1f543dd55a268b
+index 0000000..f43a58b
 --- /dev/null
 +++ b/codex-rs/app-server/tests/suite/v2/injected_local_runtime_fixture.rs
 @@ -0,0 +1,290 @@
@@ -6829,7 +6848,7 @@ index 0000000000000000000000000000000000000000..f43a58bf073448caac2c7df9ed1f543d
 +}
 diff --git a/codex-rs/app-server/tests/suite/v2/injected_project_config.rs b/codex-rs/app-server/tests/suite/v2/injected_project_config.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..90764839f617513b44bddf57e4e512039d073c3a
+index 0000000..9076483
 --- /dev/null
 +++ b/codex-rs/app-server/tests/suite/v2/injected_project_config.rs
 @@ -0,0 +1,516 @@
@@ -7350,7 +7369,7 @@ index 0000000000000000000000000000000000000000..90764839f617513b44bddf57e4e51203
 +    Ok(())
 +}
 diff --git a/codex-rs/app-server/tests/suite/v2/mod.rs b/codex-rs/app-server/tests/suite/v2/mod.rs
-index 2b14de3b4f2982b0b67faef9f163780e6a336e3b..d8200cafbc295612a04480fd2e9112cb16ce81a8 100644
+index d8ba076..95b7456 100644
 --- a/codex-rs/app-server/tests/suite/v2/mod.rs
 +++ b/codex-rs/app-server/tests/suite/v2/mod.rs
 @@ -86,6 +86,12 @@ mod host_skills;
@@ -7366,9 +7385,9 @@ index 2b14de3b4f2982b0b67faef9f163780e6a336e3b..d8200cafbc295612a04480fd2e9112cb
  mod luna_reserve;
  mod marketplace_add;
  mod marketplace_remove;
-@@ -108,6 +114,8 @@ mod model_provider_capabilities_read;
- #[path = "model_provider_enforcement_tests.rs"]
+@@ -110,6 +116,8 @@ mod model_provider_config_tests;
  mod model_provider_enforcement;
+ mod model_provider_list_tests;
  mod multi_agent_v2_developer_instructions;
 +#[cfg(target_os = "linux")]
 +mod native_app_server;
@@ -7377,7 +7396,7 @@ index 2b14de3b4f2982b0b67faef9f163780e6a336e3b..d8200cafbc295612a04480fd2e9112cb
  mod permission_profile_list;
 diff --git a/codex-rs/app-server/tests/suite/v2/native_app_server.rs b/codex-rs/app-server/tests/suite/v2/native_app_server.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..8a011ac8fed1752092ce15bfe8d5a7a90b0552dd
+index 0000000..8a011ac
 --- /dev/null
 +++ b/codex-rs/app-server/tests/suite/v2/native_app_server.rs
 @@ -0,0 +1,400 @@
@@ -7783,7 +7802,7 @@ index 0000000000000000000000000000000000000000..8a011ac8fed1752092ce15bfe8d5a7a9
 +}
 diff --git a/codex-rs/app-server/tests/suite/v2/native_app_server_bootstrap.rs b/codex-rs/app-server/tests/suite/v2/native_app_server_bootstrap.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..2b2943aeb5fbebafda593e55e1a7d4c812882088
+index 0000000..2b2943a
 --- /dev/null
 +++ b/codex-rs/app-server/tests/suite/v2/native_app_server_bootstrap.rs
 @@ -0,0 +1,110 @@
@@ -7899,7 +7918,7 @@ index 0000000000000000000000000000000000000000..2b2943aeb5fbebafda593e55e1a7d4c8
 +}
 diff --git a/codex-rs/app-server/tests/suite/v2/native_app_server_fixture.py b/codex-rs/app-server/tests/suite/v2/native_app_server_fixture.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..c166fc4bbbfe75bb11148296c8efae3e75a41fa5
+index 0000000..c166fc4
 --- /dev/null
 +++ b/codex-rs/app-server/tests/suite/v2/native_app_server_fixture.py
 @@ -0,0 +1,248 @@
@@ -8152,10 +8171,10 @@ index 0000000000000000000000000000000000000000..c166fc4bbbfe75bb11148296c8efae3e
 +if returncode:
 +    raise SystemExit(returncode)
 diff --git a/codex-rs/cli/src/main.rs b/codex-rs/cli/src/main.rs
-index 1c3fe17c1cfb536c5402453f6efabd87548ea1e9..b305aeff40d54c33a2744370d9f573f6da024368 100644
+index 5108253..691861f 100644
 --- a/codex-rs/cli/src/main.rs
 +++ b/codex-rs/cli/src/main.rs
-@@ -583,6 +583,9 @@ struct AppServerCommand {
+@@ -594,6 +594,9 @@ struct AppServerCommand {
      #[command(flatten)]
      code_mode_host: codex_app_server::AppServerCodeModeHostArgs,
  
@@ -8165,7 +8184,7 @@ index 1c3fe17c1cfb536c5402453f6efabd87548ea1e9..b305aeff40d54c33a2744370d9f573f6
      /// Error out when config.toml contains fields that are not recognized by this version of Codex.
      #[arg(long = "strict-config", default_value_t = false)]
      strict_config: bool,
-@@ -1239,6 +1242,7 @@ async fn dispatch_cli(
+@@ -1283,6 +1286,7 @@ async fn dispatch_cli(
                  cloud_skills_snapshot,
                  subcommand,
                  code_mode_host,
@@ -8173,7 +8192,7 @@ index 1c3fe17c1cfb536c5402453f6efabd87548ea1e9..b305aeff40d54c33a2744370d9f573f6
                  strict_config: app_server_strict_config,
                  listen,
                  stdio,
-@@ -1248,6 +1252,11 @@ async fn dispatch_cli(
+@@ -1292,6 +1296,11 @@ async fn dispatch_cli(
                  auth,
              } = app_server_cli;
              let strict_config = app_server_strict_config || root_strict_config;
@@ -8185,7 +8204,7 @@ index 1c3fe17c1cfb536c5402453f6efabd87548ea1e9..b305aeff40d54c33a2744370d9f573f6
              reject_strict_config_for_app_server_subcommand(strict_config, subcommand.as_ref())?;
              reject_remote_mode_for_app_server_subcommand(
                  root_remote.as_deref(),
-@@ -1303,7 +1312,12 @@ async fn dispatch_cli(
+@@ -1347,7 +1356,12 @@ async fn dispatch_cli(
                          },
                          ..Default::default()
                      };
@@ -8199,7 +8218,7 @@ index 1c3fe17c1cfb536c5402453f6efabd87548ea1e9..b305aeff40d54c33a2744370d9f573f6
                          arg0_paths.clone(),
                          root_config_overrides,
                          LoaderOverrides::default(),
-@@ -1312,11 +1326,11 @@ async fn dispatch_cli(
+@@ -1356,11 +1370,11 @@ async fn dispatch_cli(
                          transport,
                          codex_protocol::protocol::SessionSource::VSCode,
                          auth,
@@ -8215,10 +8234,10 @@ index 1c3fe17c1cfb536c5402453f6efabd87548ea1e9..b305aeff40d54c33a2744370d9f573f6
                      }
                  }
 diff --git a/codex-rs/config/src/config_toml.rs b/codex-rs/config/src/config_toml.rs
-index cd1c40056e191533b5ba5d1ea22c1940d6738177..36c3dc75e30c9145dce0edd496de07339d42c25f 100644
+index 340861b..d4d9857 100644
 --- a/codex-rs/config/src/config_toml.rs
 +++ b/codex-rs/config/src/config_toml.rs
-@@ -942,6 +942,33 @@ impl ConfigToml {
+@@ -914,6 +914,33 @@ impl ConfigToml {
                  ))
              })
      }
@@ -8252,7 +8271,7 @@ index cd1c40056e191533b5ba5d1ea22c1940d6738177..36c3dc75e30c9145dce0edd496de0733
  }
  
  pub fn validate_reserved_model_provider_ids(
-@@ -1201,3 +1228,29 @@ credential_file = "{credential_file}"
+@@ -1173,3 +1200,29 @@ credential_file = "{credential_file}"
          }
      }
  }
@@ -8283,7 +8302,7 @@ index cd1c40056e191533b5ba5d1ea22c1940d6738177..36c3dc75e30c9145dce0edd496de0733
 +        .map(|(_, project_config)| (**project_config).clone())
 +}
 diff --git a/codex-rs/config/src/diagnostics.rs b/codex-rs/config/src/diagnostics.rs
-index 003693288765cf836f7af5c4e280d52fda65bdb7..d08f7e8c7c159d3b1585aadcd3237c670e961cc8 100644
+index 0036932..d08f7e8 100644
 --- a/codex-rs/config/src/diagnostics.rs
 +++ b/codex-rs/config/src/diagnostics.rs
 @@ -208,10 +208,17 @@ where
@@ -8309,10 +8328,10 @@ index 003693288765cf836f7af5c4e280d52fda65bdb7..d08f7e8c7c159d3b1585aadcd3237c67
              }
              continue;
 diff --git a/codex-rs/config/src/lib.rs b/codex-rs/config/src/lib.rs
-index 6bff2b4f8820e375489dc288d0357d59b07617ca..b72ade80d2a57d67540ac14a46abd15a3842326a 100644
+index 4a10ce6..257eeaa 100644
 --- a/codex-rs/config/src/lib.rs
 +++ b/codex-rs/config/src/lib.rs
-@@ -37,6 +37,7 @@ mod path_context;
+@@ -38,6 +38,7 @@ mod permission_config;
  pub mod permissions_toml;
  mod plugin_edit;
  pub mod profile_toml;
@@ -8320,7 +8339,7 @@ index 6bff2b4f8820e375489dc288d0357d59b07617ca..b72ade80d2a57d67540ac14a46abd15a
  mod project_root_markers;
  mod project_trust;
  mod requirements_exec_policy;
-@@ -55,6 +56,7 @@ mod tui_rendering;
+@@ -56,6 +57,7 @@ mod tui_rendering;
  pub mod types;
  
  pub const CONFIG_TOML_FILE: &str = "config.toml";
@@ -8329,7 +8348,7 @@ index 6bff2b4f8820e375489dc288d0357d59b07617ca..b72ade80d2a57d67540ac14a46abd15a
  pub use application_requirements::ApplicationNetworkRequirementsToml;
  pub use application_requirements::ApplicationRequirementsToml;
 diff --git a/codex-rs/config/src/loader/local.rs b/codex-rs/config/src/loader/local.rs
-index 5a42cb47756c0b29c4db1b03acc4e7bf43025549..3131ef90a00c2a5f39794e212a04017b2dd39a47 100644
+index 5a42cb4..3131ef9 100644
 --- a/codex-rs/config/src/loader/local.rs
 +++ b/codex-rs/config/src/loader/local.rs
 @@ -6,6 +6,7 @@ use super::load_config_toml_for_required_layer_raw;
@@ -8359,7 +8378,7 @@ index 5a42cb47756c0b29c4db1b03acc4e7bf43025549..3131ef90a00c2a5f39794e212a04017b
          &trust_context.project_root,
          &trust_context,
 diff --git a/codex-rs/config/src/loader/mod.rs b/codex-rs/config/src/loader/mod.rs
-index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288fcd8aee5 100644
+index bdc19e6..00b2400 100644
 --- a/codex-rs/config/src/loader/mod.rs
 +++ b/codex-rs/config/src/loader/mod.rs
 @@ -5,6 +5,7 @@ mod local;
@@ -8479,7 +8498,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
      let packaged_defaults_layer = if let Some(file) = &overrides.packaged_defaults_path {
          let config = layer_io::read_config_from_path(
              fs,
-@@ -377,7 +466,7 @@ pub async fn load_config_layers_state(
+@@ -378,7 +467,7 @@ pub async fn load_config_layers_state(
              }
          };
          let mut project_trust_context = match project_trust_context(
@@ -8488,7 +8507,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
              &merged_so_far,
              &trusted_broker_config,
              &cwd,
-@@ -409,7 +498,7 @@ pub async fn load_config_layers_state(
+@@ -410,7 +499,7 @@ pub async fn load_config_layers_state(
              &trusted_broker_config,
          );
          let project_layers = load_project_layers(
@@ -8497,18 +8516,28 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
              &cwd,
              &project_trust_context.project_root,
              &project_trust_context,
-@@ -1080,8 +1169,8 @@ impl ProjectTrustDecision {
- }
+@@ -1124,8 +1213,7 @@ impl ProjectTrustContext {
+         })
+     }
  
- impl ProjectTrustContext {
 -    fn decision_for_dir(&self, dir: &AbsolutePathBuf) -> ProjectTrustDecision {
--        for dir_key in normalized_project_trust_keys(dir.as_path()) {
-+    fn decision_for_dir(&self, dir_keys: Vec<String>) -> ProjectTrustDecision {
-+        for dir_key in dir_keys {
-             if let Some((trust_key, trust_level)) =
-                 project_trust_for_lookup_key(&self.projects_trust, &dir_key)
-             {
-@@ -1161,6 +1250,7 @@ impl ProjectTrustContext {
+-        let dir_keys = normalized_project_trust_keys(dir.as_path());
++    fn decision_for_keys(&self, dir_keys: Vec<String>) -> ProjectTrustDecision {
+         let mut keys = dir_keys
+             .iter()
+             .chain(&self.project_root_lookup_keys)
+@@ -1143,6 +1231,10 @@ impl ProjectTrustContext {
+         }
+     }
+ 
++    fn decision_for_dir(&self, dir: &AbsolutePathBuf) -> ProjectTrustDecision {
++        self.decision_for_keys(normalized_project_trust_keys(dir.as_path()))
++    }
++
+     fn disabled_reason_for_decision(&self, decision: &ProjectTrustDecision) -> Option<String> {
+         if decision.is_trusted() {
+             return None;
+@@ -1179,6 +1271,7 @@ impl ProjectTrustContext {
  fn project_layer_entry(
      dot_codex_folder: &AbsolutePathBuf,
      config: TomlValue,
@@ -8516,7 +8545,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
      disabled_reason: Option<String>,
      hooks_config_folder_override: Option<AbsolutePathBuf>,
  ) -> ConfigLayerEntry {
-@@ -1170,6 +1260,8 @@ fn project_layer_entry(
+@@ -1188,6 +1281,8 @@ fn project_layer_entry(
  
      let entry = if let Some(reason) = disabled_reason {
          ConfigLayerEntry::new_disabled(source, config, reason)
@@ -8525,7 +8554,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
      } else {
          ConfigLayerEntry::new(source, config)
      };
-@@ -1448,7 +1540,7 @@ fn project_ignored_config_keys_warning(
+@@ -1466,7 +1561,7 @@ fn project_ignored_config_keys_warning(
  }
  
  async fn project_trust_context(
@@ -8534,7 +8563,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
      merged_config: &TomlValue,
      trusted_broker_config: &TomlValue,
      cwd: &AbsolutePathBuf,
-@@ -1464,21 +1556,30 @@ async fn project_trust_context(
+@@ -1482,21 +1577,30 @@ async fn project_trust_context(
              .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?
      };
  
@@ -8572,7 +8601,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
      let repo_root_key = repo_root_lookup_keys
          .as_ref()
          .and_then(|keys| keys.first().cloned());
-@@ -1722,43 +1823,56 @@ pub async fn discover_project_root(
+@@ -1740,43 +1844,56 @@ pub async fn discover_project_root(
      Ok(None)
  }
  
@@ -8656,7 +8685,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
  }
  
  struct LoadedProjectLayers {
-@@ -1770,6 +1884,7 @@ struct LoadedProjectLayers {
+@@ -1788,6 +1905,7 @@ struct LoadedProjectLayers {
  struct DiscoveredProjectLayer {
      dot_codex_folder: AbsolutePathBuf,
      config: TomlValue,
@@ -8664,7 +8693,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
      disabled_reason: Option<String>,
      hooks_config_folder_override: Option<AbsolutePathBuf>,
      load_root_checkout_hooks: bool,
-@@ -1787,7 +1902,7 @@ struct DiscoveredProjectLayers {
+@@ -1805,7 +1923,7 @@ struct DiscoveredProjectLayers {
  /// precedence) to those closest to `cwd` (which is the highest precedence).
  /// Any warnings are stack-level startup messages, not additional config layers.
  async fn load_project_layers(
@@ -8673,7 +8702,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
      cwd: &AbsolutePathBuf,
      project_root: &AbsolutePathBuf,
      trust_context: &ProjectTrustContext,
-@@ -1809,7 +1924,7 @@ async fn load_project_layers(
+@@ -1827,7 +1945,7 @@ async fn load_project_layers(
              resolve_relative_paths_in_config_toml(layer.config, layer.dot_codex_folder.as_path())?;
          let config = if layer.load_root_checkout_hooks {
              merge_root_checkout_project_hooks(
@@ -8682,7 +8711,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
                  config,
                  layer.hooks_config_folder_override.as_ref(),
                  layer.disabled_reason.is_none(),
-@@ -1821,6 +1936,7 @@ async fn load_project_layers(
+@@ -1839,6 +1957,7 @@ async fn load_project_layers(
          layers.push(project_layer_entry(
              &layer.dot_codex_folder,
              config,
@@ -8690,7 +8719,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
              layer.disabled_reason,
              layer.hooks_config_folder_override,
          ));
-@@ -1833,7 +1949,7 @@ async fn load_project_layers(
+@@ -1851,7 +1970,7 @@ async fn load_project_layers(
  }
  
  async fn discover_project_layers(
@@ -8699,7 +8728,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
      cwd: &AbsolutePathBuf,
      project_root: &AbsolutePathBuf,
      trust_context: &ProjectTrustContext,
-@@ -1841,8 +1957,7 @@ async fn discover_project_layers(
+@@ -1859,8 +1978,7 @@ async fn discover_project_layers(
      strict_config: bool,
  ) -> io::Result<DiscoveredProjectLayers> {
      let codex_home_abs = AbsolutePathBuf::from_absolute_path(codex_home)?;
@@ -8709,7 +8738,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
      let mut dirs = cwd
          .ancestors()
          .scan(false, |done, a| {
-@@ -1862,27 +1977,25 @@ async fn discover_project_layers(
+@@ -1880,27 +1998,25 @@ async fn discover_project_layers(
      let mut startup_warnings = Vec::new();
      for dir in dirs {
          let dot_codex_abs = dir.join(".codex");
@@ -8727,7 +8756,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
          }
  
 -        let decision = trust_context.decision_for_dir(&dir);
-+        let decision = trust_context.decision_for_dir(fs.trust_keys(dir.as_path()).await?);
++        let decision = trust_context.decision_for_keys(fs.trust_keys(dir.as_path()).await?);
          let disabled_reason = trust_context.disabled_reason_for_decision(&decision);
          let hooks_config_folder_override = trust_context.root_checkout_hooks_folder_for_dir(&dir);
 -        let dot_codex_normalized =
@@ -8743,7 +8772,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
              .read_file_text(&config_file_uri, Default::default(), /*sandbox*/ None)
              .await
          {
-@@ -1902,6 +2015,7 @@ async fn discover_project_layers(
+@@ -1920,6 +2036,7 @@ async fn discover_project_layers(
                          layers.push(DiscoveredProjectLayer {
                              dot_codex_folder: dot_codex_abs,
                              config: TomlValue::Table(toml::map::Map::new()),
@@ -8751,7 +8780,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
                              disabled_reason,
                              hooks_config_folder_override,
                              load_root_checkout_hooks: false,
-@@ -1932,6 +2046,7 @@ async fn discover_project_layers(
+@@ -1950,6 +2067,7 @@ async fn discover_project_layers(
                  layers.push(DiscoveredProjectLayer {
                      dot_codex_folder: dot_codex_abs,
                      config,
@@ -8759,7 +8788,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
                      disabled_reason,
                      hooks_config_folder_override,
                      load_root_checkout_hooks: true,
-@@ -1945,6 +2060,7 @@ async fn discover_project_layers(
+@@ -1963,6 +2081,7 @@ async fn discover_project_layers(
                      layers.push(DiscoveredProjectLayer {
                          dot_codex_folder: dot_codex_abs,
                          config: TomlValue::Table(toml::map::Map::new()),
@@ -8769,7 +8798,7 @@ index 6e1dd082fac8938f358cf21af66d1d3b107292a4..3f23a5277fffd0014755b67736743288
                          load_root_checkout_hooks: true,
 diff --git a/codex-rs/config/src/loader/project_filesystems.rs b/codex-rs/config/src/loader/project_filesystems.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..cb82ce378617f6bf9404e0f420b2a9566a0e9799
+index 0000000..cb82ce3
 --- /dev/null
 +++ b/codex-rs/config/src/loader/project_filesystems.rs
 @@ -0,0 +1,121 @@
@@ -8896,7 +8925,7 @@ index 0000000000000000000000000000000000000000..cb82ce378617f6bf9404e0f420b2a956
 +}
 diff --git a/codex-rs/config/src/project_filesystem.rs b/codex-rs/config/src/project_filesystem.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..61d9d11d94992f405d4b6a9fe7b22048c4bc529e
+index 0000000..61d9d11
 --- /dev/null
 +++ b/codex-rs/config/src/project_filesystem.rs
 @@ -0,0 +1,113 @@
@@ -9014,10 +9043,18 @@ index 0000000000000000000000000000000000000000..61d9d11d94992f405d4b6a9fe7b22048
 +
 +impl Eq for ProjectConfigFileSystem {}
 diff --git a/codex-rs/core/src/agent/role.rs b/codex-rs/core/src/agent/role.rs
-index b1642fe5c04987774edc544350450fe1c51d1df0..d90bb6ad6232cd387b7b2e5cf96230f614056b02 100644
+index fd21d22..a32bd50 100644
 --- a/codex-rs/core/src/agent/role.rs
 +++ b/codex-rs/core/src/agent/role.rs
-@@ -140,7 +140,26 @@ async fn load_role_layer_toml(
+@@ -8,6 +8,7 @@ use crate::config::Config;
+ use crate::config::deserialize_config_toml_with_base;
+ use anyhow::anyhow;
+ use codex_agent_roles::parse_agent_role_file_contents;
++use codex_config::ConfigLayerSource;
+ use codex_config::SkillsConfig;
+ use codex_config::loader::resolve_relative_paths_in_config_toml;
+ use codex_exec_server::read_sensitive_file_to_string;
+@@ -137,7 +138,26 @@ async fn load_role_layer_toml(
          let role_config_toml: TomlValue = toml::from_str(&role_config_contents)?;
          (role_config_toml, config.codex_home.as_path())
      } else {
@@ -9046,7 +9083,7 @@ index b1642fe5c04987774edc544350450fe1c51d1df0..d90bb6ad6232cd387b7b2e5cf96230f6
              .parent()
              .ok_or(anyhow!("No corresponding config content"))?;
 diff --git a/codex-rs/core/src/agents_md.rs b/codex-rs/core/src/agents_md.rs
-index 1919d681f3febb57a33afe86527ad02b05baac69..caa0daf069d07fbbcc2daef3171ddeee3f647797 100644
+index 08983d7..6c957ce 100644
 --- a/codex-rs/core/src/agents_md.rs
 +++ b/codex-rs/core/src/agents_md.rs
 @@ -21,16 +21,19 @@ use crate::config::Config;
@@ -9069,7 +9106,7 @@ index 1919d681f3febb57a33afe86527ad02b05baac69..caa0daf069d07fbbcc2daef3171ddeee
  use codex_utils_absolute_path::AbsolutePathBuf;
  use codex_utils_path_uri::PathConvention;
  use codex_utils_path_uri::PathUri;
-@@ -94,7 +97,11 @@ pub(crate) async fn load_project_instructions(
+@@ -101,7 +104,11 @@ pub(crate) async fn load_project_instructions(
                  }
              }
              Ok(None) => {}
@@ -9082,11 +9119,15 @@ index 1919d681f3febb57a33afe86527ad02b05baac69..caa0daf069d07fbbcc2daef3171ddeee
                  error!(
                      environment_id = turn_environment.selection.environment_id,
                      "error trying to find AGENTS.md docs: {error:#}"
-@@ -134,7 +141,18 @@ async fn read_agents_md(
-         return Ok(None);
-     }
- 
+@@ -138,7 +145,26 @@ async fn read_agents_md(
+     sandbox: Option<&FileSystemSandboxContext>,
+     warnings: &mut Vec<String>,
+ ) -> io::Result<Option<LoadedAgentsMd>> {
 -    let paths = agents_md_paths(config, cwd, fs, sandbox).await?;
++    if max_total == 0 {
++        return Ok(None);
++    }
++
 +    // The bootstrap's project authority belongs only to the local environment.
 +    // Instruction loading is a trusted configuration read; it does not replace
 +    // the filesystem or sandbox context used by model tools.
@@ -9099,10 +9140,14 @@ index 1919d681f3febb57a33afe86527ad02b05baac69..caa0daf069d07fbbcc2daef3171ddeee
 +        None => (fs, sandbox),
 +    };
 +    let paths = agents_md_paths(config, cwd, fs, sandbox, project).await?;
-     if paths.is_empty() {
-         return Ok(None);
-     }
-@@ -194,6 +212,7 @@ async fn agents_md_paths(
++    if paths.is_empty() {
++        return Ok(None);
++    }
++
+     let mut remaining = max_total;
+     let mut loaded = LoadedAgentsMd::default();
+ 
+@@ -201,6 +227,7 @@ async fn agents_md_paths(
      cwd: &PathUri,
      fs: &dyn ExecutorFileSystem,
      sandbox: Option<&FileSystemSandboxContext>,
@@ -9110,7 +9155,7 @@ index 1919d681f3febb57a33afe86527ad02b05baac69..caa0daf069d07fbbcc2daef3171ddeee
  ) -> io::Result<Vec<PathUri>> {
      let dir = cwd.clone();
  
-@@ -212,14 +231,32 @@ async fn agents_md_paths(
+@@ -219,14 +246,32 @@ async fn agents_md_paths(
              default_project_root_markers()
          }
      };
@@ -9151,7 +9196,7 @@ index 1919d681f3febb57a33afe86527ad02b05baac69..caa0daf069d07fbbcc2daef3171ddeee
      let search_dirs = if let Some(root) = project_root {
          let mut dirs = Vec::new();
          let mut cursor = dir.clone();
-@@ -247,6 +284,17 @@ async fn agents_md_paths(
+@@ -254,6 +299,17 @@ async fn agents_md_paths(
                  let candidate = directory
                      .join(name)
                      .map_err(|err| io::Error::new(io::ErrorKind::InvalidInput, err))?;
@@ -9171,7 +9216,7 @@ index 1919d681f3febb57a33afe86527ad02b05baac69..caa0daf069d07fbbcc2daef3171ddeee
                      .await
 diff --git a/codex-rs/core/src/agents_md_project_tests.rs b/codex-rs/core/src/agents_md_project_tests.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..dea7ad186b62d3f33bf7454c38d7f533124709df
+index 0000000..dea7ad1
 --- /dev/null
 +++ b/codex-rs/core/src/agents_md_project_tests.rs
 @@ -0,0 +1,275 @@
@@ -9451,7 +9496,7 @@ index 0000000000000000000000000000000000000000..dea7ad186b62d3f33bf7454c38d7f533
 +    );
 +}
 diff --git a/codex-rs/core/src/agents_md_tests.rs b/codex-rs/core/src/agents_md_tests.rs
-index aad04d540c6444fed781fc149ecd9774633bae6b..b20bbc99742b3834c9ac49ddcf9817a7a4e3a550 100644
+index 354c5d2..b5bc42e 100644
 --- a/codex-rs/core/src/agents_md_tests.rs
 +++ b/codex-rs/core/src/agents_md_tests.rs
 @@ -53,6 +53,7 @@ use tokio::sync::Semaphore;
@@ -9507,7 +9552,7 @@ index aad04d540c6444fed781fc149ecd9774633bae6b..b20bbc99742b3834c9ac49ddcf9817a7
      )
      .await
  }
-@@ -827,7 +845,13 @@ async fn marker_search_does_not_wait_for_a_higher_ancestor() {
+@@ -833,7 +851,13 @@ async fn marker_search_does_not_wait_for_a_higher_ancestor() {
  
      let paths = tokio::time::timeout(
          std::time::Duration::from_secs(1),
@@ -9522,7 +9567,7 @@ index aad04d540c6444fed781fc149ecd9774633bae6b..b20bbc99742b3834c9ac49ddcf9817a7
      )
      .await
      .expect("nearest marker should complete")
-@@ -932,7 +956,13 @@ async fn project_root_marker_search_limits_concurrent_probes_and_preserves_order
+@@ -938,7 +962,13 @@ async fn project_root_marker_search_limits_concurrent_probes_and_preserves_order
          metadata_calls.release.add_permits(max_probe_count);
      };
      let (paths, ()) = tokio::join!(
@@ -9537,7 +9582,7 @@ index aad04d540c6444fed781fc149ecd9774633bae6b..b20bbc99742b3834c9ac49ddcf9817a7
          assertions
      );
      let paths = paths.expect("AGENTS.md discovery");
-@@ -979,7 +1009,14 @@ async fn agents_md_search_starts_all_directory_probes() {
+@@ -985,7 +1015,14 @@ async fn agents_md_search_starts_all_directory_probes() {
          metadata_calls: Arc::clone(&metadata_calls),
      };
      let search = tokio::spawn(async move {
@@ -9553,7 +9598,7 @@ index aad04d540c6444fed781fc149ecd9774633bae6b..b20bbc99742b3834c9ac49ddcf9817a7
      });
      tokio::time::timeout(std::time::Duration::from_secs(5), async {
          loop {
-@@ -1054,9 +1091,15 @@ async fn empty_project_root_markers_only_probe_cwd_candidates() {
+@@ -1060,9 +1097,15 @@ async fn empty_project_root_markers_only_probe_cwd_candidates() {
      };
      let cwd = PathUri::from_abs_path(&config.cwd);
  
@@ -9574,7 +9619,7 @@ index aad04d540c6444fed781fc149ecd9774633bae6b..b20bbc99742b3834c9ac49ddcf9817a7
      let agents_path = cwd.join(DEFAULT_AGENTS_MD_FILENAME).expect("agents path");
 diff --git a/codex-rs/core/src/bounded_trust_tests.rs b/codex-rs/core/src/bounded_trust_tests.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..915536aab14ce71f4838348af3897d904252b32e
+index 0000000..915536a
 --- /dev/null
 +++ b/codex-rs/core/src/bounded_trust_tests.rs
 @@ -0,0 +1,295 @@
@@ -9874,17 +9919,10 @@ index 0000000000000000000000000000000000000000..915536aab14ce71f4838348af3897d90
 +    assert_calls_within(&provider, &root);
 +}
 diff --git a/codex-rs/core/src/config/managed_features.rs b/codex-rs/core/src/config/managed_features.rs
-index 2fd34d2f0ccd3c3e4cda7ff715e6f1112511d745..cf212063907191b8ea54843efc45f7ad5ebbb6f6 100644
+index a40e6de..946318b 100644
 --- a/codex-rs/core/src/config/managed_features.rs
 +++ b/codex-rs/core/src/config/managed_features.rs
-@@ -1,5 +1,6 @@
- use std::collections::BTreeMap;
- 
-+use codex_config::ConfigLayerStack;
- use codex_config::Constrained;
- use codex_config::ConstrainedWithSource;
- use codex_config::ConstraintError;
-@@ -39,6 +40,31 @@ impl Default for ManagedFeatures {
+@@ -68,6 +68,31 @@ impl Default for ManagedFeatures {
  }
  
  impl ManagedFeatures {
@@ -9917,7 +9955,7 @@ index 2fd34d2f0ccd3c3e4cda7ff715e6f1112511d745..cf212063907191b8ea54843efc45f7ad
          configured_features: Features,
          feature_requirements: Option<Sourced<FeatureRequirementsToml>>,
 diff --git a/codex-rs/core/src/config/mod.rs b/codex-rs/core/src/config/mod.rs
-index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd651c0e4f3 100644
+index baf6aa6..d208928 100644
 --- a/codex-rs/core/src/config/mod.rs
 +++ b/codex-rs/core/src/config/mod.rs
 @@ -7,7 +7,7 @@ use crate::unified_exec::MIN_EMPTY_YIELD_TIME_MS;
@@ -9929,7 +9967,7 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
  use codex_config::CloudConfigBundleLoader;
  use codex_config::ConfigLayerSource;
  use codex_config::ConfigLayerStack;
-@@ -632,6 +632,9 @@ pub struct Config {
+@@ -653,6 +653,9 @@ pub struct Config {
      /// Provenance for how this [`Config`] was derived (merged layers + enforced
      /// requirements).
      pub config_layer_stack: ConfigLayerStack,
@@ -9939,7 +9977,7 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
  
      /// Plugin settings resolved with this snapshot, before capability admission.
      pub plugins: codex_config::types::PluginsConfigToml,
-@@ -1504,9 +1507,14 @@ pub struct ConfigBuilder {
+@@ -1538,9 +1541,14 @@ pub struct ConfigBuilder {
      thread_config_loader: Option<Arc<dyn ThreadConfigLoader>>,
      fallback_cwd: Option<PathBuf>,
      without_project_context: bool,
@@ -9954,7 +9992,7 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
      pub fn codex_home(mut self, codex_home: PathBuf) -> Self {
          self.codex_home = Some(codex_home);
          self
-@@ -1585,6 +1593,7 @@ impl ConfigBuilder {
+@@ -1619,6 +1627,7 @@ impl ConfigBuilder {
              thread_config_loader,
              fallback_cwd,
              without_project_context,
@@ -9962,7 +10000,7 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
          } = self;
          let codex_home = match codex_home {
              Some(codex_home) => AbsolutePathBuf::from_absolute_path(codex_home)?,
-@@ -1599,25 +1608,46 @@ impl ConfigBuilder {
+@@ -1637,25 +1646,46 @@ impl ConfigBuilder {
              None => AbsolutePathBuf::current_dir()?,
          };
          harness_overrides.cwd = Some(cwd.to_path_buf());
@@ -10025,7 +10063,7 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
              config_toml,
              harness_overrides,
              codex_home,
-@@ -2027,12 +2057,30 @@ impl Config {
+@@ -2097,12 +2127,30 @@ impl Config {
          cwd: PathBuf,
          refreshed_layers: &ConfigLayerStack,
          codex_home: AbsolutePathBuf,
@@ -10057,7 +10095,7 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
              cfg,
              ConfigOverrides {
                  cwd: Some(cwd),
-@@ -2258,7 +2306,14 @@ pub fn validate_feature_requirements_for_config_toml(
+@@ -2328,7 +2376,14 @@ pub fn validate_feature_requirements_for_config_toml(
  
  fn load_catalog_json(path: &AbsolutePathBuf) -> std::io::Result<ModelsResponse> {
      let file_contents = std::fs::read_to_string(path)?;
@@ -10073,7 +10111,7 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
          std::io::Error::new(
              ErrorKind::InvalidData,
              format!(
-@@ -3352,6 +3407,25 @@ impl Config {
+@@ -3358,6 +3413,25 @@ impl Config {
  
      pub(crate) async fn load_config_with_layer_stack(
          fs: &dyn ExecutorFileSystem,
@@ -10099,7 +10137,7 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
          mut cfg: ConfigToml,
          overrides: ConfigOverrides,
          codex_home: AbsolutePathBuf,
-@@ -3636,13 +3710,13 @@ impl Config {
+@@ -3651,13 +3725,13 @@ impl Config {
              .into_iter()
              .map(|path| AbsolutePathBuf::resolve_path_against_base(path, resolved_cwd.as_path()))
              .collect();
@@ -10117,10 +10155,10 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
 +            let repo_root = resolve_root_git_project_for_trust(fs, &resolved_cwd).await;
 +            cfg.get_active_project(resolved_cwd.as_path(), repo_root.as_ref().map(AbsolutePathBuf::as_path))
 +        }.unwrap_or(ProjectConfig { trust_level: None });
-         let permission_config_syntax = resolve_permission_config_syntax(
+         let permission_config = resolve_permission_config(
              &config_layer_stack,
              &cfg,
-@@ -4031,8 +4105,9 @@ impl Config {
+@@ -4055,8 +4129,9 @@ impl Config {
              .unwrap_or_default();
          let terminal_resize_reflow = resolve_terminal_resize_reflow_config(&cfg);
  
@@ -10132,7 +10170,7 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
  
          let openai_base_url = cfg
              .openai_base_url
-@@ -4228,7 +4303,7 @@ impl Config {
+@@ -4252,7 +4327,7 @@ impl Config {
          // behaviour matches other path-like config values.
          let model_instructions_path = cfg.model_instructions_file.as_ref();
          let file_base_instructions = Self::try_read_non_empty_file(
@@ -10141,7 +10179,7 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
              model_instructions_path,
              "model instructions file",
          )
-@@ -4305,7 +4380,7 @@ impl Config {
+@@ -4335,7 +4410,7 @@ impl Config {
  
          let experimental_compact_prompt_path = cfg.experimental_compact_prompt_file.as_ref();
          let file_compact_prompt = Self::try_read_non_empty_file(
@@ -10150,7 +10188,7 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
              experimental_compact_prompt_path,
              "experimental compact prompt file",
          )
-@@ -4314,7 +4389,13 @@ impl Config {
+@@ -4344,7 +4419,13 @@ impl Config {
          let review_model = override_review_model.or(cfg.review_model);
  
          let check_for_update_on_startup = cfg.check_for_update_on_startup.unwrap_or(true);
@@ -10165,7 +10203,7 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
  
          let log_dir = cfg
              .log_dir
-@@ -4625,6 +4706,8 @@ impl Config {
+@@ -4658,6 +4739,8 @@ impl Config {
              agent_default_subagent_reasoning_effort,
              agent_max_depth,
              agent_roles,
@@ -10174,17 +10212,17 @@ index 8d93436455c461e1cd79753e369e116bc79f326a..cdcb5c28046ab55d785a924925978cd6
              max_goal_token_budget: cfg
                  .goals
                  .as_ref()
-@@ -5261,3 +5344,7 @@ mod tests;
+@@ -5303,3 +5386,7 @@ mod config_loader_tests;
  #[cfg(test)]
- #[path = "config_loader_tests.rs"]
- mod config_loader_tests;
+ #[path = "runtime_auth_tests.rs"]
+ mod runtime_auth_tests;
 +
 +#[cfg(test)]
 +#[path = "project_filesystem_tests.rs"]
 +mod project_filesystem_tests;
 diff --git a/codex-rs/core/src/config/project_filesystem_fixture.rs b/codex-rs/core/src/config/project_filesystem_fixture.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..82601f0a8ef08a993ec39869e1cad6638b1e4af0
+index 0000000..82601f0
 --- /dev/null
 +++ b/codex-rs/core/src/config/project_filesystem_fixture.rs
 @@ -0,0 +1,147 @@
@@ -10337,7 +10375,7 @@ index 0000000000000000000000000000000000000000..82601f0a8ef08a993ec39869e1cad663
 +}
 diff --git a/codex-rs/core/src/config/project_filesystem_tests.rs b/codex-rs/core/src/config/project_filesystem_tests.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..28e82c1a19d18db0ebf9428b1ddc21817e1333d9
+index 0000000..28e82c1
 --- /dev/null
 +++ b/codex-rs/core/src/config/project_filesystem_tests.rs
 @@ -0,0 +1,495 @@
@@ -10837,10 +10875,10 @@ index 0000000000000000000000000000000000000000..28e82c1a19d18db0ebf9428b1ddc2181
 +    Ok(())
 +}
 diff --git a/codex-rs/core/src/environment_selection.rs b/codex-rs/core/src/environment_selection.rs
-index ce7bf9c8f84e2c76109e8c468f00077cb5a8777f..b4085df458ad6b1cae2b524eda0f9df7d9ce84d1 100644
+index b76bdf6..0b0880b 100644
 --- a/codex-rs/core/src/environment_selection.rs
 +++ b/codex-rs/core/src/environment_selection.rs
-@@ -1008,7 +1008,9 @@ impl ThreadEnvironments {
+@@ -1032,7 +1032,9 @@ impl ThreadEnvironments {
          // Resolve the attachment only after both prerequisites are ready.
          let ((), installed_config) = tokio::try_join!(connection_ready, configuration_ready)?;
          let executor_platform_os;
@@ -10851,7 +10889,7 @@ index ce7bf9c8f84e2c76109e8c468f00077cb5a8777f..b4085df458ad6b1cae2b524eda0f9df7
              match environment.info().await {
                  Ok(info) => {
                      executor_platform_os = info.platform_os;
-@@ -1017,6 +1019,11 @@ impl ThreadEnvironments {
+@@ -1041,6 +1043,11 @@ impl ThreadEnvironments {
                      let shell_snapshot_v2_supported = info.capabilities.shell_snapshot_v2;
                      let shell = match Shell::from_environment_shell_info(info.shell) {
                          Ok(shell) => Some(shell),
@@ -10863,7 +10901,7 @@ index ce7bf9c8f84e2c76109e8c468f00077cb5a8777f..b4085df458ad6b1cae2b524eda0f9df7
                          Err(err) => {
                              tracing::warn!(
                                  "failed to resolve shell for environment `{environment_id}`: {err}"
-@@ -1031,6 +1038,7 @@ impl ThreadEnvironments {
+@@ -1055,6 +1062,7 @@ impl ThreadEnvironments {
                          shell_snapshot_v2_supported,
                      )
                  }
@@ -10871,7 +10909,7 @@ index ce7bf9c8f84e2c76109e8c468f00077cb5a8777f..b4085df458ad6b1cae2b524eda0f9df7
                  Err(err) => {
                      executor_platform_os = None;
                      tracing::warn!("failed to get info for environment `{environment_id}`: {err}");
-@@ -1491,6 +1499,10 @@ mod snapshot_tests;
+@@ -1514,6 +1522,10 @@ mod snapshot_tests;
  #[path = "environment_connection_tests.rs"]
  mod connection_tests;
  
@@ -10884,7 +10922,7 @@ index ce7bf9c8f84e2c76109e8c468f00077cb5a8777f..b4085df458ad6b1cae2b524eda0f9df7
      use std::time::Duration;
 diff --git a/codex-rs/core/src/environment_selection_runtime_tests.rs b/codex-rs/core/src/environment_selection_runtime_tests.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..d876da8fa370fa9291ff14c0a81aeebdc85a49a2
+index 0000000..d876da8
 --- /dev/null
 +++ b/codex-rs/core/src/environment_selection_runtime_tests.rs
 @@ -0,0 +1,290 @@
@@ -11179,7 +11217,7 @@ index 0000000000000000000000000000000000000000..d876da8fa370fa9291ff14c0a81aeebd
 +    );
 +}
 diff --git a/codex-rs/core/src/git_info_tests.rs b/codex-rs/core/src/git_info_tests.rs
-index d09cfb6a7c34a9d730bc24cf158d175aa353b55f..0e29dfe295d5564476815fdc8fd7d046c524db3c 100644
+index d09cfb6..0e29dfe 100644
 --- a/codex-rs/core/src/git_info_tests.rs
 +++ b/codex-rs/core/src/git_info_tests.rs
 @@ -40,6 +40,13 @@ use std::path::PathBuf;
@@ -11276,10 +11314,10 @@ index d09cfb6a7c34a9d730bc24cf158d175aa353b55f..0e29dfe295d5564476815fdc8fd7d046
  async fn resolve_root_git_project_for_trust_detects_worktree_and_returns_main_root() {
      let temp_dir = TempDir::new().expect("Failed to create temp dir");
 diff --git a/codex-rs/core/src/lib.rs b/codex-rs/core/src/lib.rs
-index 51573406cbac98747a83e8b6fa7594b2b6c59063..50bff1b8d2358a9702aa1701e6faad8465c6674d 100644
+index d684b39..b040e80 100644
 --- a/codex-rs/core/src/lib.rs
 +++ b/codex-rs/core/src/lib.rs
-@@ -210,6 +210,7 @@ mod thread_rollout_truncation;
+@@ -230,6 +230,7 @@ mod thread_rollout_truncation;
  pub use thread_rollout_truncation::truncate_rollout_after_turn_id;
  pub use thread_rollout_truncation::truncate_rollout_before_turn_id;
  mod tools;
@@ -11288,25 +11326,21 @@ index 51573406cbac98747a83e8b6fa7594b2b6c59063..50bff1b8d2358a9702aa1701e6faad84
  mod turn_metadata;
  mod turn_timing;
 diff --git a/codex-rs/core/src/session/mcp_runtime.rs b/codex-rs/core/src/session/mcp_runtime.rs
-index ac0bc4a98375b38ac977ea8fee6445b4026be43c..580087a3e0b173339514180bf77b293865d96fe0 100644
+index 7b26b27..030a01e 100644
 --- a/codex-rs/core/src/session/mcp_runtime.rs
 +++ b/codex-rs/core/src/session/mcp_runtime.rs
-@@ -362,7 +362,12 @@ impl Session {
-             self.mcp_runtime_context(&desired.environments, &desired.local_process_cwd);
-         McpRuntimeInput {
-             network_policy_metadata: None,
--            startup_policy: if matches!(desired.session_source, SessionSource::SubAgent(_)) {
-+            startup_policy: if matches!(desired.session_source, SessionSource::SubAgent(_))
-+                || std::env::var("CODEX_LAZY_MCP")
-+                    .is_ok_and(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+@@ -389,6 +389,9 @@ impl Session {
+                 .config
+                 .features
+                 .enabled(Feature::McpLazyStdioStartup)
++                || std::env::var("CODEX_LAZY_MCP").is_ok_and(|v| v == "1" || v.eq_ignore_ascii_case("true"))
 +                || std::env::var("CODEX_NATIVE_BOOTSTRAP").is_ok()
 +                || std::env::var("CODEX_IME_UID").is_ok()
-+            {
-                 McpStartupPolicy::LazyWhenCached
+             {
+                 McpStartupPolicy::DeferCachedStdio
              } else {
-                 McpStartupPolicy::Eager
 diff --git a/codex-rs/core/src/shell_snapshot.rs b/codex-rs/core/src/shell_snapshot.rs
-index 01bd13688a75f8cfb9b8cf8e316f6e4a407235bf..0708bda3ba135635a72789b38e0417a51ac6e50a 100644
+index 01bd136..0708bda 100644
 --- a/codex-rs/core/src/shell_snapshot.rs
 +++ b/codex-rs/core/src/shell_snapshot.rs
 @@ -159,7 +159,7 @@ impl ShellSnapshot {
@@ -11320,7 +11354,7 @@ index 01bd13688a75f8cfb9b8cf8e316f6e4a407235bf..0708bda3ba135635a72789b38e0417a5
  
 diff --git a/codex-rs/core/src/strict_trust_tests.rs b/codex-rs/core/src/strict_trust_tests.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..c031060fef56543e0a5008b9dd420368bc08115f
+index 0000000..c031060
 --- /dev/null
 +++ b/codex-rs/core/src/strict_trust_tests.rs
 @@ -0,0 +1,228 @@
@@ -11553,10 +11587,10 @@ index 0000000000000000000000000000000000000000..c031060fef56543e0a5008b9dd420368
 +    }
 +}
 diff --git a/codex-rs/core/src/thread_manager.rs b/codex-rs/core/src/thread_manager.rs
-index 7bd869f2c0770ea1ac9858998302e2002bc77b6b..007a9795827c859a6910a4431879c9e7baea1903 100644
+index b7d841c..dc72218 100644
 --- a/codex-rs/core/src/thread_manager.rs
 +++ b/codex-rs/core/src/thread_manager.rs
-@@ -1461,18 +1461,34 @@ impl ThreadManager {
+@@ -1600,18 +1600,34 @@ impl ThreadManager {
          parent_trace: Option<W3cTraceContext>,
          client_mcp_extensions: ClientMcpExtensions,
      ) -> CodexResult<NewThread> {
@@ -11602,10 +11636,10 @@ index 7bd869f2c0770ea1ac9858998302e2002bc77b6b..007a9795827c859a6910a4431879c9e7
              options,
              auth_manager,
 diff --git a/codex-rs/core/src/thread_manager_tests.rs b/codex-rs/core/src/thread_manager_tests.rs
-index 54e06778a38b0ce4b30ecbf6cfe230bf1ed04f4a..b6e84252a93c17712bb59922a6f3d1e397ce61a8 100644
+index 2caafda..d6976bf 100644
 --- a/codex-rs/core/src/thread_manager_tests.rs
 +++ b/codex-rs/core/src/thread_manager_tests.rs
-@@ -2507,6 +2507,100 @@ async fn resume_and_fork_do_not_restore_thread_environments_from_rollout() {
+@@ -2862,6 +2862,100 @@ async fn resume_and_fork_do_not_restore_thread_environments_from_rollout() {
      );
  }
  
@@ -11707,7 +11741,7 @@ index 54e06778a38b0ce4b30ecbf6cfe230bf1ed04f4a..b6e84252a93c17712bb59922a6f3d1e3
  async fn explicit_installation_id_skips_codex_home_file() {
      let temp_dir = tempdir().expect("tempdir");
 diff --git a/codex-rs/core/src/tools/handlers/unified_exec/preparation.rs b/codex-rs/core/src/tools/handlers/unified_exec/preparation.rs
-index 0c368eee5b370c7f256d860e68ec7aded16ede45..71639196137c31bc0f9d0bde297d938fc625ef75 100644
+index f9e93c9..4a85044 100644
 --- a/codex-rs/core/src/tools/handlers/unified_exec/preparation.rs
 +++ b/codex-rs/core/src/tools/handlers/unified_exec/preparation.rs
 @@ -71,7 +71,7 @@ impl PreparedExecCommand {
@@ -11733,7 +11767,7 @@ index 0c368eee5b370c7f256d860e68ec7aded16ede45..71639196137c31bc0f9d0bde297d938f
          } = self;
          // Remote environments may use a different OS and must build commands with their native
          // shell; fall back to the session shell when the environment did not report one.
-+        if turn_environment.environment.has_local_runtime() && turn_environment.shell.is_none() {
++        if turn_environment.environment().has_local_runtime() && turn_environment.shell.is_none() {
 +            return Err(FunctionCallError::RespondToModel(format!(
 +                "local runtime `{}` does not report a shell",
 +                turn_environment.selection.environment_id,
@@ -11746,9 +11780,9 @@ index 0c368eee5b370c7f256d860e68ec7aded16ede45..71639196137c31bc0f9d0bde297d938f
              .unwrap_or_else(|| session.user_shell());
          // TODO(anp): Resolve requested shells in remote environments instead of restricting
          // commands to the reported default shell.
--        if turn_environment.environment.is_remote()
-+        if (turn_environment.environment.is_remote()
-+            || turn_environment.environment.has_local_runtime())
+-        if turn_environment.environment().is_remote()
++        if (turn_environment.environment().is_remote()
++            || turn_environment.environment().has_local_runtime())
              && let Some(requested_shell) = args.shell.take()
          {
              let Some(remote_shell) = turn_environment.shell.as_ref() else {
@@ -11757,7 +11791,7 @@ index 0c368eee5b370c7f256d860e68ec7aded16ede45..71639196137c31bc0f9d0bde297d938f
                  )));
              };
 -            if detect_shell_type(Path::new(&requested_shell)) != Some(remote_shell.shell_type) {
-+            if !(turn_environment.environment.has_local_runtime()
++            if !(turn_environment.environment().has_local_runtime()
 +                && Path::new(&requested_shell) == remote_shell.shell_path)
 +                && detect_shell_type(Path::new(&requested_shell)) != Some(remote_shell.shell_type)
 +            {
@@ -11765,58 +11799,56 @@ index 0c368eee5b370c7f256d860e68ec7aded16ede45..71639196137c31bc0f9d0bde297d938f
                      "environment `{}` only supports `{}`",
                      turn_environment.selection.environment_id,
 diff --git a/codex-rs/core/src/tools/runtimes/apply_patch.rs b/codex-rs/core/src/tools/runtimes/apply_patch.rs
-index bb6dd3e1ca7133c9422cf96ce7b592c9850f750f..ea765e061a342347e1e102952ce1ba859d2102a6 100644
+index bda1a9b..a9e3dde 100644
 --- a/codex-rs/core/src/tools/runtimes/apply_patch.rs
 +++ b/codex-rs/core/src/tools/runtimes/apply_patch.rs
 @@ -162,7 +162,8 @@ impl ToolRuntime<ApplyPatchRequest, ApplyPatchRuntimeOutput> for ApplyPatchRunti
      }
  
      fn uses_executor_managed_process_sandbox(&self, req: &ApplyPatchRequest) -> bool {
--        req.turn_environment.environment.is_remote()
-+        req.turn_environment.environment.filesystem_sandbox_owner()
+-        req.turn_environment.environment().is_remote()
++        req.turn_environment.environment().filesystem_sandbox_owner()
 +            == codex_exec_server::SandboxOwner::Executor
      }
  
      fn sandbox_cwd<'a>(&self, req: &'a ApplyPatchRequest) -> Option<&'a PathUri> {
 diff --git a/codex-rs/core/src/tools/runtimes/unified_exec.rs b/codex-rs/core/src/tools/runtimes/unified_exec.rs
-index 9d0352b0ac34bf71eaa1076d1a032a0e9da491d9..09b777e947a8fbaecf989de35a37edf852080f41 100644
+index 849795f..8445d99 100644
 --- a/codex-rs/core/src/tools/runtimes/unified_exec.rs
 +++ b/codex-rs/core/src/tools/runtimes/unified_exec.rs
-@@ -187,7 +187,12 @@ impl<'a> ToolRuntime<UnifiedExecRequest<'_>, UnifiedExecAttempt> for UnifiedExec
+@@ -167,7 +167,12 @@ impl<'a> ToolRuntime<UnifiedExecRequest<'_>, UnifiedExecAttempt> for UnifiedExec
      }
  
      fn uses_executor_managed_process_sandbox(&self, req: &UnifiedExecRequest<'_>) -> bool {
--        req.prepared.turn_environment.environment.is_remote() || req.shell_snapshot.is_some()
+-        req.prepared.turn_environment.environment().is_remote() || req.shell_snapshot.is_some()
 +        req.prepared
 +            .turn_environment
-+            .environment
++            .environment()
 +            .process_sandbox_owner()
 +            == codex_exec_server::SandboxOwner::Executor
 +            || req.shell_snapshot.is_some()
      }
  
      fn sandbox_cwd<'b>(&self, req: &'b UnifiedExecRequest<'_>) -> Option<&'b PathUri> {
-@@ -254,6 +259,8 @@ impl<'a> ToolRuntime<UnifiedExecRequest<'_>, UnifiedExecAttempt> for UnifiedExec
+@@ -234,6 +239,8 @@ impl<'a> ToolRuntime<UnifiedExecRequest<'_>, UnifiedExecAttempt> for UnifiedExec
              .shell
              .as_ref()
              .unwrap_or(session_shell.as_ref());
-+        let uses_controller_shell = !prepared.turn_environment.environment.is_remote()
-+            && !prepared.turn_environment.environment.has_local_runtime();
++        let uses_controller_shell = !prepared.turn_environment.environment().is_remote()
++            && !prepared.turn_environment.environment().has_local_runtime();
          let (file_system_sandbox_policy, _) = attempt.permissions.to_runtime_permissions();
          let launch_sandbox_permissions = sandbox_permissions_preserving_denied_reads(
              prepared.permissions.sandbox_permissions,
-@@ -263,8 +270,8 @@ impl<'a> ToolRuntime<UnifiedExecRequest<'_>, UnifiedExecAttempt> for UnifiedExec
-             req.network.as_ref(),
+@@ -244,7 +251,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest<'_>, UnifiedExecAttempt> for UnifiedExec
              launch_sandbox_permissions,
          ));
--        let environment_is_remote = prepared.turn_environment.environment.is_remote();
+         let environment_is_remote = prepared.turn_environment.environment().is_remote();
 -        let credential_broker_available = !environment_is_remote
-+        let environment_is_remote = req.prepared.turn_environment.environment.is_remote();
 +        let credential_broker_available = uses_controller_shell
              && req.network.is_some()
              && ctx
                  .step_context
-@@ -281,7 +288,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest<'_>, UnifiedExecAttempt> for UnifiedExec
+@@ -261,7 +268,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest<'_>, UnifiedExecAttempt> for UnifiedExec
          };
          let snapshot_metrics =
              snapshot_metrics::SnapshotMetrics::start(req, &ctx.step_context.turn.config);
@@ -11825,7 +11857,7 @@ index 9d0352b0ac34bf71eaa1076d1a032a0e9da491d9..09b777e947a8fbaecf989de35a37edf8
              || credential_broker_available
                  && launch_sandbox_permissions.requires_escalated_permissions()
          {
-@@ -455,7 +462,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest<'_>, UnifiedExecAttempt> for UnifiedExec
+@@ -435,7 +442,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest<'_>, UnifiedExecAttempt> for UnifiedExec
          #[cfg(unix)]
          let runtime_path_prepends = {
              let mut runtime_path_prepends = RuntimePathPrepends::default();
@@ -11834,7 +11866,7 @@ index 9d0352b0ac34bf71eaa1076d1a032a0e9da491d9..09b777e947a8fbaecf989de35a37edf8
                  crate::tools::runtimes::apply_package_path_prepend(
                      &mut env,
                      &mut runtime_path_prepends,
-@@ -483,7 +490,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest<'_>, UnifiedExecAttempt> for UnifiedExec
+@@ -463,7 +470,7 @@ impl<'a> ToolRuntime<UnifiedExecRequest<'_>, UnifiedExecAttempt> for UnifiedExec
              command = command_with_path_prepends;
          }
          let mut snapshot_used = false;
@@ -11844,10 +11876,10 @@ index 9d0352b0ac34bf71eaa1076d1a032a0e9da491d9..09b777e947a8fbaecf989de35a37edf8
                  &command,
                  shell,
 diff --git a/codex-rs/core/src/tools/sandboxing.rs b/codex-rs/core/src/tools/sandboxing.rs
-index d80079d307d50c4eeb1b0ad441865cfa0792ace6..e48dcb74ea5a9233cf2dc2c2cad0b0fbae605c55 100644
+index 9f37891..a75d044 100644
 --- a/codex-rs/core/src/tools/sandboxing.rs
 +++ b/codex-rs/core/src/tools/sandboxing.rs
-@@ -439,7 +439,7 @@ pub(crate) fn executor_windows_sandbox_level(
+@@ -443,7 +443,7 @@ pub(crate) fn executor_windows_sandbox_level(
      }
  }
  
@@ -11857,22 +11889,10 @@ index d80079d307d50c4eeb1b0ad441865cfa0792ace6..e48dcb74ea5a9233cf2dc2c2cad0b0fb
      windows_sandbox_level: WindowsSandboxLevel,
      cwd: &PathUri,
 diff --git a/codex-rs/core/src/unified_exec/process_manager.rs b/codex-rs/core/src/unified_exec/process_manager.rs
-index 9715d1b1a8d0c3e2f0c02c7b27858fa77bb75bd6..9b22d381c89233459234702afd8ca8f9470f6304 100644
+index 315dbee..def78a2 100644
 --- a/codex-rs/core/src/unified_exec/process_manager.rs
 +++ b/codex-rs/core/src/unified_exec/process_manager.rs
-@@ -1323,7 +1323,10 @@ impl UnifiedExecProcessManager {
-         tty: bool,
-         environment: &codex_exec_server::Environment,
-     ) -> Result<UnifiedExecProcess, ToolError> {
--        let mut request = if environment.is_remote() || shell_snapshot.is_some() {
-+        let mut request = if environment.process_sandbox_owner()
-+            == codex_exec_server::SandboxOwner::Executor
-+            || shell_snapshot.is_some()
-+        {
-             attempt.env_for_exec_server(command, options).await
-         } else {
-             attempt
-@@ -1373,7 +1376,12 @@ impl UnifiedExecProcessManager {
+@@ -1362,7 +1362,12 @@ impl UnifiedExecProcessManager {
          tty: bool,
          environment: &codex_exec_server::Environment,
      ) -> Result<UnifiedExecProcess, UnifiedExecError> {
@@ -11887,10 +11907,10 @@ index 9715d1b1a8d0c3e2f0c02c7b27858fa77bb75bd6..9b22d381c89233459234702afd8ca8f9
              let params = exec_server_params_for_request(
                  process_id,
 diff --git a/codex-rs/core/tests/common/test_codex.rs b/codex-rs/core/tests/common/test_codex.rs
-index 89081ae5caf40fdfb24cd82d0b85422cb2342a21..c13cdd2c688d341c7373e28ed240b1c18097c806 100644
+index 68f76f2..70051f0 100644
 --- a/codex-rs/core/tests/common/test_codex.rs
 +++ b/codex-rs/core/tests/common/test_codex.rs
-@@ -418,6 +418,7 @@ pub struct TestCodexBuilder {
+@@ -419,6 +419,7 @@ pub struct TestCodexBuilder {
      user_shell_override: Option<Shell>,
      exec_server_url: Option<String>,
      extensions: Arc<ExtensionRegistry<Config>>,
@@ -11898,7 +11918,7 @@ index 89081ae5caf40fdfb24cd82d0b85422cb2342a21..c13cdd2c688d341c7373e28ed240b1c1
      user_instructions_provider: Option<Arc<dyn UserInstructionsProvider>>,
      supports_openai_form_elicitation: bool,
      external_time_provider: Option<Arc<dyn TimeProvider>>,
-@@ -453,6 +454,14 @@ impl TestCodexBuilder {
+@@ -455,6 +456,14 @@ impl TestCodexBuilder {
          self
      }
  
@@ -11913,7 +11933,7 @@ index 89081ae5caf40fdfb24cd82d0b85422cb2342a21..c13cdd2c688d341c7373e28ed240b1c1
      pub fn with_config<T>(mut self, mutator: T) -> Self
      where
          T: FnOnce(&mut Config) + Send + 'static,
-@@ -803,19 +812,23 @@ impl TestCodexBuilder {
+@@ -810,19 +819,23 @@ impl TestCodexBuilder {
              std::env::current_exe()?,
              codex_linux_sandbox_exe,
          )?;
@@ -11949,7 +11969,7 @@ index 89081ae5caf40fdfb24cd82d0b85422cb2342a21..c13cdd2c688d341c7373e28ed240b1c1
          let file_system = test_env.environment().get_filesystem();
          let mut workspace_setups = vec![];
          swap(&mut self.workspace_setups, &mut workspace_setups);
-@@ -1559,6 +1572,7 @@ pub fn test_codex() -> TestCodexBuilder {
+@@ -1587,6 +1600,7 @@ pub fn test_codex() -> TestCodexBuilder {
          user_shell_override: None,
          exec_server_url: None,
          extensions: empty_extension_registry(),
@@ -11959,7 +11979,7 @@ index 89081ae5caf40fdfb24cd82d0b85422cb2342a21..c13cdd2c688d341c7373e28ed240b1c1
          external_time_provider: None,
 diff --git a/codex-rs/core/tests/suite/injected_local_runtime.rs b/codex-rs/core/tests/suite/injected_local_runtime.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..ecbf46453a1075a0fe7ffca48ce1e3808076b42c
+index 0000000..ecbf464
 --- /dev/null
 +++ b/codex-rs/core/tests/suite/injected_local_runtime.rs
 @@ -0,0 +1,258 @@
@@ -12222,10 +12242,10 @@ index 0000000000000000000000000000000000000000..ecbf46453a1075a0fe7ffca48ce1e380
 +    Ok(())
 +}
 diff --git a/codex-rs/core/tests/suite/mod.rs b/codex-rs/core/tests/suite/mod.rs
-index d78151c35b91fb4dafdcb770500486cc01dfca09..7691162fb56a13f6a3d5922a175293eaf9654f57 100644
+index b1f7a42..8646cfe 100644
 --- a/codex-rs/core/tests/suite/mod.rs
 +++ b/codex-rs/core/tests/suite/mod.rs
-@@ -128,6 +128,7 @@ mod hooks_executor;
+@@ -132,6 +132,7 @@ mod hooks_executor;
  mod hooks_mcp;
  mod hooks_plugin_policy_refresh;
  mod image_rollout;
@@ -12234,7 +12254,7 @@ index d78151c35b91fb4dafdcb770500486cc01dfca09..7691162fb56a13f6a3d5922a175293ea
  #[cfg(not(target_os = "windows"))]
  mod interrupt_hooks;
 diff --git a/codex-rs/exec-server/BUILD.bazel b/codex-rs/exec-server/BUILD.bazel
-index 355e17e9eee8036022c3d04386d25c0a835b9e50..b2b4edac31bed8cf9c22f01f41c6575df1df237f 100644
+index 355e17e..b2b4eda 100644
 --- a/codex-rs/exec-server/BUILD.bazel
 +++ b/codex-rs/exec-server/BUILD.bazel
 @@ -25,6 +25,8 @@ codex_rust_crate(
@@ -12247,7 +12267,7 @@ index 355e17e9eee8036022c3d04386d25c0a835b9e50..b2b4edac31bed8cf9c22f01f41c6575d
      # Keep the crate's tests single-threaded under Bazel because they install
      # process-global test-binary dispatch state, and the remote exec-server
 diff --git a/codex-rs/exec-server/Cargo.toml b/codex-rs/exec-server/Cargo.toml
-index 6f9a1e7af8e4ab4e77c933487287e4575e9e7c31..1cd5b61accf30d99e1a4532db97d21eef352b45e 100644
+index 886262a..d616842 100644
 --- a/codex-rs/exec-server/Cargo.toml
 +++ b/codex-rs/exec-server/Cargo.toml
 @@ -20,6 +20,7 @@ workspace = true
@@ -12258,7 +12278,7 @@ index 6f9a1e7af8e4ab4e77c933487287e4575e9e7c31..1cd5b61accf30d99e1a4532db97d21ee
  arc-swap = { workspace = true }
  axum = { workspace = true, features = ["http1", "tokio", "ws"] }
  base64 = { workspace = true }
-@@ -96,7 +97,6 @@ windows-sys = { workspace = true, features = [
+@@ -95,7 +96,6 @@ windows-sys = { workspace = true, features = [
  ] }
  
  [dev-dependencies]
@@ -12268,7 +12288,7 @@ index 6f9a1e7af8e4ab4e77c933487287e4575e9e7c31..1cd5b61accf30d99e1a4532db97d21ee
  codex-utils-cargo-bin = { workspace = true }
 diff --git a/codex-rs/exec-server/examples/bootstrap_files_pc.rs b/codex-rs/exec-server/examples/bootstrap_files_pc.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..1855d6f754c0aaf8ee69939465452a8e8a19809c
+index 0000000..1855d6f
 --- /dev/null
 +++ b/codex-rs/exec-server/examples/bootstrap_files_pc.rs
 @@ -0,0 +1,162 @@
@@ -12436,7 +12456,7 @@ index 0000000000000000000000000000000000000000..1855d6f754c0aaf8ee69939465452a8e
 +}
 diff --git a/codex-rs/exec-server/examples/host_files_pc.rs b/codex-rs/exec-server/examples/host_files_pc.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..d32087637fdf40251be547d5bee531bbff43be3c
+index 0000000..d320876
 --- /dev/null
 +++ b/codex-rs/exec-server/examples/host_files_pc.rs
 @@ -0,0 +1,149 @@
@@ -12591,7 +12611,7 @@ index 0000000000000000000000000000000000000000..d32087637fdf40251be547d5bee531bb
 +}
 diff --git a/codex-rs/exec-server/src/bootstrap_files.rs b/codex-rs/exec-server/src/bootstrap_files.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..2bcba09857d2ec2655726ce0de1ac251d9e7af9a
+index 0000000..2bcba09
 --- /dev/null
 +++ b/codex-rs/exec-server/src/bootstrap_files.rs
 @@ -0,0 +1,275 @@
@@ -12872,7 +12892,7 @@ index 0000000000000000000000000000000000000000..2bcba09857d2ec2655726ce0de1ac251
 +mod tests;
 diff --git a/codex-rs/exec-server/src/bootstrap_files_protocol.rs b/codex-rs/exec-server/src/bootstrap_files_protocol.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..6e54cfc6240e82ef81adc65b4ef2d8e6080b39f0
+index 0000000..6e54cfc
 --- /dev/null
 +++ b/codex-rs/exec-server/src/bootstrap_files_protocol.rs
 @@ -0,0 +1,92 @@
@@ -12970,7 +12990,7 @@ index 0000000000000000000000000000000000000000..6e54cfc6240e82ef81adc65b4ef2d8e6
 +}
 diff --git a/codex-rs/exec-server/src/bootstrap_files_socket.rs b/codex-rs/exec-server/src/bootstrap_files_socket.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..092090b97e8c986c283b87585c14c76f3faa8aba
+index 0000000..092090b
 --- /dev/null
 +++ b/codex-rs/exec-server/src/bootstrap_files_socket.rs
 @@ -0,0 +1,273 @@
@@ -13249,7 +13269,7 @@ index 0000000000000000000000000000000000000000..092090b97e8c986c283b87585c14c76f
 +mod tests;
 diff --git a/codex-rs/exec-server/src/bootstrap_files_socket_tests.rs b/codex-rs/exec-server/src/bootstrap_files_socket_tests.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..57b706054219b1a6d38e7c60d90f0e7c06eeb7c6
+index 0000000..57b7060
 --- /dev/null
 +++ b/codex-rs/exec-server/src/bootstrap_files_socket_tests.rs
 @@ -0,0 +1,354 @@
@@ -13609,7 +13629,7 @@ index 0000000000000000000000000000000000000000..57b706054219b1a6d38e7c60d90f0e7c
 +}
 diff --git a/codex-rs/exec-server/src/bootstrap_files_tests.rs b/codex-rs/exec-server/src/bootstrap_files_tests.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..ead319bd129f8a01447de91974c16d99a79607a0
+index 0000000..ead319b
 --- /dev/null
 +++ b/codex-rs/exec-server/src/bootstrap_files_tests.rs
 @@ -0,0 +1,528 @@
@@ -14143,7 +14163,7 @@ index 0000000000000000000000000000000000000000..ead319bd129f8a01447de91974c16d99
 +}
 diff --git a/codex-rs/exec-server/src/bootstrap_files_trait.rs b/codex-rs/exec-server/src/bootstrap_files_trait.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..f75e5ce4c895452be8d200e35b7764617338cded
+index 0000000..f75e5ce
 --- /dev/null
 +++ b/codex-rs/exec-server/src/bootstrap_files_trait.rs
 @@ -0,0 +1,156 @@
@@ -14304,7 +14324,7 @@ index 0000000000000000000000000000000000000000..f75e5ce4c895452be8d200e35b776461
 +    }
 +}
 diff --git a/codex-rs/exec-server/src/client.rs b/codex-rs/exec-server/src/client.rs
-index 82c3f7ca837323a5dbbc9112842743aa9b28fe18..f9b2e17a160218c95ab065171fb1b41eff5c5353 100644
+index 82c3f7c..f9b2e17 100644
 --- a/codex-rs/exec-server/src/client.rs
 +++ b/codex-rs/exec-server/src/client.rs
 @@ -148,6 +148,8 @@ use codex_http_client::HttpClientFactory;
@@ -14318,7 +14338,7 @@ index 82c3f7ca837323a5dbbc9112842743aa9b28fe18..f9b2e17a160218c95ab065171fb1b41e
  #[cfg(test)]
 diff --git a/codex-rs/exec-server/src/client/fixed_transport.rs b/codex-rs/exec-server/src/client/fixed_transport.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..dcbc3acffc4958447b974848c6260f114f935921
+index 0000000..dcbc3ac
 --- /dev/null
 +++ b/codex-rs/exec-server/src/client/fixed_transport.rs
 @@ -0,0 +1,20 @@
@@ -14343,7 +14363,7 @@ index 0000000000000000000000000000000000000000..dcbc3acffc4958447b974848c6260f11
 +    }
 +}
 diff --git a/codex-rs/exec-server/src/environment.rs b/codex-rs/exec-server/src/environment.rs
-index a7f1c2895356d30b0b920b17767d8037d0a9c0ac..e53840acebcebb2c6fcddfce6b91e60fa7d6a576 100644
+index a5adfb7..bd22027 100644
 --- a/codex-rs/exec-server/src/environment.rs
 +++ b/codex-rs/exec-server/src/environment.rs
 @@ -56,6 +56,16 @@ use tracing::instrument::WithSubscriber;
@@ -14429,7 +14449,7 @@ index a7f1c2895356d30b0b920b17767d8037d0a9c0ac..e53840acebcebb2c6fcddfce6b91e60f
              environment_map.insert(
                  LOCAL_ENVIRONMENT_ID.to_string(),
                  Arc::clone(&local_environment),
-@@ -704,6 +746,7 @@ pub struct Environment {
+@@ -714,6 +756,7 @@ pub struct Environment {
      filesystem: Arc<dyn ExecutorFileSystem>,
      http_client: Arc<dyn HttpClient>,
      local_runtime_paths: Option<ExecServerRuntimeOptions>,
@@ -14437,7 +14457,7 @@ index a7f1c2895356d30b0b920b17767d8037d0a9c0ac..e53840acebcebb2c6fcddfce6b91e60f
  }
  
  impl Environment {
-@@ -722,6 +765,7 @@ impl Environment {
+@@ -732,6 +775,7 @@ impl Environment {
                  OutboundProxyPolicy::ReqwestDefault,
              ))),
              local_runtime_paths: None,
@@ -14445,7 +14465,7 @@ index a7f1c2895356d30b0b920b17767d8037d0a9c0ac..e53840acebcebb2c6fcddfce6b91e60f
          }
      }
  }
-@@ -804,6 +848,7 @@ impl Environment {
+@@ -814,6 +858,7 @@ impl Environment {
              )),
              http_client: Arc::new(RouteAwareHttpClient::new(http_client_factory)),
              local_runtime_paths: Some(local_runtime_paths),
@@ -14453,7 +14473,7 @@ index a7f1c2895356d30b0b920b17767d8037d0a9c0ac..e53840acebcebb2c6fcddfce6b91e60f
          }
      }
  
-@@ -836,6 +881,7 @@ impl Environment {
+@@ -846,6 +891,7 @@ impl Environment {
              filesystem,
              http_client: Arc::new(client),
              local_runtime_paths,
@@ -14461,7 +14481,7 @@ index a7f1c2895356d30b0b920b17767d8037d0a9c0ac..e53840acebcebb2c6fcddfce6b91e60f
          }
      }
  
-@@ -952,6 +998,9 @@ impl Environment {
+@@ -962,6 +1008,9 @@ impl Environment {
          fields(remote = self.is_remote())
      )]
      pub async fn info(&self) -> Result<EnvironmentInfo, ExecServerError> {
@@ -14471,7 +14491,7 @@ index a7f1c2895356d30b0b920b17767d8037d0a9c0ac..e53840acebcebb2c6fcddfce6b91e60f
          match &self.remote_client {
              Some(client) => client.environment_info().await,
              None => Ok(EnvironmentInfo::local()),
-@@ -1020,6 +1069,9 @@ impl Environment {
+@@ -1030,6 +1079,9 @@ impl Environment {
          fields(remote = self.is_remote())
      )]
      pub async fn force_info(&self) -> Result<EnvironmentInfo, ExecServerError> {
@@ -14481,7 +14501,7 @@ index a7f1c2895356d30b0b920b17767d8037d0a9c0ac..e53840acebcebb2c6fcddfce6b91e60f
          match &self.remote_client {
              Some(client) => client.get().await?.force_environment_info().await,
              None => Ok(EnvironmentInfo::local()),
-@@ -1146,6 +1198,9 @@ impl Environment {
+@@ -1156,6 +1208,9 @@ impl Environment {
  
      /// Returns whether startup has completed, including a first connection made by refresh.
      pub fn startup_finished(&self) -> bool {
@@ -14491,7 +14511,7 @@ index a7f1c2895356d30b0b920b17767d8037d0a9c0ac..e53840acebcebb2c6fcddfce6b91e60f
          self.remote_client
              .as_ref()
              .is_none_or(LazyRemoteExecServerClient::startup_finished)
-@@ -1158,6 +1213,9 @@ impl Environment {
+@@ -1168,6 +1223,9 @@ impl Environment {
          fields(remote = self.is_remote())
      )]
      pub async fn wait_until_ready(&self) -> Result<(), ExecServerError> {
@@ -14501,7 +14521,7 @@ index a7f1c2895356d30b0b920b17767d8037d0a9c0ac..e53840acebcebb2c6fcddfce6b91e60f
          match &self.remote_client {
              Some(client) => client.wait_until_ready().await,
              None => Ok(()),
-@@ -1166,6 +1224,9 @@ impl Environment {
+@@ -1176,6 +1234,9 @@ impl Environment {
  
      /// Returns whether the environment can serve a request without waiting or reconnecting.
      pub(crate) fn readiness_result(&self) -> Option<Result<(), ExecServerError>> {
@@ -14511,7 +14531,7 @@ index a7f1c2895356d30b0b920b17767d8037d0a9c0ac..e53840acebcebb2c6fcddfce6b91e60f
          match &self.remote_client {
              Some(client) => client.readiness_result(),
              None => Some(Ok(())),
-@@ -1174,11 +1235,15 @@ impl Environment {
+@@ -1184,11 +1245,15 @@ impl Environment {
  
      /// Returns the environment's status without starting or recovering it.
      ///
@@ -14530,7 +14550,7 @@ index a7f1c2895356d30b0b920b17767d8037d0a9c0ac..e53840acebcebb2c6fcddfce6b91e60f
              None => EnvironmentObservedStatus::Ready,
 diff --git a/codex-rs/exec-server/src/environment/exec_server_runtime.rs b/codex-rs/exec-server/src/environment/exec_server_runtime.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..2050062110c45fedba6d99f9675dc60dccc2ff92
+index 0000000..2050062
 --- /dev/null
 +++ b/codex-rs/exec-server/src/environment/exec_server_runtime.rs
 @@ -0,0 +1,189 @@
@@ -14725,7 +14745,7 @@ index 0000000000000000000000000000000000000000..2050062110c45fedba6d99f9675dc60d
 +}
 diff --git a/codex-rs/exec-server/src/environment/local_runtime.rs b/codex-rs/exec-server/src/environment/local_runtime.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..df3e3ff675ab24261c8c5edcbd816e2f87401b72
+index 0000000..df3e3ff
 --- /dev/null
 +++ b/codex-rs/exec-server/src/environment/local_runtime.rs
 @@ -0,0 +1,152 @@
@@ -14883,7 +14903,7 @@ index 0000000000000000000000000000000000000000..df3e3ff675ab24261c8c5edcbd816e2f
 +mod tests;
 diff --git a/codex-rs/exec-server/src/environment/local_runtime_tests.rs b/codex-rs/exec-server/src/environment/local_runtime_tests.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..636568164867ec9d3a26a1bee7419d3afcc86d06
+index 0000000..6365681
 --- /dev/null
 +++ b/codex-rs/exec-server/src/environment/local_runtime_tests.rs
 @@ -0,0 +1,316 @@
@@ -15204,7 +15224,7 @@ index 0000000000000000000000000000000000000000..636568164867ec9d3a26a1bee7419d3a
 +    assert!(runtime.backend.requests.lock().unwrap().is_empty());
 +}
 diff --git a/codex-rs/exec-server/src/environment_bootstrap.rs b/codex-rs/exec-server/src/environment_bootstrap.rs
-index 76624b0eec5dd75292c6ba6544e99c9a67dcbe1e..426241adf552409fae06f7e64af6a5db9e9d3233 100644
+index 76624b0..426241a 100644
 --- a/codex-rs/exec-server/src/environment_bootstrap.rs
 +++ b/codex-rs/exec-server/src/environment_bootstrap.rs
 @@ -3,6 +3,7 @@ use codex_http_client::HttpClientFactory;
@@ -15250,7 +15270,7 @@ index 76624b0eec5dd75292c6ba6544e99c9a67dcbe1e..426241adf552409fae06f7e64af6a5db
          match &self.source {
 diff --git a/codex-rs/exec-server/src/host_files.rs b/codex-rs/exec-server/src/host_files.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..ff075f99b16703ecc1a5ca788fe0565967fac5c9
+index 0000000..ff075f9
 --- /dev/null
 +++ b/codex-rs/exec-server/src/host_files.rs
 @@ -0,0 +1,358 @@
@@ -15614,7 +15634,7 @@ index 0000000000000000000000000000000000000000..ff075f99b16703ecc1a5ca788fe05659
 +mod tests;
 diff --git a/codex-rs/exec-server/src/host_files_protocol.rs b/codex-rs/exec-server/src/host_files_protocol.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..a31380b1e51f4a971ae4ca67646654cc0aa91406
+index 0000000..a31380b
 --- /dev/null
 +++ b/codex-rs/exec-server/src/host_files_protocol.rs
 @@ -0,0 +1,103 @@
@@ -15723,7 +15743,7 @@ index 0000000000000000000000000000000000000000..a31380b1e51f4a971ae4ca67646654cc
 +}
 diff --git a/codex-rs/exec-server/src/host_files_tests.rs b/codex-rs/exec-server/src/host_files_tests.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..aa4e9592d062b36f33c7fb57947e5679e224de96
+index 0000000..aa4e959
 --- /dev/null
 +++ b/codex-rs/exec-server/src/host_files_tests.rs
 @@ -0,0 +1,637 @@
@@ -16366,7 +16386,7 @@ index 0000000000000000000000000000000000000000..aa4e9592d062b36f33c7fb57947e5679
 +}
 diff --git a/codex-rs/exec-server/src/host_files_trait.rs b/codex-rs/exec-server/src/host_files_trait.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..defacf2ff63ea7472a78a28d81fe6719cd8bfdeb
+index 0000000..defacf2
 --- /dev/null
 +++ b/codex-rs/exec-server/src/host_files_trait.rs
 @@ -0,0 +1,158 @@
@@ -16530,7 +16550,7 @@ index 0000000000000000000000000000000000000000..defacf2ff63ea7472a78a28d81fe6719
 +}
 diff --git a/codex-rs/exec-server/src/host_v2.rs b/codex-rs/exec-server/src/host_v2.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..8afd86e74e9d97c1da7d06c33e2645751625fad9
+index 0000000..8afd86e
 --- /dev/null
 +++ b/codex-rs/exec-server/src/host_v2.rs
 @@ -0,0 +1,327 @@
@@ -16863,7 +16883,7 @@ index 0000000000000000000000000000000000000000..8afd86e74e9d97c1da7d06c33e264575
 +mod tests;
 diff --git a/codex-rs/exec-server/src/host_v2_files.rs b/codex-rs/exec-server/src/host_v2_files.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..e1765ff9758bf99517adc6d2e8ef1a4211be7b15
+index 0000000..e1765ff
 --- /dev/null
 +++ b/codex-rs/exec-server/src/host_v2_files.rs
 @@ -0,0 +1,309 @@
@@ -17178,7 +17198,7 @@ index 0000000000000000000000000000000000000000..e1765ff9758bf99517adc6d2e8ef1a42
 +}
 diff --git a/codex-rs/exec-server/src/host_v2_processes.rs b/codex-rs/exec-server/src/host_v2_processes.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..e1bdf5ec4fa12aaa497973328d56d127415ee1e6
+index 0000000..e1bdf5e
 --- /dev/null
 +++ b/codex-rs/exec-server/src/host_v2_processes.rs
 @@ -0,0 +1,289 @@
@@ -17473,7 +17493,7 @@ index 0000000000000000000000000000000000000000..e1bdf5ec4fa12aaa497973328d56d127
 +}
 diff --git a/codex-rs/exec-server/src/host_v2_protocol.rs b/codex-rs/exec-server/src/host_v2_protocol.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..e78405b1591bc329f8a54fc39f62a78be6396748
+index 0000000..e78405b
 --- /dev/null
 +++ b/codex-rs/exec-server/src/host_v2_protocol.rs
 @@ -0,0 +1,142 @@
@@ -17621,7 +17641,7 @@ index 0000000000000000000000000000000000000000..e78405b1591bc329f8a54fc39f62a78b
 +}
 diff --git a/codex-rs/exec-server/src/host_v2_tests.rs b/codex-rs/exec-server/src/host_v2_tests.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..9c23e63997b1fb1a49289dd92fedd896cdbc1496
+index 0000000..9c23e63
 --- /dev/null
 +++ b/codex-rs/exec-server/src/host_v2_tests.rs
 @@ -0,0 +1,276 @@
@@ -17902,7 +17922,7 @@ index 0000000000000000000000000000000000000000..9c23e63997b1fb1a49289dd92fedd896
 +    Ok(())
 +}
 diff --git a/codex-rs/exec-server/src/lib.rs b/codex-rs/exec-server/src/lib.rs
-index 6d77d325a21e6a1ee24c6333514cbe0781cf992e..9a1ce2f47d17d2a380e96ab572de16d5fd520afb 100644
+index 4ef470c..e105cbf 100644
 --- a/codex-rs/exec-server/src/lib.rs
 +++ b/codex-rs/exec-server/src/lib.rs
 @@ -1,4 +1,8 @@
@@ -17988,7 +18008,7 @@ index 6d77d325a21e6a1ee24c6333514cbe0781cf992e..9a1ce2f47d17d2a380e96ab572de16d5
  pub use environment::supports_capability_discovery_v2;
  pub use environment_bootstrap::PreparedEnvironmentManager;
  pub use environment_provider::DefaultEnvironmentProvider;
-@@ -257,3 +297,6 @@ pub use sandbox_integrity::run_integrity_checks;
+@@ -260,3 +300,6 @@ pub use sandbox_integrity::run_integrity_checks;
  
  #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
  pub async fn run_integrity_checks(_request: &codex_sandboxing::SandboxExecRequest) {}
@@ -17996,7 +18016,7 @@ index 6d77d325a21e6a1ee24c6333514cbe0781cf992e..9a1ce2f47d17d2a380e96ab572de16d5
 +/// Native adapters retain all current runtime options.
 +pub type ExecServerRuntimePaths = ExecServerRuntimeOptions;
 diff --git a/codex-rs/exec-server/src/process.rs b/codex-rs/exec-server/src/process.rs
-index 5e795faa1af2634ffd5eee36608f03e7459e07f7..4e3dab616425787d8a7baedc45e3164173f4d730 100644
+index 5e795fa..4e3dab6 100644
 --- a/codex-rs/exec-server/src/process.rs
 +++ b/codex-rs/exec-server/src/process.rs
 @@ -7,6 +7,7 @@ use std::sync::Mutex as StdMutex;
@@ -18095,7 +18115,7 @@ index 5e795faa1af2634ffd5eee36608f03e7459e07f7..4e3dab616425787d8a7baedc45e31641
  }
  
 diff --git a/codex-rs/exec-server/src/remote_file_system.rs b/codex-rs/exec-server/src/remote_file_system.rs
-index 06762ed9b483c32c667ca7887eb92876a2b77b0b..0e0a55d0984a8a9304a2cc9fe75c9760da733cd2 100644
+index 06762ed..0e0a55d 100644
 --- a/codex-rs/exec-server/src/remote_file_system.rs
 +++ b/codex-rs/exec-server/src/remote_file_system.rs
 @@ -65,6 +65,12 @@ pub(crate) struct RemoteFileSystem {
@@ -18243,7 +18263,7 @@ index 06762ed9b483c32c667ca7887eb92876a2b77b0b..0e0a55d0984a8a9304a2cc9fe75c9760
              .await;
          self.lock_metadata_requests().clear();
 diff --git a/codex-rs/exec-server/src/remote_process.rs b/codex-rs/exec-server/src/remote_process.rs
-index 4c2d4c8e63514a3f8157f1b0275662f5407fcd68..241c874d3143630d8e844a2072265d3b31d364e8 100644
+index 4c2d4c8..241c874 100644
 --- a/codex-rs/exec-server/src/remote_process.rs
 +++ b/codex-rs/exec-server/src/remote_process.rs
 @@ -21,16 +21,34 @@ use crate::protocol::WriteResponse;
@@ -18362,7 +18382,7 @@ index 4c2d4c8e63514a3f8157f1b0275662f5407fcd68..241c874d3143630d8e844a2072265d3b
 +}
 diff --git a/codex-rs/exec-server/src/runtime_acquisition.rs b/codex-rs/exec-server/src/runtime_acquisition.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..fb88ea93006cf55610f427af4e26aaf065bd0fe4
+index 0000000..fb88ea9
 --- /dev/null
 +++ b/codex-rs/exec-server/src/runtime_acquisition.rs
 @@ -0,0 +1,226 @@
@@ -18594,7 +18614,7 @@ index 0000000000000000000000000000000000000000..fb88ea93006cf55610f427af4e26aaf0
 +}
 diff --git a/codex-rs/exec-server/src/runtime_acquisition_socket.rs b/codex-rs/exec-server/src/runtime_acquisition_socket.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..432506f69534192f6bae8d13cb35a79994abc7b3
+index 0000000..432506f
 --- /dev/null
 +++ b/codex-rs/exec-server/src/runtime_acquisition_socket.rs
 @@ -0,0 +1,243 @@
@@ -18843,7 +18863,7 @@ index 0000000000000000000000000000000000000000..432506f69534192f6bae8d13cb35a799
 +}
 diff --git a/codex-rs/exec-server/src/runtime_startup.rs b/codex-rs/exec-server/src/runtime_startup.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..e418405c43330de24ba59fda504d2b71b3ba0441
+index 0000000..e418405
 --- /dev/null
 +++ b/codex-rs/exec-server/src/runtime_startup.rs
 @@ -0,0 +1,300 @@
@@ -19149,7 +19169,7 @@ index 0000000000000000000000000000000000000000..e418405c43330de24ba59fda504d2b71
 +}
 diff --git a/codex-rs/exec-server/tests/fixtures/native_exec_server.py b/codex-rs/exec-server/tests/fixtures/native_exec_server.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..776d39a2106a140bd6339cfbdb2ab048ee3f8747
+index 0000000..776d39a
 --- /dev/null
 +++ b/codex-rs/exec-server/tests/fixtures/native_exec_server.py
 @@ -0,0 +1,88 @@
@@ -19243,7 +19263,7 @@ index 0000000000000000000000000000000000000000..776d39a2106a140bd6339cfbdb2ab048
 +asyncio.run(serve_stdio(ExecServer(ObservedBackend(), environment_info=info)))
 diff --git a/codex-rs/exec-server/tests/fixtures/runtime_acquisition_peer.py b/codex-rs/exec-server/tests/fixtures/runtime_acquisition_peer.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..322976e590d81e0ae79db902dc7b879d67281ea3
+index 0000000..322976e
 --- /dev/null
 +++ b/codex-rs/exec-server/tests/fixtures/runtime_acquisition_peer.py
 @@ -0,0 +1,110 @@
@@ -19359,7 +19379,7 @@ index 0000000000000000000000000000000000000000..322976e590d81e0ae79db902dc7b879d
 +print(json.dumps({"lifetimeClosed": True}), flush=True)
 diff --git a/codex-rs/exec-server/tests/native_local_runtime.rs b/codex-rs/exec-server/tests/native_local_runtime.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..ca05bdc382e9966f2ca1ab17bc60959419e5c9ad
+index 0000000..ca05bdc
 --- /dev/null
 +++ b/codex-rs/exec-server/tests/native_local_runtime.rs
 @@ -0,0 +1,369 @@
@@ -19734,7 +19754,7 @@ index 0000000000000000000000000000000000000000..ca05bdc382e9966f2ca1ab17bc609594
 +}
 diff --git a/codex-rs/exec-server/tests/owned_process_events.rs b/codex-rs/exec-server/tests/owned_process_events.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..a47edaf41ae43c2981f6eb7d0acc3dfe9f6c3264
+index 0000000..a47edaf
 --- /dev/null
 +++ b/codex-rs/exec-server/tests/owned_process_events.rs
 @@ -0,0 +1,375 @@
@@ -20115,7 +20135,7 @@ index 0000000000000000000000000000000000000000..a47edaf41ae43c2981f6eb7d0acc3dfe
 +}
 diff --git a/codex-rs/exec-server/tests/runtime_acquisition.rs b/codex-rs/exec-server/tests/runtime_acquisition.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..0ba9f4148e7299abd3049e6f9dfac75d15f2c4d5
+index 0000000..0ba9f41
 --- /dev/null
 +++ b/codex-rs/exec-server/tests/runtime_acquisition.rs
 @@ -0,0 +1,249 @@
@@ -20369,7 +20389,7 @@ index 0000000000000000000000000000000000000000..0ba9f4148e7299abd3049e6f9dfac75d
 +    Ok(())
 +}
 diff --git a/codex-rs/file-system/src/find_up.rs b/codex-rs/file-system/src/find_up.rs
-index a5a071d2843ccd19f11a73aed3af54e676b9e876..ec26f6324ba7392eed412c92397836b5e3a81c34 100644
+index a5a071d..ec26f63 100644
 --- a/codex-rs/file-system/src/find_up.rs
 +++ b/codex-rs/file-system/src/find_up.rs
 @@ -70,6 +70,54 @@ pub async fn find_nearest_native_ancestor_with_markers(
@@ -20428,10 +20448,10 @@ index a5a071d2843ccd19f11a73aed3af54e676b9e876..ec26f6324ba7392eed412c92397836b5
      file_system: &dyn ExecutorFileSystem,
      start: P,
 diff --git a/codex-rs/file-system/src/lib.rs b/codex-rs/file-system/src/lib.rs
-index 9e032e557b2ddd55ac9a51721708d5258bc7f52b..ccc1b54b25136d2193e9f18c6cc16ccfe71a00bd 100644
+index 4756de1..a91d8b1 100644
 --- a/codex-rs/file-system/src/lib.rs
 +++ b/codex-rs/file-system/src/lib.rs
-@@ -29,6 +29,7 @@ pub use environment_accessor::FileSystemEnvironmentAccessor;
+@@ -26,6 +26,7 @@ pub use environment_accessor::FileSystemEnvironmentAccessor;
  pub use find_up::FindUpErrorPolicy;
  pub use find_up::find_nearest_ancestor_with_markers;
  pub use find_up::find_nearest_native_ancestor_with_markers;
@@ -20441,7 +20461,7 @@ index 9e032e557b2ddd55ac9a51721708d5258bc7f52b..ccc1b54b25136d2193e9f18c6cc16ccf
  pub use local_logs::LocalLogsDir;
 diff --git a/codex-rs/git-utils/src/bounded_trust.rs b/codex-rs/git-utils/src/bounded_trust.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..f08f6535f5b4cf6804dbd920c10a3a3b7207929d
+index 0000000..f08f653
 --- /dev/null
 +++ b/codex-rs/git-utils/src/bounded_trust.rs
 @@ -0,0 +1,302 @@
@@ -20748,7 +20768,7 @@ index 0000000000000000000000000000000000000000..f08f6535f5b4cf6804dbd920c10a3a3b
 +        .ok_or(ResolutionError::Absent)
 +}
 diff --git a/codex-rs/git-utils/src/lib.rs b/codex-rs/git-utils/src/lib.rs
-index 1224d2ab03516cfca762b8bb2f31419e71cdcb84..a5c88bb8520116c82c1f7ec95daf90cc8f21ec25 100644
+index 1224d2a..a5c88bb 100644
 --- a/codex-rs/git-utils/src/lib.rs
 +++ b/codex-rs/git-utils/src/lib.rs
 @@ -1,5 +1,6 @@
@@ -20777,7 +20797,7 @@ index 1224d2ab03516cfca762b8bb2f31419e71cdcb84..a5c88bb8520116c82c1f7ec95daf90cc
  pub use codex_protocol::protocol::GitSha;
 diff --git a/codex-rs/git-utils/src/trust_filesystem.rs b/codex-rs/git-utils/src/trust_filesystem.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..36577fa67c5f30b541ff025a2a43ce2511061eb7
+index 0000000..36577fa
 --- /dev/null
 +++ b/codex-rs/git-utils/src/trust_filesystem.rs
 @@ -0,0 +1,118 @@
@@ -20900,10 +20920,10 @@ index 0000000000000000000000000000000000000000..36577fa67c5f30b541ff025a2a43ce25
 +    }
 +}
 diff --git a/codex-rs/thread-manager-sample/src/main.rs b/codex-rs/thread-manager-sample/src/main.rs
-index 1ced86ef113dfd68db029a86d2a83b13cf4465bf..7812de1c88a836f4ed289ca1e944e9225a04d192 100644
+index 80bb021..37fde5d 100644
 --- a/codex-rs/thread-manager-sample/src/main.rs
 +++ b/codex-rs/thread-manager-sample/src/main.rs
-@@ -240,6 +240,8 @@ async fn new_config(
+@@ -244,6 +244,8 @@ async fn new_config(
          application_auth_route_config: Some(auth_config.auth_route_config.clone()),
          config_layer_stack,
          plugins: Default::default(),
@@ -20913,7 +20933,7 @@ index 1ced86ef113dfd68db029a86d2a83b13cf4465bf..7812de1c88a836f4ed289ca1e944e922
          bypass_hook_trust: false,
          model,
 diff --git a/codex-rs/utils/pty/src/lib.rs b/codex-rs/utils/pty/src/lib.rs
-index 8b0070fde274277ec144e34214d380b99a717bda..14ff09135794077f06a2d61fa54dea739434b180 100644
+index 8b0070f..14ff091 100644
 --- a/codex-rs/utils/pty/src/lib.rs
 +++ b/codex-rs/utils/pty/src/lib.rs
 @@ -66,5 +66,11 @@ mod spawn_helper_main;
@@ -20930,7 +20950,7 @@ index 8b0070fde274277ec144e34214d380b99a717bda..14ff09135794077f06a2d61fa54dea73
  use tests::spawn_helper_tests;
 diff --git a/codex-rs/utils/pty/src/owned_driver_tests.rs b/codex-rs/utils/pty/src/owned_driver_tests.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..a89fbc5a702c24670e08344f0bebec2d47983ff2
+index 0000000..a89fbc5
 --- /dev/null
 +++ b/codex-rs/utils/pty/src/owned_driver_tests.rs
 @@ -0,0 +1,211 @@
@@ -21146,7 +21166,7 @@ index 0000000000000000000000000000000000000000..a89fbc5a702c24670e08344f0bebec2d
 +    assert!(child.lock().unwrap().try_wait().unwrap().is_some());
 +}
 diff --git a/codex-rs/utils/pty/src/process.rs b/codex-rs/utils/pty/src/process.rs
-index 4ad710f63fd8d2aa534bb6b1d2e21a5fa99b3cd5..8bced41d101d59f385083efa9fe0d0feb9610dca 100644
+index 4ad710f..8bced41 100644
 --- a/codex-rs/utils/pty/src/process.rs
 +++ b/codex-rs/utils/pty/src/process.rs
 @@ -123,6 +123,9 @@ pub struct ProcessHandle {
@@ -21224,7 +21244,7 @@ index 4ad710f63fd8d2aa534bb6b1d2e21a5fa99b3cd5..8bced41d101d59f385083efa9fe0d0fe
 +pub use owned_driver::spawn_from_owned_driver;
 diff --git a/codex-rs/utils/pty/src/process/owned_driver.rs b/codex-rs/utils/pty/src/process/owned_driver.rs
 new file mode 100644
-index 0000000000000000000000000000000000000000..3575331b27e719f3d3ebede5107269c62ebc268e
+index 0000000..3575331
 --- /dev/null
 +++ b/codex-rs/utils/pty/src/process/owned_driver.rs
 @@ -0,0 +1,113 @@
@@ -21342,7 +21362,7 @@ index 0000000000000000000000000000000000000000..3575331b27e719f3d3ebede5107269c6
 +    }
 +}
 diff --git a/codex-rs/utils/pty/src/tests.rs b/codex-rs/utils/pty/src/tests.rs
-index 20cf4d5b26ead3c8827ddd76422c0d642fd83d77..e382828e2ae66f38c9841729da7870f63fe6d695 100644
+index 20cf4d5..e382828 100644
 --- a/codex-rs/utils/pty/src/tests.rs
 +++ b/codex-rs/utils/pty/src/tests.rs
 @@ -13,6 +13,9 @@ use crate::spawn_pipe_process;

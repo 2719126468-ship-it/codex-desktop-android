@@ -16,7 +16,31 @@ import stat
 import struct
 import tempfile
 
-KNOWN = {'ff2f15086473082610eb5756177a4a7f926a05d715437070b84c4fca9b94dd85': {'module': '.vite/build/early-bootstrap-824-8c6252e0131a7fe3.js',
+KNOWN = {'d6511a6999ba4a6e3579001274fc79addae3b2604503af52600523b4ccf3c9d3': {'module': '.vite/build/early-bootstrap-824-71d2a741f6138352.js',
+ 'sha256': 'be1ce76c13ab45bd2df4575e566a3cd8e8ff2315431a1e55d1ca398058d3b147',
+ 'insertions': [{'at': 244835,
+                 'code': '\n'
+                         ';/* Codex workspace provider v1 */\n'
+                         "({resolveManifest:et,validatePaths:ew,diagnose:X}=require('/usr/local/lib/codex/codex-workspace-provider.cjs').integrate({resolveManifest:et,validatePaths:ew,diagnose:X}));\n",
+                 'role': 'workspaceProvider'},
+                {'at': 163739,
+                 'code': '\n'
+                         ';/* Codex startup configuration probe */\n'
+                         "G=require('/usr/local/lib/codex/codex-workspace-provider.cjs').integrateStartupTransportResolver(G);\n",
+                 'role': 'startupProbeResolver'},
+                {'at': 227292,
+                 'code': "require('/usr/local/lib/codex/codex-workspace-provider.cjs').integrate({instructions:",
+                 'role': 'wrap-instructions-start'},
+                {'at': 227894,
+                 'code': '}).instructions',
+                 'role': 'wrap-instructions-end'},
+                {'at': 232768,
+                 'code': "require('/usr/local/lib/codex/codex-workspace-provider.cjs').integrate({downloadFile:",
+                 'role': 'wrap-downloadFile-start'},
+                {'at': 233509,
+                 'code': '}).downloadFile',
+                 'role': 'wrap-downloadFile-end'}]},
+ 'ff2f15086473082610eb5756177a4a7f926a05d715437070b84c4fca9b94dd85': {'module': '.vite/build/early-bootstrap-824-8c6252e0131a7fe3.js',
                                                                       'sha256': '135ba428856dcfa52b53be2cc714bef8ed4fe8cefdad6011e61c89f27069b36b',
                                                                       'insertions': [{'at': 244092,
                                                                                       'code': '\n'
