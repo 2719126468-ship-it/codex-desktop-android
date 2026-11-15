@@ -3,6 +3,7 @@ import importlib.util
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -22,11 +23,13 @@ class PublicationTests(unittest.TestCase):
             root = Path(temporary)
             source = root / "source"
             target = root / "published"
-            source.mkdir()
+            source.mkdir(mode=0o700)
             (source / "manifest.json").write_bytes(b"verified fixture")
             BUILD.publish_directory(source, target)
             self.assertFalse(source.exists())
             self.assertEqual((target / "manifest.json").read_bytes(), b"verified fixture")
+            if str(root).startswith("/var/tmp/"):
+                self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o755)
             source.mkdir()
             (source / "manifest.json").write_bytes(b"replacement fixture")
             with self.assertRaises((FileExistsError, subprocess.CalledProcessError)):

@@ -193,7 +193,11 @@ def validate_signatures(work, evidence, keyring):
 
 
 def publish_directory(staging, target):
-    """Atomically promote a completed directory, refusing any existing target."""
+    """Atomically publish completed public build inputs without replacing a target."""
+    # mkdtemp creates mode 0700, including when packaging under sudo. The
+    # following unprivileged build stages must be able to read these public
+    # archives; retain root ownership and prohibit group/other writes.
+    staging.chmod(0o755)
     # WSL's DrvFS does not implement Linux RENAME_NOREPLACE. Native Windows
     # os.rename has the required no-replacement semantics on the same NTFS
     # volume. Use that actual filesystem API rather than weakening the flag.
