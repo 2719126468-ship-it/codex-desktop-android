@@ -76,5 +76,9 @@ Debian 软件源或工具链可在仓库脚本未变化时更新；需要刷新�
 `config/android/release-notes.txt` 中的说明，同时附带 `build-info.json` 和 `SHA256SUMS`。
 未通过的上传保留为草稿；小体积日志保留七天，不上传签名密钥或手机数据。
 
-首版尚需一次实际 Actions 构建与新设备首次安装验证。工作流成功不等于通过真机测试。
+2026-11-16，[第 10 轮 Actions](https://github.com/JinShichang/codex-desktop-android/actions/runs/43744217664)
+已完成完整 APK 构建、签名、校验并发布 [v70](https://github.com/JinShichang/codex-desktop-android/releases/tag/v70)。
+发布阶段首次创建草稿后未能从列表识别该草稿；仅重跑失败任务后复用已保存的 APK 发布成功。
+下载后的成品也已通过完整环境归档、版本、原签名和 DEX/JNI 离线检查。
+新设备首次安装和 Android 11/12 真机运行仍未验证；工作流成功不等于通过真机测试。
 完整镜像含官方桌面客户端；公开分发前需按其适用条款处理，仓库的开源许可证不授予该客户端的再分发权。
