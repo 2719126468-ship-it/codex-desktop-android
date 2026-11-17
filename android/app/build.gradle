@@ -203,7 +203,7 @@ def syncLocalToolsAssets = tasks.register('syncCodexToolsAssets', NativeFilesRpc
     from(rootProject.file('../tools/runtime/codex-phone-dialogs.css')) { into 'codex-tools' }
     from(rootProject.file('../runtime/guest/codex-session.sh')) { into 'codex-tools' }
     from(rootProject.file('../runtime/guest')) {
-        include 'codex_ime.py', 'keyboard-focus.js'
+        include 'codex_ime.py', 'keyboard-focus.js', 'codex-graphics.sh', 'codex-software-probe.py'
         into 'codex-tools'
     }
     from(rootProject.file('../tools/runtime')) {

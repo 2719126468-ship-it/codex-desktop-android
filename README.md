@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/106fb10e-1151-4f02-9a93-da7b29ec0529
 
 Codex Android 是基于 FoldGPT 的独立适配项目，把 Linux ARM64 版 ChatGPT 桌面客户端带到 Android 上。它提供简体中文界面、启动全屏、共享存储项目，以及带屏幕边缘提示的前台手机操控。
 
-**本项目只在一加 13（Android 17、ARM64）上做过实机测试，其他手机能否运行没有保证。仓库只提供源码，不计划发布 Release APK。**
+**本项目只在一加 13（Android 17、ARM64）上做过实机测试，其他手机能否运行没有保证。仓库提供源码和测试版 APK；更新包需要已有 Linux 运行环境，首次安装请使用包含环境的完整包。**
 
 ## 功能亮点
 
@@ -16,6 +16,7 @@ Codex Android 是基于 FoldGPT 的独立适配项目，把 Linux ARM64 版 Chat
 - **通过 MCP 操控手机**：授权无障碍服务后，Codex 可读屏、点击、滑动和输入；提供任务状态悬浮窗，以及暂停、继续、接管和停止操作。
 - **屏幕边缘动态光效**：手机操控期间以连续渐变光效提示工作状态，配合悬浮窗与灵动岛，让当前操作更直观。
 - **高刷新率与中文输入**：解除桌面固定 60Hz 限制，随系统实际显示模式同步刷新率；提供简体中文界面，并优化系统输入法、焦点保持和键盘遮挡适配。
+- **Android 工具与配置共享**：提供图形自动/兼容/加速模式和日志导出；通过系统文件选择器授权整个 `.codex` 目录，供独立 CC Switch 等应用读写配置。当前改动的跨应用读写及其他 GPU 实机表现待验证。
 
 灵动岛展示由系统决定，实际帧率受系统设置、温控和负载影响。项目命令与桌面渲染在手机上运行，模型推理由在线服务完成。[实时状态与光效说明](docs/live-status-and-edge-glow.md) · [兼容性与验证范围](docs/compatibility.md)
 
@@ -25,7 +26,7 @@ Codex Android 是基于 FoldGPT 的独立适配项目，把 Linux ARM64 版 Chat
 - **桌面与本地执行**使用 PRoot 提供 Debian 用户空间，运行 Linux ARM64 桌面客户端。适配后的 Codex `app-server` 通过 Android 原生执行器运行项目命令、访问工作区。模型推理由在线服务完成。
 - **手机操控**通过本机 MCP 接入 Codex。前台读屏、点击和输入由 Android 无障碍服务执行，Root 功能单独授权。
 
-当前开发版应用 ID 为 `com.ai.codex`，versionCode 为 `60`，适配目标为桌面客户端 `26.1111.21308` 和 Codex `rust-v0.169.0`。[架构文档](docs/architecture.md) · [后端版本与补丁清单](recovery/engine/manifest.json)
+当前应用 ID 为 `com.ai.codex`。本次本地测试包通过构建参数指定 versionCode `71`，适配目标为桌面客户端 `26.1111.21308` 和 Codex `rust-v0.169.0`；这些新改动的实机验证范围见兼容性文档。[架构文档](docs/architecture.md) · [后端版本与补丁清单](recovery/engine/manifest.json)
 
 ## 使用 Agent 部署
 

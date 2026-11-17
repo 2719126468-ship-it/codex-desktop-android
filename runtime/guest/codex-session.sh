@@ -44,24 +44,8 @@ if [[ "${CODEX_PHONE_CLIENT_COMPAT:-0}" == 1 ]]; then
     export GDK_SCALE=2 GDK_DPI_SCALE=1
     python3 -B /usr/local/lib/codex/codex_native_dialogs.py prepare
 fi
-# Keep our driver separate from both Debian Mesa and the official client. This
-# selects libraries; inspect-gpu.py must still verify the client's actual use.
-gpu_prefix=/opt/codex-gpu/mesa-26.2.2-codex5
-if [[ -d "$gpu_prefix" ]]; then
-    for required in lib/libGL.so.1 lib/libEGL.so.1 lib/libvulkan_freedreno.so share/vulkan/icd.d/freedreno_icd.aarch64.json; do
-        if [[ ! -r "$gpu_prefix/$required" ]]; then
-            echo "Codex GPU installation incomplete: $required" >&2
-            exit 1
-        fi
-    done
-    export VK_DRIVER_FILES="$gpu_prefix/share/vulkan/icd.d/freedreno_icd.aarch64.json"
-    export LD_LIBRARY_PATH="$gpu_prefix/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-    export MESA_LOADER_DRIVER_OVERRIDE=zink
-    export GALLIUM_DRIVER=zink
-    echo "Codex GPU driver selected: Mesa 26.2.2 Zink/Turnip"
-else
-    echo "Codex GPU driver not installed; using Debian graphics libraries" >&2
-fi
+source /usr/local/lib/codex/codex-graphics.sh
+codex_select_graphics
 if [[ -f /usr/local/lib/codex/libquiet_xext.so ]]; then
     export LD_PRELOAD="/usr/local/lib/codex/libquiet_xext.so${LD_PRELOAD:+:$LD_PRELOAD}"
 fi
@@ -87,7 +71,7 @@ client_compat_args=()
 if [[ "${CODEX_PHONE_CLIENT_COMPAT:-0}" == 1 ]]; then
     client_compat_args+=(--no-sandbox --no-zygote --enable-logging=stderr)
 fi
-chatgpt "${client_compat_args[@]}" --lang="${CODEX_LANGUAGE:-zh-CN}" --ozone-platform=x11 --force-device-scale-factor="${CODEX_SCALE:-1.5}" --start-maximized --remote-debugging-address=127.0.0.1 --remote-debugging-port="$CODEX_CDP_PORT" &
+chatgpt "${client_compat_args[@]}" "${CODEX_GRAPHICS_CLIENT_ARGS[@]}" --lang="${CODEX_LANGUAGE:-zh-CN}" --ozone-platform=x11 --force-device-scale-factor="${CODEX_SCALE:-1.5}" --start-maximized --remote-debugging-address=127.0.0.1 --remote-debugging-port="$CODEX_CDP_PORT" &
 client_pid=$!
 if [[ "${CODEX_PHONE_CLIENT_COMPAT:-0}" == 1 ]]; then
     python3 -B /usr/local/lib/codex/codex_native_dialogs.py watch --pid "$client_pid" \

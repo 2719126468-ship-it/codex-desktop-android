@@ -61,6 +61,13 @@ def authenticated_client(upstream, output, expected_version=None):
 
 
 def install_guest_sources(root):
+    graphics = root / "usr/local/lib/codex/codex-graphics.sh"
+    graphics.parent.mkdir(parents=True, exist_ok=True)
+    graphics.write_bytes((ROOT / "runtime/guest/codex-graphics.sh").read_bytes().replace(b"\r\n", b"\n"))
+    graphics.chmod(0o644)
+    probe = root / "usr/local/lib/codex/codex-software-probe.py"
+    probe.write_bytes((ROOT / "runtime/guest/codex-software-probe.py").read_bytes().replace(b"\r\n", b"\n"))
+    probe.chmod(0o644)
     for source, (destination, mode) in guest_bundle.SOURCES.items():
         if not destination.startswith("payload/"):
             continue

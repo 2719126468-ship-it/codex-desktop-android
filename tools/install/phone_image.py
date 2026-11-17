@@ -22,6 +22,8 @@ REQUIRED = {
     "usr/local/lib/codex/keyboard-focus.js", "usr/local/lib/codex/install-workspace-provider.py",
     "usr/local/lib/codex/codex_phone_profile.py", "usr/local/lib/codex/install_phone_mcp.py",
     "usr/local/lib/codex/codex_native_dialogs.py", "usr/local/lib/codex/codex-phone-dialogs.css",
+    "usr/local/lib/codex/codex-graphics.sh",
+    "usr/local/lib/codex/codex-software-probe.py",
     "usr/local/share/codex/pulseaudio.pa", "usr/bin/pulseaudio",
     "usr/local/lib/codex/install/initialize_keyring.py",
     "usr/local/lib/codex/install/supervise_keyring.py", "usr/share/X11/xkb/rules/evdev",

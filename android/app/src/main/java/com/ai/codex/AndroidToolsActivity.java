@@ -34,6 +34,25 @@ public final class AndroidToolsActivity extends androidx.appcompat.app.AppCompat
         int pad = (int)(24 * getResources().getDisplayMetrics().density); content.setPadding(pad,pad,pad,pad);
         scroll.addView(content); setContentView(scroll);
         text("Android 工具", 25);
+        text("图形模式：" + CodexGraphics.LABELS[CodexGraphics.selected(this)], 18);
+        button("选择图形模式（下次启动生效）", () -> new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("图形渲染模式")
+                .setSingleChoiceItems(CodexGraphics.LABELS, CodexGraphics.selected(this), (dialog, which) -> {
+                    try { CodexGraphics.set(this, CodexGraphics.MODES[which]); dialog.dismiss(); render(); }
+                    catch (Exception error) { android.widget.Toast.makeText(this, "保存失败：" + error.getMessage(), android.widget.Toast.LENGTH_LONG).show(); }
+                }).setNegativeButton("取消", null).show());
+        text("自动：探测通过才使用 Adreno 加速，否则回退软件渲染。兼容模式使用 CPU；加速模式失败会给出诊断。", 16);
+        button("导出日志到 /sdcard/codex/log", () -> {
+            if (!android.os.Environment.isExternalStorageManager()) {
+                android.widget.Toast.makeText(this, "请先允许所有文件访问，再点击导出日志", android.widget.Toast.LENGTH_LONG).show();
+                startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).setData(Uri.parse("package:" + getPackageName())));
+                return;
+            }
+            android.widget.Toast.makeText(this, "正在收集并打包日志…", android.widget.Toast.LENGTH_SHORT).show();
+            ContextWork.export(this);
+        });
+        text("CC Switch 配置目录", 18);
+        text("在 CC Switch 中选择“连接配置目录”，从系统文件选择器进入“Codex → .codex”并授权。切换前请安全退出桌面客户端，保存后重新启动；目录访问不会启动 Linux 桌面。", 16);
         text("你可以让 Codex 查找消息或操作应用。使用相关功能时，Android 会请求相应权限。", 17);
         text("按你的要求读取的消息和截图会在对话中发送给模型。你可以随时在 Android 设置中撤销权限。", 16);
         button("手机操控（读屏、操作与 Root 后台屏）", () -> startActivity(new Intent(this, com.ai.codex.phone.PhoneSettingsActivity.class)));
@@ -67,6 +86,19 @@ public final class AndroidToolsActivity extends androidx.appcompat.app.AppCompat
         button("管理 Android 权限", () -> startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                 .setData(Uri.parse("package:" + getPackageName()))));
         button("返回 Codex", () -> { startActivity(new Intent(this, CodexActivity.class)); finish(); });
+    }
+    private static final class ContextWork {
+        private static final java.util.concurrent.ExecutorService WORK = java.util.concurrent.Executors.newSingleThreadExecutor();
+        static void export(AndroidToolsActivity activity) {
+            android.content.Context context = activity.getApplicationContext();
+            WORK.execute(() -> {
+                String message;
+                try { message = "日志已导出：" + CodexLogExport.export(context).getAbsolutePath(); }
+                catch (Exception error) { message = "导出失败：" + error.getMessage(); }
+                String result = message;
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> android.widget.Toast.makeText(context, result, android.widget.Toast.LENGTH_LONG).show());
+            });
+        }
     }
     private String granted(String name) {
         String state = Manifest.permission.SEND_SMS.equals(name) ? "授权" : "授权";

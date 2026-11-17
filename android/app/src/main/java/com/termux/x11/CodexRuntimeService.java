@@ -746,6 +746,7 @@ public final class CodexRuntimeService extends Service {
                 "DISPLAY=:2", "CODEX_IME_UID=" + android.os.Process.myUid(),
                 "CODEX_URL_UID=" + android.os.Process.myUid(),
                 "CODEX_SCALE=" + (getResources().getInteger(com.ai.codex.R.integer.codex_desktop_scale_percent) / 100f),
+                "CODEX_GRAPHICS_MODE=" + com.ai.codex.CodexGraphics.mode(this),
                 "CODEX_LAZY_MCP=1",
                 "CODEX_THREAD_UNLOAD_SECS=180"));
             args.add("CODEX_SESSION_TOKEN=" + token);
@@ -788,10 +789,21 @@ public final class CodexRuntimeService extends Service {
             // client without a window must not leave an endless loading screen.
             long windowDeadline = SystemClock.elapsedRealtime() + java.util.concurrent.TimeUnit.SECONDS.toMillis(90);
             while (!clientReady.isDone()) {
+                // FileObserver delivery is best-effort on vendor ROMs. Poll the
+                // same bounded launch-token receipt before checking the deadline.
+                File receipt = new File(temp, "codex-client-ready");
+                try {
+                    if (java.nio.file.Files.isRegularFile(receipt.toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS)
+                            && receipt.length() <= 128 && token.equals(java.nio.file.Files.readString(receipt.toPath()).trim())) {
+                        clientReady.complete(null);
+                        mainHandler.post(() -> { if (!destroyed && !stopping && sessionToken.equals(token)) publishPhase("ready", ""); });
+                    }
+                } catch (IOException ignored) { }
+                if (clientReady.isDone()) break;
                 if (started.waitFor(1, java.util.concurrent.TimeUnit.SECONDS))
                     throw new IOException("Codex 在窗口打开前已退出（代码 " + started.exitValue() + ").");
                 if (SystemClock.elapsedRealtime() >= windowDeadline)
-                    throw new IOException("Codex 窗口未能在 90 秒内显示，请重新启动。");
+                    throw new IOException("Codex 窗口未能在 90 秒内显示。请在 Android 工具中导出日志；也可选择兼容模式后重新启动。");
             }
             int exit = started.waitFor();
             Log.i("Codex", "Linux exited with " + exit);

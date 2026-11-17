@@ -78,6 +78,8 @@ public final class CodexLocalTools {
         // Refresh the bridge in existing containers along with its focus hook.
         writeAsset(context, contextDir, "codex_ime.py", "codex-tools/codex_ime.py", uid);
         writeAsset(context, contextDir, "keyboard-focus.js", "codex-tools/keyboard-focus.js", uid);
+        writeAsset(context, contextDir, "codex-graphics.sh", "codex-tools/codex-graphics.sh", uid);
+        writeAsset(context, contextDir, "codex-software-probe.py", "codex-tools/codex-software-probe.py", uid);
         // Ship the admission-before-context ordering together with its adapter.
         // Updating Python alone would leave the previous guest launch order.
         File guestBin = directory(guestRoot, "usr/local/bin", uid);
