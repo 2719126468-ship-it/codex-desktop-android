@@ -20,6 +20,18 @@ Codex Android 是基于 FoldGPT 的独立适配项目，把 Linux ARM64 版 Chat
 
 灵动岛展示由系统决定，实际帧率受系统设置、温控和负载影响。项目命令与桌面渲染在手机上运行，模型推理由在线服务完成。[实时状态与光效说明](docs/live-status-and-edge-glow.md) · [兼容性与验证范围](docs/compatibility.md)
 
+## 推荐搭配安卓版 CC Switch
+
+推荐使用 [CC Switch Android](https://github.com/JinShichang/cc-switch-android) 管理多套服务商配置，切换 API 地址、API Key 和模型。它作为独立 Android 应用运行，通过系统文件选择器获得 Codex 配置目录的读写授权，无需 Root。
+
+Codex v71 已加入 DocumentsProvider，可向 CC Switch 提供整个 `.codex` 目录：
+
+1. 启动一次 Codex，完成运行环境和配置目录初始化，然后安全退出桌面客户端。
+2. 在 CC Switch 中点击“连接配置目录”，从系统文件选择器进入 **Codex → .codex**，选择“使用此文件夹”并授权。
+3. 保存并应用服务商配置后，重新启动 Codex，建立新会话确认配置生效。
+
+CC Switch 的安装包、使用说明和功能范围见其[项目主页](https://github.com/JinShichang/cc-switch-android)。
+
 ## 架构
 
 - **Android 宿主**负责显示、触摸、键盘和运行时启停，通过内嵌的 Termux:X11 显示桌面客户端。
