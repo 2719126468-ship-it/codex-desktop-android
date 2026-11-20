@@ -11,7 +11,8 @@ rule or protected metadata into a writable-root grant.
 The supervisor configures one guest workspace mapping and owns its physical
 directory FD. Requests cannot select a host path, root FD or a wider mapping.
 The helper receives that FD through explicit descriptor inheritance; it resolves
-relative paths with openat2 BENEATH/NO_SYMLINKS/NO_XDEV. Existing files are pinned
+relative paths with openat2 BENEATH/NO_SYMLINKS/NO_XDEV, or Android's equivalent
+component-wise openat NOFOLLOW walk with per-component device checks. Existing files are pinned
 with O_PATH, checked for regular type, owner and one link, then reopened by the
 helper's own /proc/self/fd entry. New files use exclusive creation. The helper
 never executes caller code and is only the native half of this trusted backend;
@@ -63,8 +64,8 @@ Directory, metadata and canonicalization operations accept `.` to refer to the
 already pinned workspace root. Directory stdin must reach EOF with no body. All numeric fields,
 component lengths and depths are checked before any mutation.
 
-The helper opens the existing prefix with openat2
-BENEATH/NO_SYMLINKS/NO_XDEV, verifies its actual device and inode and checks that
+The helper opens the existing prefix with the same platform resolver,
+verifies its actual device and inode and checks that
 the first planned component is still missing. Unexpected existing objects,
 missing prefixes and replacement inodes fail; they are never adopted through
 a retry. It creates each component by `mkdirat` relative to a held directory
@@ -92,7 +93,7 @@ native-files canonicalize      ROOT_FD RELATIVE_PATH 0
 
 These operations also accept `.` for the pinned workspace root. The final
 argument must be exactly `0`, and stdin must reach EOF with no body. Each
-operation resolves the actual object using openat2 and O_PATH, then checks its
+operation resolves the actual object using the platform resolver and O_PATH, then checks its
 type, owner and regular-file link count. A FIFO or device is never activated
 to discover its type. A symlink, hardlink, special file, escape or absent
 object cannot produce successful metadata or canonicalization.

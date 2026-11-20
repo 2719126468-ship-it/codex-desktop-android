@@ -3,15 +3,18 @@
 Android permits opening /linkerconfig/ld.config.txt while denying getattr on
 /linkerconfig. CPython realpath walks parents with lstat; Bionic realpath instead
 opens the object with O_PATH and reads /proc/self/fd. Use that descriptor route,
-also refusing magic links and checking the returned name still identifies the
-same ordinary object. This is admission of the existing immutable runtime
-contract, not a lifetime pin or exclusion against an unconfined host writer.
+checking the returned name still identifies the same ordinary object. Non-Android
+openat2 also rejects magic links; Android's fixed APK-owned paths instead avoid
+that syscall, which vendor seccomp filters may kill before userspace can react.
+This is admission of the existing immutable runtime contract, not a lifetime pin
+or exclusion against an unconfined host writer.
 """
 import ctypes
 import errno
 import os
 from pathlib import Path
 import stat
+import sys
 
 
 class _OpenHow(ctypes.Structure):
@@ -48,6 +51,12 @@ def native_name(value):
 def _pin(path, *, canonical=False):
     if os.uname().machine not in ("x86_64", "aarch64"):
         raise OSError(errno.ENOTSUP, "Unverified runtime resolver syscall ABI")
+    flags = os.O_PATH | os.O_CLOEXEC | (os.O_NOFOLLOW if canonical else 0)
+    if sys.platform == "android":
+        # Android's app seccomp filter may reject openat2 with SIGSYS before
+        # userspace can handle ENOSYS. The fixed, APK-owned runtime paths use
+        # Bionic's openat route; subsequent FD identity/name checks remain.
+        return os.open(path, flags)
     how = _OpenHow(os.O_PATH | os.O_CLOEXEC, 0,
                    _NO_MAGICLINKS | (_NO_SYMLINKS if canonical else 0))
     fd = _SYSCALL(_SYS_OPENAT2, _AT_FDCWD, path.encode("utf-8"),

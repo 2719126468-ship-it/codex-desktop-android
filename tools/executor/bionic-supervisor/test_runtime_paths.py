@@ -221,6 +221,22 @@ class RuntimePathTests(unittest.TestCase):
         finally:
             os.close(fd)
 
+    def test_17_android_openat_fallback_never_calls_openat2(self):
+        with (patch.object(paths.sys, "platform", "android"),
+              patch.object(paths, "_SYSCALL") as syscall):
+            self.assertEqual(paths.runtime_spellings(self.file), (str(self.file), str(self.file)))
+            self.assertEqual(paths.runtime_spellings(self.alias / self.file.name),
+                             (str(self.alias / self.file.name), str(self.file)))
+            fd = paths._pin(str(self.file), canonical=True)
+            try:
+                self.assertFalse(os.get_inheritable(fd))
+            finally:
+                os.close(fd)
+            with self.assertRaises(OSError) as raised:
+                paths._pin(str(self.alias), canonical=True)
+            self.assertEqual(raised.exception.errno, errno.ELOOP)
+            syscall.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

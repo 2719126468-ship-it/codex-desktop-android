@@ -21,6 +21,7 @@ from android_ndk_host import select_toolchain, write_host_evidence
 INPUTS = {
     "native-files.c": "tools/executor/native-files.c",
     "native-file-handle.c": "tools/executor/native-file-handle.c",
+    "native-open-beneath.h": "tools/executor/native-open-beneath.h",
     "native-runner-seccomp.h": "tools/executor/native-runner-seccomp.h",
     "spawn.c": "tools/executor/shizuku-service/transport/src/main/cpp/spawn.c",
     "cwd.c": "tools/executor/bionic-cwd/cwd.c",
