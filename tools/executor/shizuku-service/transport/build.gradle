@@ -59,6 +59,7 @@ if (frozenTransportNative.isPresent()) {
                 def currentSources = [
                     'native-files.c': 'tools/executor/native-files.c',
                     'native-file-handle.c': 'tools/executor/native-file-handle.c',
+                    'native-open-beneath.h': 'tools/executor/native-open-beneath.h',
                     'native-runner-seccomp.h': 'tools/executor/native-runner-seccomp.h',
                     'spawn.c': 'tools/executor/shizuku-service/transport/src/main/cpp/spawn.c',
                     'cwd.c': 'tools/executor/bionic-cwd/cwd.c',

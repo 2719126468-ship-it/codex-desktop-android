@@ -141,8 +141,8 @@
     {
       "path": "tools/executor/bionic-supervisor/runtime_paths.py",
       "source": "tools/executor/bionic-supervisor/runtime_paths.py",
-      "bytes": 4508,
-      "sha256": "77c32128e13ec87d4a2326eb8ddbe9ac79809226fb8ea1cf39416027781151cd"
+      "bytes": 4975,
+      "sha256": "df11683ae6a3721218d764c0dd3eea8e91ed58ca23f170a020b9591c152006cc"
     },
     {
       "path": "tools/executor/bionic-supervisor/tty_processes.py",

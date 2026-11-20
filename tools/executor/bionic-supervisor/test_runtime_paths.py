@@ -232,9 +232,10 @@ class RuntimePathTests(unittest.TestCase):
                 self.assertFalse(os.get_inheritable(fd))
             finally:
                 os.close(fd)
-            with self.assertRaises(OSError) as raised:
-                paths._pin(str(self.alias), canonical=True)
-            self.assertEqual(raised.exception.errno, errno.ELOOP)
+            for path in (self.alias, self.alias / self.file.name):
+                with self.subTest(path=path), self.assertRaises(OSError) as raised:
+                    paths._pin(str(path), canonical=True)
+                self.assertEqual(raised.exception.errno, errno.ELOOP)
             syscall.assert_not_called()
 
 

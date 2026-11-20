@@ -7,7 +7,7 @@ chmod 755 "$work"
 compiler=${ANDROID_NDK_HOME:-/opt/codex/android-ndk-r29}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android35-clang
 mkdir -p "$work/package/tools/executor" "$work/package/tools/policy"
 for name in native-file-handle.c native_file_streams.py test_native_file_streams.py \
-    native-files.c native_files.py test_native_files_live.py exec_server.py policy_intent.py test_policy_intent.py; do
+    native-files.c native-open-beneath.h native_files.py test_native_files_live.py exec_server.py policy_intent.py test_policy_intent.py; do
     cp "$repo/tools/executor/$name" "$work/package/tools/executor/"
 done
 cp "$repo/tools/policy/managed_policy.py" "$work/package/tools/policy/"

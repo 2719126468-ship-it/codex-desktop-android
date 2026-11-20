@@ -11,8 +11,9 @@ rule or protected metadata into a writable-root grant.
 The supervisor configures one guest workspace mapping and owns its physical
 directory FD. Requests cannot select a host path, root FD or a wider mapping.
 The helper receives that FD through explicit descriptor inheritance; it resolves
-relative paths with openat2 BENEATH/NO_SYMLINKS/NO_XDEV, or Android's equivalent
-component-wise openat NOFOLLOW walk with per-component device checks. Existing files are pinned
+relative paths with openat2 BENEATH/NO_SYMLINKS/NO_XDEV, or on Android with a
+descriptor-based openat walk that rejects symbolic links and mount crossings.
+The exact path `.` names the already admitted root. Existing files are pinned
 with O_PATH, checked for regular type, owner and one link, then reopened by the
 helper's own /proc/self/fd entry. New files use exclusive creation. The helper
 never executes caller code and is only the native half of this trusted backend;

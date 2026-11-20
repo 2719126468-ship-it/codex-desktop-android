@@ -4,10 +4,11 @@ Android permits opening /linkerconfig/ld.config.txt while denying getattr on
 /linkerconfig. CPython realpath walks parents with lstat; Bionic realpath instead
 opens the object with O_PATH and reads /proc/self/fd. Use that descriptor route,
 checking the returned name still identifies the same ordinary object. Non-Android
-openat2 also rejects magic links; Android's fixed APK-owned paths instead avoid
-that syscall, which vendor seccomp filters may kill before userspace can react.
-This is admission of the existing immutable runtime contract, not a lifetime pin
-or exclusion against an unconfined host writer.
+openat2 also rejects magic links on the initial lookup. Android's configured
+system and APK runtime paths instead use openat and verify the reopened
+canonical name from its descriptor, without probing every parent. This is
+admission of the existing immutable runtime contract, not a lifetime pin or
+exclusion against an unconfined host writer.
 """
 import ctypes
 import errno
@@ -51,13 +52,23 @@ def native_name(value):
 def _pin(path, *, canonical=False):
     if os.uname().machine not in ("x86_64", "aarch64"):
         raise OSError(errno.ENOTSUP, "Unverified runtime resolver syscall ABI")
-    flags = os.O_PATH | os.O_CLOEXEC | (os.O_NOFOLLOW if canonical else 0)
+    flags = os.O_PATH | os.O_CLOEXEC
     if sys.platform == "android":
         # Android's app seccomp filter may reject openat2 with SIGSYS before
-        # userspace can handle ENOSYS. The fixed, APK-owned runtime paths use
-        # Bionic's openat route; subsequent FD identity/name checks remain.
-        return os.open(path, flags)
-    how = _OpenHow(os.O_PATH | os.O_CLOEXEC, 0,
+        # userspace can handle ENOSYS. The first open permits configured aliases.
+        if not canonical:
+            return os.open(path, flags)
+        fd = os.open(path, flags | os.O_NOFOLLOW)
+        try:
+            # O_PATH can open a final symlink itself. Check its type and the
+            # physical spelling of the reopened FD to also reject parent aliases.
+            if stat.S_ISLNK(os.fstat(fd).st_mode) or os.readlink(f"/proc/self/fd/{fd}") != path:
+                raise OSError(errno.ELOOP, "Runtime canonical name resolves through an alias", path)
+        except BaseException:
+            os.close(fd)
+            raise
+        return fd
+    how = _OpenHow(flags, 0,
                    _NO_MAGICLINKS | (_NO_SYMLINKS if canonical else 0))
     fd = _SYSCALL(_SYS_OPENAT2, _AT_FDCWD, path.encode("utf-8"),
                   ctypes.byref(how), ctypes.sizeof(how))

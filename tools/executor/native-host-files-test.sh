@@ -15,7 +15,7 @@ mkdir -p "$work/package/tools/executor/bionic-supervisor" "$work/package/tools/p
 cp "$repo/tools/executor/"*.py "$work/package/tools/executor/"
 cp "$repo/tools/executor/bionic-supervisor/"*.py "$work/package/tools/executor/bionic-supervisor/"
 cp "$repo/tools/policy/"*.py "$work/package/tools/policy/"
-cp "$repo/tools/executor/"{native-files.c,native-file-handle.c,test_bootstrap_paused_helper.c} "$work/"
+cp "$repo/tools/executor/"{native-files.c,native-file-handle.c,native-open-beneath.h,test_bootstrap_paused_helper.c} "$work/"
 cp "$repo/tools/executor/native-host-files-test.sh" "$work/"
 cp "$runner" "$work/runner"
 printf '%s\n' "$runner" > "$work/RUNNER-SOURCE.txt"
@@ -25,7 +25,7 @@ gcc -std=c11 -O2 -Wall -Wextra -Werror -static "$work/native-files.c" -o "$work/
 gcc -std=c11 -O2 -Wall -Wextra -Werror -static "$work/native-file-handle.c" -o "$work/native-file-handle"
 gcc -std=c11 -O2 -Wall -Wextra -Werror -static "$work/test_bootstrap_paused_helper.c" -o "$work/paused-helper"
 (cd "$work" && find package -type f -print0 | sort -z | xargs -0 sha256sum > SOURCES.sha256)
-(cd "$work" && sha256sum *.c native-host-files-test.sh >> SOURCES.sha256)
+(cd "$work" && sha256sum *.c native-open-beneath.h native-host-files-test.sh >> SOURCES.sha256)
 (cd "$work" && sha256sum native-files native-file-handle paused-helper runner > BINARIES.sha256)
 if [ "$(id -u)" = 0 ]; then
     chown nobody:nogroup "$work/results"

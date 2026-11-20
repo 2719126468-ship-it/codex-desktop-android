@@ -16,7 +16,8 @@ fi
   --helper "$work/native-files" --evidence "$work/evidence" | tee "$work/fixture-output.txt"
 cd "$repo"
 "${run[@]}" python3 -B -m unittest tools.executor.test_native_files_fixture_lifecycle -v 2>&1 | tee "$work/lifecycle-tests.txt"
-(cd "$repo" && sha256sum tools/executor/native-files.c tools/executor/native_files*.py \
+(cd "$repo" && sha256sum tools/executor/native-files.c tools/executor/native-open-beneath.h \
+  tools/executor/native_files*.py \
   tools/executor/exec_server.py tools/executor/policy_intent.py tools/policy/managed_policy.py) > "$work/SHA256SUMS"
 destination="$repo/downloads/native-files-rpc/$(basename "$work")"
 mkdir -p "$(dirname "$destination")"

@@ -13,7 +13,7 @@ for name in native-managed-runner.c native-managed-filter.h native-managed-fixtu
     native-runner.c native-runner-seccomp.h native-runner-memory-contract.h \
     native-process-fixture.c native_processes.py native_process_policy.py \
     native_environment.py native_environment_unicode.py \
-    native_files.py native-files.c exec_server.py policy_intent.py native-managed-test.py \
+    native_files.py native-files.c native-open-beneath.h exec_server.py policy_intent.py native-managed-test.py \
     test_native_processes_live.py native-process-build.sh native-process-lifecycle.md native-process-fd-abi.c; do
     cp "$repo/tools/executor/$name" "$work/sources/"
 done

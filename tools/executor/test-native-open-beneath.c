@@ -31,6 +31,11 @@ int main(int argc, char **argv) {
     CHECK(length > 0 && length < (int)sizeof(base) && mkdtemp(base));
     int root = open(base, O_PATH | O_DIRECTORY | O_CLOEXEC);
     CHECK(root >= 0);
+    int same_root = codex_open_beneath(root, ".", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
+    struct stat root_info, same_root_info;
+    CHECK(same_root >= 0 && fstat(root, &root_info) == 0 && fstat(same_root, &same_root_info) == 0);
+    CHECK(root_info.st_dev == same_root_info.st_dev && root_info.st_ino == same_root_info.st_ino);
+    CHECK(close(same_root) == 0);
     CHECK(mkdirat(root, "nested", 0700) == 0);
     CHECK(write_file(root, "nested/file", "real") == 0);
     int fd = codex_open_beneath(root, "nested/file", O_PATH | O_CLOEXEC, 0);
@@ -45,11 +50,16 @@ int main(int argc, char **argv) {
     CHECK(read(fd, data, 3) == 3 && !memcmp(data, "new", 3));
     close(fd);
     CHECK(codex_open_beneath(root, "../escape", O_PATH | O_CLOEXEC, 0) < 0 && errno == EINVAL);
+    CHECK(codex_open_beneath(root, "nested/./file", O_PATH | O_CLOEXEC, 0) < 0 && errno == EINVAL);
     CHECK(codex_open_beneath(root, "/absolute", O_PATH | O_CLOEXEC, 0) < 0 && errno == EINVAL);
     CHECK(symlinkat("file", root, "nested/link") == 0);
     CHECK(codex_open_beneath(root, "nested/link", O_PATH | O_CLOEXEC, 0) < 0 && errno == ELOOP);
     CHECK(symlinkat("/", root, "nested/escape") == 0);
     CHECK(codex_open_beneath(root, "nested/escape/etc", O_PATH | O_CLOEXEC, 0) < 0 && errno == ELOOP);
+    int system_root = open("/", O_PATH | O_DIRECTORY | O_CLOEXEC);
+    CHECK(system_root >= 0);
+    CHECK(codex_open_beneath(system_root, "proc", O_PATH | O_CLOEXEC, 0) < 0 && errno == EXDEV);
+    CHECK(close(system_root) == 0);
     CHECK(unlinkat(root, "nested/link", 0) == 0);
     CHECK(unlinkat(root, "nested/escape", 0) == 0);
     CHECK(unlinkat(root, "nested/file", 0) == 0);
@@ -57,6 +67,6 @@ int main(int argc, char **argv) {
     CHECK(unlinkat(root, "nested", AT_REMOVEDIR) == 0);
     CHECK(close(root) == 0);
     CHECK(unlinkat(AT_FDCWD, base, AT_REMOVEDIR) == 0);
-    puts("PASS openat component walk, read/create, absolute/dotdot/link refusal");
+    puts("PASS openat component walk, root/read/create, link and mount refusal");
     return 0;
 }

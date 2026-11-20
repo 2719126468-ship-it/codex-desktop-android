@@ -15,7 +15,7 @@ for name in exec_server native_executor_backend native_file_streams native_files
     cp "$repo/tools/executor/$name.py" "$source_dir/"
 done
 cp "$repo/tools/policy/managed_policy.py" "$work/package/tools/policy/"
-cp "$repo/tools/executor/"{native-runner-seccomp.h,native-files.c,native-file-handle.c,native-process-fd-abi.c} "$source_dir/"
+cp "$repo/tools/executor/"{native-runner-seccomp.h,native-files.c,native-file-handle.c,native-open-beneath.h,native-process-fd-abi.c} "$source_dir/"
 cp "$repo/tools/executor/bionic-supervisor/"*.py "$source_dir/bionic-supervisor/"
 cp "$repo/tools/executor/bionic-supervisor/"{runner.c,qualification-worker.c,test_runtime_paths.c,test_executable_metadata_worker.c} "$source_dir/bionic-supervisor/"
 cp "$repo/tools/executor/bionic-supervisor/build.sh" "$repo/tools/executor/bionic-supervisor/README.md" "$work/"

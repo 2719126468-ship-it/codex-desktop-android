@@ -32,7 +32,8 @@ def build(project: Path, destination: Path) -> None:
         "executable-metadata-test": "bionic-supervisor/test_executable_metadata_worker.c",
         "native-process-fd-abi": "native-process-fd-abi.c",
     }
-    for relative in (*inputs.values(), "native-runner-seccomp.h", "bionic-supervisor/host-fd-seccomp.h",
+    for relative in (*inputs.values(), "native-open-beneath.h", "native-runner-seccomp.h",
+                     "bionic-supervisor/host-fd-seccomp.h",
                      "bionic-cwd/cwd.c", "bionic-cwd/exports.map"):
         output = source / relative
         output.parent.mkdir(parents=True, exist_ok=True)

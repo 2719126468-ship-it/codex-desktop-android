@@ -8,7 +8,7 @@ mkdir -p "$work/sources" "$work/linux" "$work/python/tools/executor" "$work/pyth
 chmod 777 "$work/evidence"
 for name in native-managed-runner.c native-managed-filter.h native-managed-fixture.c \
     native-runner.c native-runner-seccomp.h native-runner-memory-contract.h native-process-fixture.c \
-    native_processes.py native_process_policy.py native_files.py native-files.c \
+    native_processes.py native_process_policy.py native_files.py native-files.c native-open-beneath.h \
     native_environment.py native_environment_unicode.py \
     native_file_streams.py native-file-handle.c native_executor_backend.py \
     exec_server.py policy_intent.py private_exec_broker.py private-exec-bridge.c \

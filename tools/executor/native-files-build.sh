@@ -4,7 +4,8 @@ repo=$(cd "$(dirname "$0")/../.." && pwd)
 work=$(mktemp -d /var/tmp/codex-native-files-build-XXXXXXXX)
 chmod 755 "$work"
 mkdir "$work/sources"
-cp "$repo/tools/executor/"native-files*.c "$repo/tools/executor/"native_files.py "$work/sources/"
+cp "$repo/tools/executor/"native-files*.c \
+    "$repo/tools/executor/"{native_files.py,native-open-beneath.h,test-native-open-beneath.c} "$work/sources/"
 compiler=${ANDROID_NDK_HOME:-/opt/codex/android-ndk-r29}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android35-clang
 gcc -std=c11 -O2 -Wall -Wextra -Werror -static "$repo/tools/executor/native-files.c" -o "$work/native-files"
 gcc -D__ANDROID__=1 -std=c11 -O2 -Wall -Wextra -Werror \
