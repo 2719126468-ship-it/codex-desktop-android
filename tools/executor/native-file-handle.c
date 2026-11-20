@@ -17,6 +17,7 @@
 #include <sys/syscall.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include "native-open-beneath.h"
 
 #define MAX_BLOCK (1024U * 1024U) /* Official FILE_READ_CHUNK_SIZE. */
 static int failure(const char *stage) {
@@ -70,9 +71,7 @@ static int acquire(int argc,char **argv) {
             getsockopt(channel,SOL_SOCKET,SO_TYPE,&type,&type_size)<0||type!=SOCK_SEQPACKET||
             getsockopt(channel,SOL_SOCKET,SO_PEERCRED,&peer,&peer_size)<0||peer_size!=sizeof(peer)||
             peer.uid!=getuid()||peer.pid!=getppid()) { errno=EPERM; return failure("channel"); }
-    struct open_how how={.flags=O_PATH|O_NOFOLLOW|O_CLOEXEC,
-        .resolve=RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS|RESOLVE_NO_XDEV};
-    int pin=(int)syscall(SYS_openat2,root,argv[3],&how,sizeof(how));
+    int pin=codex_open_beneath(root,argv[3],O_PATH|O_NOFOLLOW|O_CLOEXEC,0);
     if(pin<0) return failure("open");
     struct stat before,after;
     if(!ordinary(pin,&before)) { close(pin); return failure("file-kind"); }

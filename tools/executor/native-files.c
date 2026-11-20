@@ -18,6 +18,7 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "native-open-beneath.h"
 
 #define MAX_DATA (16U * 1024U * 1024U)
 #define MAX_DEPTH 64U
@@ -41,9 +42,7 @@ static int valid_relative(const char *path) {
     }
 }
 static int open_beneath(int root,const char *path,int flags,int mode) {
-    struct open_how how={.flags=(uint64_t)flags,.mode=(uint64_t)mode,
-        .resolve=RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS|RESOLVE_NO_XDEV};
-    return (int)syscall(SYS_openat2,root,path,&how,sizeof(how));
+    return codex_open_beneath(root,path,flags,mode);
 }
 static int ordinary(int fd) {
     struct stat st;
