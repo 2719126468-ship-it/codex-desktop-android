@@ -5,8 +5,10 @@ import android.app.KeyguardManager;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.PowerManager;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.view.Display;
@@ -18,6 +20,8 @@ import com.termux.x11.CodexDisplayActivity;
 
 /** Display host with a peer-credential checked IME endpoint. No text crosses this bridge. */
 public final class CodexActivity extends CodexDisplayActivity {
+    private static final String ENVIRONMENT_RELEASES_URL =
+            "https://github.com/JinShichang/codex-desktop-android/releases/latest";
     private static volatile boolean visible;
     private static volatile boolean windowFocused;
     private static volatile CodexActivity current;
@@ -42,6 +46,8 @@ public final class CodexActivity extends CodexDisplayActivity {
     private boolean desktopDisplayAllowed;
     private boolean redirecting;
     private String pendingConnectorCallback;
+    private final EnvironmentLaunchGate environmentLaunchGate = new EnvironmentLaunchGate();
+    private androidx.appcompat.app.AlertDialog environmentDialog;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -178,6 +184,7 @@ public final class CodexActivity extends CodexDisplayActivity {
         if (!hasPendingRuntimeLaunch()) return;
         boolean sendCallback = pendingConnectorCallback != null && canHandleDisplayTransition();
         if (pendingConnectorCallback != null && !sendCallback) return;
+        if (!environmentReadyForLaunch()) return;
         Intent start = new Intent(this, CodexRuntimeService.class).setAction(CodexRuntimeService.ACTION_START);
         String thread = getIntent().getStringExtra(CodexRuntimeService.EXTRA_THREAD);
         if (thread != null) start.putExtra(CodexRuntimeService.EXTRA_THREAD, thread);
@@ -198,7 +205,75 @@ public final class CodexActivity extends CodexDisplayActivity {
         }
     }
     @Override protected void onRuntimeRetryRequested() {
+        environmentLaunchGate.retry();
         refreshDisplayPolicy();
+    }
+    @Override protected void onRuntimePrerequisiteRequested() {
+        environmentLaunchGate.retry();
+        refreshDisplayPolicy();
+    }
+    private boolean environmentReadyForLaunch() {
+        boolean needsInstall = com.ai.codex.install.EnvironmentPackageSource.needsInstall(this);
+        boolean externalPackageRequired = needsInstall;
+        if (needsInstall) {
+            try {
+                String[] assets = getAssets().list("phone-runtime");
+                externalPackageRequired = assets == null
+                        || !java.util.Arrays.asList(assets).contains("codex-phone-rootfs.tgz");
+            } catch (java.io.IOException unavailable) {
+                // Let the normal source validator report any asset read error.
+            }
+        }
+        boolean access = !externalPackageRequired || com.ai.codex.install.EnvironmentPackageSource.hasDownloadsAccess();
+        boolean present = access && (!externalPackageRequired
+                || java.nio.file.Files.isRegularFile(
+                        com.ai.codex.install.EnvironmentPackageSource.archiveFile().toPath(),
+                        java.nio.file.LinkOption.NOFOLLOW_LINKS));
+        EnvironmentLaunchGate.State state = EnvironmentLaunchGate.evaluate(externalPackageRequired, access, present);
+        if (state == EnvironmentLaunchGate.State.READY) {
+            if (environmentDialog != null) { environmentDialog.dismiss(); environmentDialog = null; }
+            clearRuntimePrerequisite();
+            return true;
+        }
+        String title = state == EnvironmentLaunchGate.State.ACCESS_REQUIRED
+                ? "允许读取 Download 环境包" : "请先下载运行环境";
+        String detail = state == EnvironmentLaunchGate.State.ACCESS_REQUIRED
+                ? "首次安装需要读取 Download 目录中的环境包。请在系统设置中允许所有文件访问；授权后会自动检查，无需选择文件。"
+                : "请从发布页面下载 codex-phone-rootfs.tar.gz，保存到手机内部存储的 Download 目录。无需解压，请保留原文件名。下载完成后返回 Codex，应用会自动检查，也可以点击重新检查。";
+        showRuntimePrerequisite(title, detail);
+        if (!environmentLaunchGate.shouldPrompt(state) || environmentDialog != null) return false;
+        environmentLaunchGate.presented(state);
+        androidx.appcompat.app.AlertDialog.Builder dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(title).setMessage(detail).setNegativeButton("稍后", null);
+        if (state == EnvironmentLaunchGate.State.ACCESS_REQUIRED) {
+            dialog.setPositiveButton("去授权", (view, which) -> openEnvironmentAccessSettings());
+        } else {
+            dialog.setPositiveButton("前往下载", (view, which) -> {
+                try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(ENVIRONMENT_RELEASES_URL))); }
+                catch (android.content.ActivityNotFoundException unavailable) {
+                    Toast.makeText(this, "未找到浏览器，请从项目发布页面下载环境包到 Download 目录。", Toast.LENGTH_LONG).show();
+                }
+            });
+            dialog.setNeutralButton("重新检查", (view, which) -> getWindow().getDecorView().post(() -> {
+                environmentLaunchGate.retry();
+                refreshDisplayPolicy();
+            }));
+        }
+        environmentDialog = dialog.create();
+        environmentDialog.setOnDismissListener(view -> environmentDialog = null);
+        environmentDialog.show();
+        return false;
+    }
+    private void openEnvironmentAccessSettings() {
+        try {
+            startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                    .setData(Uri.parse("package:" + getPackageName())));
+        } catch (android.content.ActivityNotFoundException unavailable) {
+            try { startActivity(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)); }
+            catch (android.content.ActivityNotFoundException missing) {
+                Toast.makeText(this, "请在系统设置中允许 Codex 的所有文件访问权限，然后返回重试。", Toast.LENGTH_LONG).show();
+            }
+        }
     }
     @Override public void onBackPressed() { getOnBackPressedDispatcher().onBackPressed(); }
     @Override protected void onRuntimeStopped() { com.ai.codex.phone.PhoneControl.get(this).onEngineStopped(); CodexDeviceFeatures.turnOffTorch(this); finishAndRemoveTask(); }
@@ -274,6 +349,7 @@ public final class CodexActivity extends CodexDisplayActivity {
         finish();
     }
     @Override protected void onDestroy() {
+        if (environmentDialog != null) { environmentDialog.dismiss(); environmentDialog = null; }
         if (current == this) current = null;
         resumed = false;
         if (posture != null) posture.close();

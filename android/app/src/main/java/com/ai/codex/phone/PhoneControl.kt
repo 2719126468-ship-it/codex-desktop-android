@@ -370,7 +370,7 @@ class PhoneControl private constructor(private val app: Context) : PhoneEnv, Con
 
     fun isEnabled(): Boolean = switchedOn(app)
 
-    /** Off closes the bridge and stops the task after any in-flight keeper settings write.
+    /** Off closes the Codex phone bridge and stops control tasks after any in-flight keeper settings write.
      * On needs an engine restart (the UI does it); the rebind gap never holds this switch.
      */
     fun setEnabled(enabled: Boolean): Boolean {
@@ -422,7 +422,8 @@ class PhoneControl private constructor(private val app: Context) : PhoneEnv, Con
     fun policiesMap(): Map<String, Any?> {
         val p = policies()
         val labels = LinkedHashMap<String, String>()
-        for (pkg in (p.denyPackages + p.confirmEveryWritePackages + PhonePolicies().denyPackages + PhonePolicies().confirmEveryWritePackages).distinct()) {
+        for (pkg in (p.denyPackages + p.confirmEveryWritePackages + p.alwaysAllowPackages +
+                PhonePolicies().denyPackages + PhonePolicies().confirmEveryWritePackages).distinct()) {
             label(pkg)?.let { labels[pkg] = it }
         }
         return p.toMap() + mapOf("labels" to labels, "defaults" to PhonePolicies().toMap(),
@@ -438,9 +439,8 @@ class PhoneControl private constructor(private val app: Context) : PhoneEnv, Con
     // ── Engine lifecycle (RuntimeController's worker thread) ───────────────────────
 
     /**
-     * Before DSH launches: with the switch on and not in safe mode, writes the guest files, starts
-     * the bridge and returns true (the launch then adds the `--patch` overlay). Otherwise makes
-     * sure nothing is listening and returns false: DSH mounts no phone tools at all.
+     * Prepares the Codex-owned bridge descriptor before launch. Native control operations
+     * still require the phone-control switch. Safe mode mounts no phone tools.
      */
     fun prepareLaunch(rootfs: File, safe: Boolean, log: (String) -> Unit): Boolean {
         logger = log
@@ -643,7 +643,7 @@ class PhoneControl private constructor(private val app: Context) : PhoneEnv, Con
     /** Receiver ownership stays on main; a pending selfcheck outlives an engine bridge. */
     private fun refreshScreenOff() {
         if (Looper.myLooper() != main.looper) { main.post { refreshScreenOff() }; return }
-        if (bridge.listening || selfCheck.needsReceiver) registerScreenOffNow()
+        if ((bridge.listening && isEnabled()) || selfCheck.needsReceiver) registerScreenOffNow()
         else {
             screenReceiver?.let { runCatching { app.unregisterReceiver(it) } }
             screenReceiver = null
@@ -744,9 +744,6 @@ class PhoneControl private constructor(private val app: Context) : PhoneEnv, Con
             SerialWorker.Outcome.Interrupted -> mapOf("ok" to false, "reason" to AppStrings.get(app, R.string.phone_stopped))
         }
     }
-
-    /** Reads the existing immutable gate snapshot without refreshing phone state. */
-    fun backgroundProbeDiagnostics(): Map<String, Any?> = background.inputProbeDiagnostics()
 
     fun setSkillSavePrompt(enabled: Boolean): Boolean {
         prefs.edit().putBoolean(K_SKILL_PROMPT, enabled).apply()

@@ -81,6 +81,43 @@ test('26.1103 ordinary tasks, unrelated startup commands and null resolutions ke
     assert.equal(await integrateStartupTransportResolver(()=>spec,phone)(input),spec);
   assert.equal(await integrateStartupTransportResolver(()=>null,phone)({startupCommand:{args:['--print-startup-config']}}),null);
 });
+test('a fresh split installation uses the bundled desktop startup configuration helper', async () => {
+  const base = options();
+  const spec = { ...base, env: { ...base.env, CODEX_PHONE_DESKTOP_DIR: '/usr/lib/chatgpt' } };
+  const resolver = integrateStartupTransportResolver(() => spec, phone);
+  const result = await resolver({ startupCommand: { args: ['--print-startup-config'] } });
+  assert.equal(result.executablePath, '/usr/lib/chatgpt/resources/codex');
+  assert.equal(result.args, spec.args);
+  assert.equal(result.env, spec.env);
+  assert.equal(result.cwd, spec.cwd);
+  assert.equal(await resolver({}), spec);
+});
+test('bundled desktop path aliases and traversal cannot redirect the startup helper', async () => {
+  const base = options();
+  for (const desktop of ['/usr/lib/chatgpt/', '/usr/lib/chatgpt/../chatgpt',
+    '/usr/lib/chatgpt-other', '/usr/lib/./chatgpt', '/sdcard']) {
+    const spec = { ...base, env: { ...base.env, CODEX_PHONE_DESKTOP_DIR: desktop } };
+    const resolver = integrateStartupTransportResolver(() => spec, {
+      ...phone, verifyExecutable: () => assert.fail('must not select an unapproved helper'),
+    });
+    await assert.rejects(resolver({ startupCommand: { args: ['--print-startup-config'] } }),
+      /Invalid installed desktop directory/);
+  }
+});
+test('an installed desktop update supplies its own startup configuration helper', async () => {
+  const desktop = '/usr/local/lib/codex/desktops/26.1117.31558-0123456789abcdef';
+  const base = options();
+  const spec = { ...base, env: { ...base.env, CODEX_PHONE_DESKTOP_DIR: desktop } };
+  const resolver = integrateStartupTransportResolver(() => spec, {
+    ...phone, verifyExecutable: filename => assert.equal(filename, desktop + '/resources/codex'),
+  });
+  const result = await resolver({ startupCommand: { args: ['--print-startup-config'] } });
+  assert.equal(result.executablePath, desktop + '/resources/codex');
+  assert.equal(await resolver({}), spec);
+  const invalid = { ...spec, env: { ...spec.env, CODEX_PHONE_DESKTOP_DIR: '/sdcard' } };
+  await assert.rejects(integrateStartupTransportResolver(() => invalid, phone)(
+    { startupCommand: { args: ['--print-startup-config'] } }), /Invalid installed desktop directory/);
+});
 test('26.1103 resolver preserves failures and rejects unexpected startup transports', async () => {
   const input={startupCommand:{args:['--print-startup-config']}};
   await assert.rejects(integrateStartupTransportResolver(()=>{throw Error('resolver failed');},phone)(input),/resolver failed/);

@@ -25,7 +25,7 @@ DEBUG_CLASSES = (b"RootfsProbeService", b"ProotStorageProbeService", b"NativeRun
                  b"CodexProbeService", b"LandlockProbeReceiver")
 
 
-def verify_native_update(apk):
+def verify_native_update(apk, external_environment=False):
     """Current app-origin executor update, separate from legacy fixture APKs.
 
     The candidate builder also runs verify-production-apk.py for every native
@@ -59,6 +59,14 @@ def verify_native_update(apk):
         expected_engine = {'assets/gnu-engine/manifest.json'}
         for row in rows:
             name = 'assets/gnu-engine/' + row['name']
+            if external_environment:
+                if name in names:
+                    raise ValueError('Split APK embeds GNU engine bytes')
+                if (not isinstance(row.get('bytes'), int) or row['bytes'] < 20
+                        or not isinstance(row.get('sha256'), str) or len(row['sha256']) != 64
+                        or any(c not in '0123456789abcdef' for c in row['sha256'])):
+                    raise ValueError('Split GNU engine descriptor is invalid')
+                continue
             expected_engine.add(name)
             hasher, size, header = hashlib.sha256(), 0, b''
             with archive.open(name) as stream:
@@ -74,12 +82,26 @@ def verify_native_update(apk):
                 raise ValueError('Native update GNU engine differs from its manifest: ' + row['name'])
         if {n for n in names if n.startswith('assets/gnu-engine/') and not n.endswith('/')} != expected_engine:
             raise ValueError('Unexpected GNU engine asset')
+        if external_environment:
+            if any(name.endswith(('.tgz', '.tar.gz')) and name.startswith(('assets/desktop-client/', 'assets/phone-runtime/')) for name in names):
+                raise ValueError('Split APK embeds a full environment archive')
+            release = json.loads(archive.read('assets/phone-runtime/release.json'))
+            inventory = archive.read('assets/phone-runtime/inventory.json')
+            if (release.get('format') != 'codex.phone-image.v1' or release.get('archive') != 'codex-phone-rootfs.tar.gz'
+                    or release.get('accountIncluded') is not False or release.get('keyringIncluded') is not False
+                    or release.get('inventorySha256') != hashlib.sha256(inventory).hexdigest()
+                    or release.get('inventoryBytes') != len(inventory)):
+                raise ValueError('Split environment release descriptor differs')
+            desktop = json.loads(archive.read('assets/desktop-client/manifest.json'))
+            if (desktop.get('schema') != 'codex.desktop.payload.v1' or desktop.get('architecture') != 'arm64'
+                    or desktop.get('version') != release.get('client', {}).get('version')):
+                raise ValueError('Split environment desktop version differs')
         dex = b''.join(archive.read(name) for name in names if name.endswith('.dex'))
         for name in (b'Lcom/ai/codex/LiveNotifications;', b'Lcom/ai/codex/phone/PhoneControl;',
                      b'Lcom/termux/x11/CodexRuntimeService;'):
             if name not in dex:
                 raise ValueError('Native update application class is missing: ' + name.decode())
-    return {'apk_sha256': digest, 'variant': 'debug-native-update', 'native_update_contents': 'PASS',
+    return {'apk_sha256': digest, 'variant': 'debug-split-environment' if external_environment else 'debug-native-update', 'native_update_contents': 'PASS',
             'gnuEngineVersion': manifest.get('version'), 'legacyDiagnosticFixturesQualified': False,
             'deviceQualified': False, 'limit': 'Current native update contents; legacy diagnostic fixtures and phone behavior are separate'}
 
@@ -214,7 +236,10 @@ if __name__ == "__main__":
     parser.add_argument("apk", type=Path)
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--native-update", action="store_true", help="Current application-origin update contract; does not claim legacy native diagnostic fixtures")
+    parser.add_argument('--external-environment', action='store_true', help='Verify metadata-only payloads and the separate full environment contract')
     args = parser.parse_args()
     if args.native_update and not args.debug:
         parser.error('--native-update currently selects the debug update variant')
-    print(json.dumps(verify_native_update(args.apk) if args.native_update else verify(args.apk, args.debug), indent=2))
+    if args.external_environment and not args.native_update:
+        parser.error('--external-environment requires --native-update')
+    print(json.dumps(verify_native_update(args.apk, args.external_environment) if args.native_update else verify(args.apk, args.debug), indent=2))

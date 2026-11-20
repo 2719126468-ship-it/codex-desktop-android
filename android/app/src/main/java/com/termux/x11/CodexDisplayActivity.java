@@ -22,6 +22,8 @@ public abstract class CodexDisplayActivity extends MainActivity {
     private String failure = "";
     private View startup;
     private RuntimeLaunchGate launchGate;
+    private String prerequisiteTitle;
+    private String prerequisiteDetail;
     /** A display callback may deliver a pending user request, but cannot create one. */
     public static final class RuntimeLaunchGate {
         private boolean pending;
@@ -45,6 +47,8 @@ public abstract class CodexDisplayActivity extends MainActivity {
         @Override public void onReceive(Context context, Intent intent) {
             phase = intent.getStringExtra("phase");
             failure = intent.getStringExtra("detail");
+            if (startup != null) ((com.ai.codex.StartupLogView) startup.findViewById(com.ai.codex.R.id.startup_logs))
+                    .setTranscript(intent.getStringExtra(CodexRuntimeService.EXTRA_STARTUP_LOG));
             launchGate.phaseChanged(phase, intent.getLongExtra(CodexRuntimeService.EXTRA_PHASE_TIME, Long.MAX_VALUE));
             if (launchGate.pending() && ("stopped".equals(phase) || "error".equals(phase))) phase = "starting";
             renderStartup();
@@ -73,10 +77,15 @@ public abstract class CodexDisplayActivity extends MainActivity {
             requestRuntimeLaunch();
             onRuntimeRetryRequested();
         });
-        startup.findViewById(com.ai.codex.R.id.startup_details).setOnClickListener(view ->
+        startup.findViewById(com.ai.codex.R.id.startup_details).setOnClickListener(view -> {
+            if (prerequisiteTitle != null && launchGate.pending()) {
+                onRuntimePrerequisiteRequested();
+                return;
+            }
             new AlertDialog.Builder(this).setTitle("启动诊断")
                 .setMessage(failure == null || failure.isEmpty() ? "尚未连接到 Codex。" : failure)
-                .setPositiveButton(android.R.string.ok, null).show());
+                .setPositiveButton(android.R.string.ok, null).show();
+        });
         ContextCompat.registerReceiver(this, status, new IntentFilter(CodexRuntimeService.ACTION_STATUS), ContextCompat.RECEIVER_NOT_EXPORTED);
         renderStartup();
     }
@@ -88,10 +97,25 @@ public abstract class CodexDisplayActivity extends MainActivity {
     protected final void requestRuntimeLaunch() {
         launchGate.request(SystemClock.elapsedRealtimeNanos());
         if ("stopped".equals(phase) || "error".equals(phase)) { phase = "starting"; failure = ""; }
+        ((com.ai.codex.StartupLogView) startup.findViewById(com.ai.codex.R.id.startup_logs)).setTranscript("");
         renderStartup();
     }
     protected final boolean hasPendingRuntimeLaunch() { return launchGate.pending(); }
     protected final void runtimeLaunchDispatched() { launchGate.dispatched(); }
+    protected final void showRuntimePrerequisite(String title, String detail) {
+        prerequisiteTitle = title;
+        prerequisiteDetail = detail;
+        renderStartup();
+    }
+    protected final void clearRuntimePrerequisite() {
+        prerequisiteTitle = null;
+        prerequisiteDetail = null;
+        renderStartup();
+    }
+    protected void onRuntimePrerequisiteRequested() {
+        new AlertDialog.Builder(this).setTitle(prerequisiteTitle).setMessage(prerequisiteDetail)
+                .setPositiveButton(android.R.string.ok, null).show();
+    }
     protected abstract void onRuntimeRetryRequested();
     protected void onRuntimeStopped() { }
     @Override protected void onSaveInstanceState(Bundle state) {
@@ -109,15 +133,18 @@ public abstract class CodexDisplayActivity extends MainActivity {
         if (startup == null) return;
         boolean ready = "ready".equals(phase) && getLorieView().connected();
         boolean failed = "error".equals(phase) || "stopped".equals(phase);
+        boolean waiting = prerequisiteTitle != null && launchGate.pending();
         findViewById(R.id.stub).setVisibility(ready ? View.INVISIBLE : View.VISIBLE);
         getLorieView().setVisibility(ready ? View.VISIBLE : View.INVISIBLE);
         ((TextView)startup.findViewById(com.ai.codex.R.id.startup_title)).setText(
-            "error".equals(phase) ? "Codex 启动失败" : "stopped".equals(phase) ? "Codex 已停止" :
+            waiting ? prerequisiteTitle : "error".equals(phase) ? "Codex 启动失败" : "stopped".equals(phase) ? "Codex 已停止" :
             "recovering".equals(phase) ? "正在恢复 Codex…" :
             "stopping".equals(phase) ? "正在关闭 Codex…" : "正在启动 Codex…");
-        startup.findViewById(com.ai.codex.R.id.startup_progress).setVisibility(failed ? View.GONE : View.VISIBLE);
-        startup.findViewById(com.ai.codex.R.id.retry_chatgpt).setVisibility(failed ? View.VISIBLE : View.GONE);
-        startup.findViewById(com.ai.codex.R.id.startup_details).setVisibility(failed ? View.VISIBLE : View.GONE);
+        startup.findViewById(com.ai.codex.R.id.startup_progress).setVisibility(failed || waiting ? View.GONE : View.VISIBLE);
+        ((TextView)startup.findViewById(com.ai.codex.R.id.retry_chatgpt)).setText(waiting ? "重新检查" : "重试");
+        ((TextView)startup.findViewById(com.ai.codex.R.id.startup_details)).setText(waiting ? "安装说明" : "查看诊断");
+        startup.findViewById(com.ai.codex.R.id.retry_chatgpt).setVisibility(failed || waiting ? View.VISIBLE : View.GONE);
+        startup.findViewById(com.ai.codex.R.id.startup_details).setVisibility(failed || waiting ? View.VISIBLE : View.GONE);
     }
     @Override protected void onDestroy() {
         unregisterReceiver(status);

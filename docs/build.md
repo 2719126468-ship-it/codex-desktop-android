@@ -76,7 +76,7 @@ semantics; ordinary Windows paths cannot represent all NDK header names correctl
    must be obtained from its authorized upstream source and integrated with the
    matching version of the adapter. No user profile or authenticated image belongs
    in a public build artifact.
-5. **Codex backend.** Restore the pinned `rust-v0.169.0` source and Android
+5. **Codex backend.** Restore the pinned `rust-v0.171.0` source and Android
    integration patch, then build and stage the GNU ARM64 app-server and matching
    Code Mode host together. [Engine manifest](../recovery/engine/manifest.json) ·
    [GNU engine build recipe](../tools/executor/gnu-engine-build.md)
@@ -154,7 +154,7 @@ tool, not a normal-user setup step.
 The OnePlus 13 first-install image is prepared separately from the APK. The
 image builder takes the pinned Debian and Mesa inputs, completed GNU engine
 build state and signed OpenAI package inputs for Linux ARM64 client
-`26.1111.21308`. Use the inputs documented by the
+`26.1117.31558`. Use the inputs documented by the
 [image builder](../tools/install/build-phone-image.py).
 
 The builder produces `codex-phone-rootfs.tar.gz` and an `assets/phone-runtime`

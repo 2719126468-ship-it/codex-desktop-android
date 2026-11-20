@@ -2,8 +2,14 @@
 set -euo pipefail
 # Admission is read-only and precedes DBus, runtime directories, AGENTS and
 # integration. An unknown client must not start or alter the user's context.
-workspace_adapter_args=(--asar /usr/lib/chatgpt/resources/app.asar
-    --state /usr/local/share/codex/workspace-runtime/client-backup)
+desktop_dir="${CODEX_PHONE_DESKTOP_DIR:-/usr/lib/chatgpt}"
+client_backup=/usr/local/share/codex/workspace-runtime/client-backup
+client_launcher=chatgpt
+if [[ -n "${CODEX_PHONE_DESKTOP_DIR:-}" ]]; then
+    client_backup="$client_backup/${desktop_dir##*/}"
+    client_launcher="$desktop_dir/codex-launcher"
+fi
+workspace_adapter_args=(--asar "$desktop_dir/resources/app.asar" --state "$client_backup")
 python3 -B /usr/local/lib/codex/install-workspace-provider.py --check "${workspace_adapter_args[@]}"
 if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
     exec dbus-run-session -- "$0"
@@ -71,7 +77,7 @@ client_compat_args=()
 if [[ "${CODEX_PHONE_CLIENT_COMPAT:-0}" == 1 ]]; then
     client_compat_args+=(--no-sandbox --no-zygote --enable-logging=stderr)
 fi
-chatgpt "${client_compat_args[@]}" "${CODEX_GRAPHICS_CLIENT_ARGS[@]}" --lang="${CODEX_LANGUAGE:-zh-CN}" --ozone-platform=x11 --force-device-scale-factor="${CODEX_SCALE:-1.5}" --start-maximized --remote-debugging-address=127.0.0.1 --remote-debugging-port="$CODEX_CDP_PORT" &
+"$client_launcher" "${client_compat_args[@]}" "${CODEX_GRAPHICS_CLIENT_ARGS[@]}" --lang="${CODEX_LANGUAGE:-zh-CN}" --ozone-platform=x11 --force-device-scale-factor="${CODEX_SCALE:-1.5}" --start-maximized --remote-debugging-address=127.0.0.1 --remote-debugging-port="$CODEX_CDP_PORT" &
 client_pid=$!
 if [[ "${CODEX_PHONE_CLIENT_COMPAT:-0}" == 1 ]]; then
     python3 -B /usr/local/lib/codex/codex_native_dialogs.py watch --pid "$client_pid" \

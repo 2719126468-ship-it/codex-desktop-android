@@ -5,10 +5,10 @@ userspace GNU/PRoot existant. Sa cible est donc `aarch64-unknown-linux-gnu`.
 Ce binaire **n'est pas Bionic**. Les outils du modèle doivent être lancés par
 le backend Bionic distinct. Aucun de ces scripts n'utilise ADB ou le téléphone.
 
-## 2026-11-14：本机接手与 Codex 0.169.0
+## GNU ARM64 后端
 
-当前构建器绑定 `rust-v0.169.0`，提交
-`d32063f96c2dff1dc96af839b3952abb6acfeda4`。Android 恢复补丁同时适配了
+当前恢复清单绑定 `rust-v0.171.0`，提交
+`ccf9be8cc458bd6b8336fe84d68d8893f2691a5e`。Android 恢复补丁同时适配了
 新的配置加载、环境访问器和 MCP 启动路径。工作区的 Cargo.lock 版本号已与
 Cargo.toml 同步，依赖来源和第三方版本没有因此重新选择。
 
@@ -29,7 +29,7 @@ bash tools/workstation/build-engine.sh "$PWD"
 状态中的 `buildCompleted` 和 `packageCompleted` 分别说明编译和静态兼容检查/
 归档是否完成，不能将旧版本的设备验证沿用到新产物。
 
-配套客户端目标为 Linux ARM64 `26.1111.21308`。覆盖升级前需核对原签名，
+配套客户端目标为 Linux ARM64 `26.1117.31558`。覆盖升级前需核对原签名，
 设备验证范围见[兼容性说明](../../docs/compatibility.md)。
 
 ## 2026-11-06：升级至 Codex 0.167.0（历史记录）

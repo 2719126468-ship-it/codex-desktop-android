@@ -53,11 +53,11 @@
     <string name="overlay_ball_stopped">已停止</string>
     <string name="overlay_ball_waiting">Codex 在等你确认，点按展开</string>
     <string name="overlay_channel">手机操控确认</string>
-    <string name="overlay_channel_description">Codex 操作手机时请你确认的提示（允许 / 拒绝 / 停止）</string>
+    <string name="overlay_channel_description">Codex 操作手机时请你确认的提示（允许一次 / 本轮允许 / 取消）</string>
     <string name="overlay_collapse">收起详情</string>
     <string name="overlay_confirm_title">Codex 请你确认</string>
     <string name="overlay_continue">继续</string>
-    <string name="overlay_decline">拒绝</string>
+    <string name="overlay_decline">取消</string>
     <string name="overlay_expand">展开详情</string>
     <string name="overlay_first_app">首次操作「%1$s」</string>
     <string name="overlay_fold">收成小球</string>
@@ -90,7 +90,7 @@
     <string name="overlay_stopped">已停止</string>
     <string name="overlay_this_app">这个应用</string>
     <string name="overlay_time_remaining">还剩 %1$s</string>
-    <string name="overlay_timeout_hint">30 秒内不选，按「拒绝」处理</string>
+    <string name="overlay_timeout_hint">30 秒内不选，按「取消」处理</string>
     <string name="overlay_unlock_own_app">Codex 自身</string>
     <string name="overlay_unlock_secrets">密码和验证码</string>
     <string name="overlay_unlock_system">系统设置</string>
@@ -182,7 +182,7 @@
     <string name="phone_open_channel">Codex 想打开的界面</string>
     <string name="phone_open_notice">Codex 想%1$s</string>
     <string name="phone_opening_background">Codex 正在后台屏打开「%1$s」</string>
-    <string name="phone_prompt_allow_app">本任务允许操作此应用</string>
+    <string name="phone_prompt_allow_app">本轮允许</string>
     <string name="phone_prompt_allow_once">允许一次</string>
     <string name="phone_prompt_allow_task">本任务免确认</string>
     <string name="phone_prompt_approval_title">Codex · 请你授权</string>
@@ -191,7 +191,7 @@
     <string name="phone_prompt_later">稍后</string>
     <string name="phone_prompt_native_title">Codex · 手机操控确认</string>
     <string name="phone_prompt_open">去查看</string>
-    <string name="phone_prompt_reject">拒绝</string>
+    <string name="phone_prompt_reject">取消</string>
     <string name="phone_prompt_remaining">剩余 %1$d 秒 · 未回应不会授权</string>
     <string name="phone_prompt_result_channel">手机操控结果</string>
     <string name="phone_prompt_result_text">查看结果</string>

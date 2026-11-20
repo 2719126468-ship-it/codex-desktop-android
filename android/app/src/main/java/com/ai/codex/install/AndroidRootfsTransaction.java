@@ -19,7 +19,7 @@ public final class AndroidRootfsTransaction {
         return RootfsTransaction.open(context.getFilesDir().toPath(), spec, new Posix());
     }
 
-    private static final class Posix implements RootfsTransaction.Posix {
+    static final class Posix implements RootfsTransaction.Posix {
         @Override public String storageBackend() { return ProotHardlinkStorage.BACKEND; }
         @Override public void createHardlinks(Path root, java.util.Map<Path, java.util.List<Path>> groups) throws IOException {
             ProotHardlinkStorage.create(root, groups, this);

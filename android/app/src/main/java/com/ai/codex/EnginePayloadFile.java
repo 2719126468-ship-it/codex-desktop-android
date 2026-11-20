@@ -4,12 +4,37 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 
 /** Streams one signed APK payload into an unpublished file; never edits a live binary. */
 public final class EnginePayloadFile {
     private EnginePayloadFile() { }
+
+    /** Validate an environment-owned executable without rewriting it. */
+    public static void verify(Path file, long size, String expected) throws Exception {
+        if (size < 20 || size > 536870912L || expected == null || !expected.matches("[a-f0-9]{64}")
+                || !Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS) || Files.size(file) != size)
+            throw new IOException("Invalid installed GNU engine payload");
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] header = new byte[20], buffer = new byte[65536];
+        long read = 0;
+        try (InputStream input = Files.newInputStream(file, LinkOption.NOFOLLOW_LINKS)) {
+            for (int count; (count = input.read(buffer)) != -1;) {
+                if (Thread.currentThread().isInterrupted()) throw new java.io.InterruptedIOException();
+                if (read + count > size) throw new IOException("Installed GNU engine exceeds descriptor");
+                if (read < header.length)
+                    System.arraycopy(buffer, 0, header, (int)read, Math.min(count, header.length - (int)read));
+                digest.update(buffer, 0, count);
+                read += count;
+            }
+        }
+        if (read != size || !hex(digest.digest()).equals(expected)
+                || header[0] != 0x7f || header[1] != 'E' || header[2] != 'L' || header[3] != 'F'
+                || header[4] != 2 || header[5] != 1 || (header[18] & 255) != 183 || header[19] != 0)
+            throw new IOException("Installed GNU engine differs from APK descriptor");
+    }
 
     public static void stage(InputStream input, Path target, long size, String expected) throws Exception {
         if (size < 20 || size > 536870912L || !expected.matches("[a-f0-9]{64}"))

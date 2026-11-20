@@ -9,7 +9,7 @@
 ## 核对部署结果
 
 1. 在仓库根目录运行 `python -B tools/ci/check-source-integrity.py`。检查电脑是否具备 [构建指南](build.md#android-toolchain) 里的工具链。Linux 原生构建使用 Linux 或 WSL 的 Linux 文件系统。
-2. 根据 [后端清单](../recovery/engine/manifest.json) 准备成对的 GNU ARM64 后端和 Code Mode host。从 OpenAI 单独获取当前适配的 Linux ARM64 桌面客户端 `26.1111.21308`。其余原生输入按 [候选包指南](build-candidate.md) 准备。
+2. 根据 [后端清单](../recovery/engine/manifest.json) 准备成对的 GNU ARM64 后端和 Code Mode host。从 OpenAI 单独获取当前适配的 Linux ARM64 桌面客户端 `26.1117.31558`。其余原生输入按 [候选包指南](build-candidate.md) 准备。
 3. 区分设备已有的运行环境与 [首次启动镜像](build.md#prepare-the-phone-image-for-first-launch)。真机检查按 [兼容性与验证](compatibility.md#设备验收) 记录结果。需要共享项目或手机操控时，在手机系统设置中授权对应功能。
 
 签名密钥、登录资料、运行镜像和生成的 APK 放在本地构建目录。提交仓库时按 [授权说明](../LEGAL.md) 保留源码和第三方声明。

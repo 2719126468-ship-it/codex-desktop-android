@@ -22,7 +22,7 @@ if os.name == 'posix':
     SPEC.loader.exec_module(ADAPTER)
 
 
-def fixture():
+def fixture(bootstrap=False, catalog_sync=False):
     module = b'let xB,PB,QB,hB,fB; // independently generated test module\n'
     other = b'Unchanged fixture member\n' * 100001
     header = {'files': {
@@ -37,9 +37,36 @@ def fixture():
     padded = raw + b'\0' * (-len(raw) % 4)
     pickle = struct.pack('<II', len(padded) + 4, len(raw)) + padded
     source = struct.pack('<II', 4, len(pickle)) + pickle + module + other
+    bootstrap_data = b'globalThis.fixtureStarted = true;\n'
+    if bootstrap:
+        header['files']['bootstrap.js'] = {'size': len(bootstrap_data), 'offset': str(len(module) + len(other))}
+        raw = json.dumps(header, separators=(',', ':')).encode()
+        padded = raw + b'\0' * (-len(raw) % 4)
+        pickle = struct.pack('<II', len(padded) + 4, len(raw)) + padded
+        source = struct.pack('<II', 4, len(pickle)) + pickle + module + other + bootstrap_data
+    catalog_data = b'function catalog(){return activate(),foregroundSync()}'
+    if catalog_sync:
+        payload = module + other + (bootstrap_data if bootstrap else b'')
+        header['files']['catalog.js'] = {
+            'size': len(catalog_data), 'offset': str(len(payload)), 'integrity': {
+                'algorithm': 'SHA256', 'hash': hashlib.sha256(catalog_data).hexdigest(),
+                'blockSize': 16, 'blocks': [hashlib.sha256(catalog_data[i:i + 16]).hexdigest()
+                                           for i in range(0, len(catalog_data), 16)]}}
+        raw = json.dumps(header, separators=(',', ':')).encode()
+        padded = raw + b'\0' * (-len(raw) % 4)
+        pickle = struct.pack('<II', len(padded) + 4, len(raw)) + padded
+        source = struct.pack('<II', 4, len(pickle)) + pickle + payload + catalog_data
     known = {hashlib.sha256(source).hexdigest(): {
         'module': 'module.js', 'sha256': hashlib.sha256(module).hexdigest(),
         'names': ['xB', 'PB', 'QB', 'hB', 'fB']}}
+    if bootstrap:
+        known[hashlib.sha256(source).hexdigest()]['bootstrap'] = {
+            'module': 'bootstrap.js', 'sha256': hashlib.sha256(bootstrap_data).hexdigest()}
+    if catalog_sync:
+        known[hashlib.sha256(source).hexdigest()]['catalogSync'] = {
+            'module': 'catalog.js', 'sha256': hashlib.sha256(catalog_data).hexdigest(),
+            'at': catalog_data.index(b',foregroundSync()'), 'before': ',foregroundSync()',
+            'code': ',syncStatus(status)'}
     return source, known
 
 
@@ -184,6 +211,163 @@ class WorkspaceAdapterTest(unittest.TestCase):
         self.assertEqual(self.source, self.backup.read_bytes())
         self.assertFalse(self.receipt.exists())
         self.assertEqual('adapted', ADAPTER.install(self.asar, self.state)['status'])
+
+    def bootstrap_fixture(self):
+        self.source, known = fixture(bootstrap=True)
+        self.asar.write_bytes(self.source)
+        ADAPTER.KNOWN.clear()
+        ADAPTER.KNOWN.update(known)
+        self.official = next(iter(known))
+        self.backup = self.state / (self.official + '.official.asar')
+
+    def test_reviewed_bootstrap_installs_before_the_client_entry_runs(self):
+        self.bootstrap_fixture()
+        result = ADAPTER.install(self.asar, self.state)
+        self.assertEqual(['module.js', 'bootstrap.js'], result['modifiedModules'])
+        content = self.asar.read_bytes()
+        _, header_size, _, json_size = struct.unpack_from('<IIII', content)
+        header = json.loads(content[16:16 + json_size])
+        member = header['files']['bootstrap.js']
+        start = 8 + header_size + int(member['offset'])
+        entry = content[start:start + member['size']]
+        self.assertLess(entry.index(b'installPhoneFullscreen'), entry.index(b'fixtureStarted'))
+        self.assertEqual('current', ADAPTER.install(self.asar, self.state)['status'])
+
+    def test_existing_client_hook_can_upgrade_without_replacing_its_official_backup(self):
+        self.bootstrap_fixture()
+        self.state.mkdir()
+        self.backup.write_bytes(self.source)
+        plan, descriptor = ADAPTER.adaptation_plan(io.BytesIO(self.source), self.official, bootstrap=False)
+        legacy = b''.join(ADAPTER.plan_chunks(io.BytesIO(self.source), plan))
+        self.asar.write_bytes(legacy)
+        self.receipt.write_text(json.dumps({'provider': 'Codex', 'officialSha256': self.official,
+            'adaptedSha256': ADAPTER.digest(legacy), 'modifiedModule': descriptor['module'],
+            'backup': str(self.backup)}))
+        before = tree(self.root)
+        self.assertEqual('upgrade-required', ADAPTER.install(self.asar, self.state, True)['clientState'])
+        self.assertEqual(before, tree(self.root))
+        self.assertEqual('upgraded', ADAPTER.install(self.asar, self.state)['status'])
+        self.assertEqual(self.source, self.backup.read_bytes())
+        self.assertEqual(ADAPTER.adapt(self.source)[0], self.asar.read_bytes())
+        self.assertEqual('current', ADAPTER.install(self.asar, self.state)['status'])
+
+    def test_interrupted_bootstrap_upgrade_recovers_with_the_previous_receipt(self):
+        self.bootstrap_fixture()
+        self.state.mkdir()
+        self.backup.write_bytes(self.source)
+        plan, descriptor = ADAPTER.adaptation_plan(io.BytesIO(self.source), self.official, bootstrap=False)
+        legacy = b''.join(ADAPTER.plan_chunks(io.BytesIO(self.source), plan))
+        self.asar.write_bytes(legacy)
+        self.receipt.write_text(json.dumps({'provider': 'Codex', 'officialSha256': self.official,
+            'adaptedSha256': ADAPTER.digest(legacy), 'modifiedModule': descriptor['module'],
+            'backup': str(self.backup)}))
+        def stop_after_asar(name):
+            if name == 'after-asar':
+                raise RuntimeError('Interrupted upgrade')
+        with mock.patch.object(ADAPTER, 'checkpoint', side_effect=stop_after_asar):
+            with self.assertRaisesRegex(RuntimeError, 'Interrupted upgrade'):
+                ADAPTER.install(self.asar, self.state)
+        self.assertEqual(ADAPTER.adapt(self.source)[0], self.asar.read_bytes())
+        ADAPTER.install(self.asar, self.state)
+        self.assertEqual(ADAPTER.digest(self.asar.read_bytes()), json.loads(self.receipt.read_text())['adaptedSha256'])
+
+    def catalog_fixture(self, legacy=False, root=None):
+        root = self.root if root is None else root
+        source, known = fixture(bootstrap=True, catalog_sync=True)
+        ADAPTER.KNOWN.clear()
+        ADAPTER.KNOWN.update(known)
+        official = next(iter(known))
+        asar, state = root / 'app.asar', root / 'state'
+        backup, receipt = state / (official + '.official.asar'), state / 'client-adapter.json'
+        asar.write_bytes(source)
+        if legacy:
+            state.mkdir()
+            backup.write_bytes(source)
+            plan, descriptor = ADAPTER.adaptation_plan(io.BytesIO(source), official, catalog_sync=False)
+            previous = b''.join(ADAPTER.plan_chunks(io.BytesIO(source), plan))
+            asar.write_bytes(previous)
+            receipt.write_text(json.dumps({
+                'provider': 'Codex', 'officialSha256': official,
+                'adaptedSha256': ADAPTER.digest(previous), 'modifiedModule': descriptor['module'],
+                'modifiedModules': [descriptor['module'], descriptor['bootstrap']['module']],
+                'backup': str(backup)}))
+        return source, official, asar, state, backup, receipt
+
+    def test_catalog_original_install_preserves_members_and_updates_integrity(self):
+        source, official, asar, state, backup, receipt = self.catalog_fixture()
+        before = tree(self.root)
+        self.assertEqual('original', ADAPTER.install(asar, state, True)['clientState'])
+        self.assertEqual(before, tree(self.root))
+        result = ADAPTER.install(asar, state)
+        self.assertEqual('adapted', result['status'])
+        self.assertEqual(['module.js', 'bootstrap.js', 'catalog.js'], result['modifiedModules'])
+        self.assertEqual(source, backup.read_bytes())
+        adapted = asar.read_bytes()
+        _, header_size, _, json_size = struct.unpack_from('<IIII', adapted)
+        header = json.loads(adapted[16:16 + json_size])
+        base = 8 + header_size
+        catalog = header['files']['catalog.js']
+        start = base + int(catalog['offset'])
+        content = adapted[start:start + catalog['size']]
+        self.assertEqual(b'function catalog(){return activate(),syncStatus(status),foregroundSync()}', content)
+        self.assertEqual(ADAPTER.digest(content), catalog['integrity']['hash'])
+        self.assertEqual([ADAPTER.digest(content[i:i + 16]) for i in range(0, len(content), 16)],
+                         catalog['integrity']['blocks'])
+        other = header['files']['other.dat']
+        start = base + int(other['offset'])
+        self.assertEqual(b'Unchanged fixture member\n' * 100001, adapted[start:start + other['size']])
+        self.assertEqual({'size': 17, 'unpacked': True}, header['files']['external.node'])
+        before = tree(self.root)
+        self.assertEqual('adapted', ADAPTER.install(asar, state, True)['clientState'])
+        self.assertEqual('current', ADAPTER.install(asar, state)['status'])
+        self.assertEqual(before, tree(self.root))
+
+    def test_catalog_upgrade_accepts_previous_bootstrap_archive_and_receipt(self):
+        source, official, asar, state, backup, receipt = self.catalog_fixture(legacy=True)
+        before = tree(self.root)
+        self.assertEqual('upgrade-required', ADAPTER.install(asar, state, True)['clientState'])
+        self.assertEqual(before, tree(self.root))
+        self.assertEqual('upgraded', ADAPTER.install(asar, state)['status'])
+        self.assertEqual(source, backup.read_bytes())
+        self.assertEqual(before[str(backup.relative_to(self.root))], tree(self.root)[str(backup.relative_to(self.root))])
+        self.assertEqual(ADAPTER.adapt(source)[0], asar.read_bytes())
+        self.assertEqual(['module.js', 'bootstrap.js', 'catalog.js'], json.loads(receipt.read_text())['modifiedModules'])
+        self.assertEqual('current', ADAPTER.install(asar, state)['status'])
+
+    def test_catalog_upgrade_recovers_before_and_after_archive_publication(self):
+        for point in ('before-rename:app.asar', 'after-rename:app.asar', 'after-asar'):
+            with self.subTest(point=point), tempfile.TemporaryDirectory(prefix='codex-catalog-upgrade-') as directory:
+                source, official, asar, state, backup, receipt = self.catalog_fixture(legacy=True, root=Path(directory))
+                previous_asar, previous_receipt = asar.read_bytes(), receipt.read_bytes()
+                def interrupt(name):
+                    if name == point:
+                        raise RuntimeError('Interrupted catalog upgrade')
+                with mock.patch.object(ADAPTER, 'checkpoint', side_effect=interrupt):
+                    with self.assertRaisesRegex(RuntimeError, 'Interrupted catalog upgrade'):
+                        ADAPTER.install(asar, state)
+                self.assertEqual(previous_receipt, receipt.read_bytes())
+                self.assertEqual(previous_asar if point.startswith('before-') else ADAPTER.adapt(source)[0],
+                                 asar.read_bytes())
+                ADAPTER.install(asar, state, True)
+                ADAPTER.install(asar, state)
+                self.assertEqual(source, backup.read_bytes())
+                self.assertEqual(ADAPTER.adapt(source)[0], asar.read_bytes())
+                self.assertEqual(ADAPTER.digest(asar.read_bytes()), json.loads(receipt.read_text())['adaptedSha256'])
+                self.assertEqual('current', ADAPTER.install(asar, state)['status'])
+
+    def test_catalog_hash_and_insertion_drift_are_refused_before_mutation(self):
+        source, official, asar, state, backup, receipt = self.catalog_fixture()
+        descriptor = ADAPTER.KNOWN[official]['catalogSync']
+        for field, replacement, message in (
+                ('sha256', '0' * 64, 'catalog module differs'),
+                ('at', descriptor['at'] + 1, 'catalog status insertion differs'),
+                ('before', ',wrongAnchor()', 'catalog status insertion differs')):
+            with self.subTest(field=field), mock.patch.dict(descriptor, {field: replacement}):
+                before = tree(self.root)
+                for check_only in (True, False):
+                    with self.assertRaisesRegex(ValueError, message):
+                        ADAPTER.install(asar, state, check_only)
+                    self.assertEqual(before, tree(self.root))
 
     def test_real_process_deaths_before_and_after_atomic_publication_recover(self):
         for point in ('after-backup', 'before-rename:app.asar', 'after-rename:app.asar',

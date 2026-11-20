@@ -1,6 +1,6 @@
 {
   "repository": "https://github.com/ccch1mneyyy/dsh-Go",
-  "commit": "c8cd16dc656bdfeae6a4e47ddb12ad51cb2a180f",
+  "commit": "6807372da499979181805b5de48f1d8a5052a8db",
   "copiedModules": [
     "diagnostics/SystemImeEvidence.kt",
     "diagnostics/SystemImeLogcat.kt",
@@ -169,7 +169,8 @@
   ],
   "changes": [
     "Android Java host adapter; package paths; Chinese default; no Flutter or DSH engine launcher; no boot/ADB keeper",
-    "2026-11-14: native control, focus input, visual/OCR, per-caller ownership and bridge updates; Codex lifecycle/relay retained; DSH Flutter/engine/skill publishing and boot keepers excluded"
+    "2026-11-14: native control, focus input, visual/OCR, per-caller ownership and bridge updates; Codex lifecycle/relay retained; DSH Flutter/engine/skill publishing and boot keepers excluded",
+    "2026-11-20: confirmation/round grants, task stop lifecycle, draggable overlays, vdisplay-4 actual-app routing, channel and shell compatibility fixes."
   ],
   "hostAdapters": [
     "PhoneControl.kt (adapted upstream owner)",
@@ -185,8 +186,8 @@
     "FoldRootVirtualScreen.java",
     "FoldRootVirtualScreenMain.java"
   ],
-  "previousCommit": "4e1665eb4b96b785c3e01efea40679a906ba5c8c",
-  "testCommit": "c8cd16dc656bdfeae6a4e47ddb12ad51cb2a180f",
+  "previousCommit": "c8cd16dc656bdfeae6a4e47ddb12ad51cb2a180f",
+  "testCommit": "6807372da499979181805b5de48f1d8a5052a8db",
   "copiedTestModules": [
     "phone/a11y/BallGeometryTest.kt",
     "phone/a11y/CaptureVisibilityTest.kt",
@@ -230,10 +231,7 @@
     "phone/background/BackgroundDisplayTest.kt",
     "phone/background/BackgroundFrameReadinessTest.kt",
     "phone/background/BackgroundGateConnectionStateTest.kt",
-    "phone/background/BackgroundGateIntentTest.kt",
     "phone/background/BackgroundGateRetryTest.kt",
-    "phone/background/BackgroundGateStateTest.kt",
-    "phone/background/BackgroundGateStrictReceiptTest.kt",
     "phone/background/BackgroundLocalOcrTest.kt",
     "phone/background/BackgroundNavigationProtocolTest.kt",
     "phone/background/BackgroundPreviewChoiceTest.kt",
@@ -352,7 +350,10 @@
     "PhoneCallerGuestTest.kt": "DSH guest relay/config is replaced by the Codex host adapter."
   },
   "localChanges": [
-    "Pure draft protocol model retained for upstream regression; Flutter publishing host integration remains unregistered."
+    "Pure draft protocol model retained for upstream regression; Flutter publishing host integration remains unregistered.",
+    "Codex native settings, task-bound live notification actions, narrowed MCP instructions, explicit transport lifecycle, Python relay and device-command policy retained.",
+    "Codex per-corner edge glow retained; updated upstream EdgeBeam renderer/model retained with attribution but not selected by the host.",
+    "DSH DiagnosticsTool and diagnostic publication host were not ported; Codex keeps its own log export. PhoneGuest.kt, McpServer.kt and PhoneToolCatalog.kt retain Codex host adaptations."
   ],
   "copiedResources": [
     "res/xml-v33/phone_accessibility_service.xml",

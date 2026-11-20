@@ -53,11 +53,31 @@ if (gnuEngineAssets.isPresent()) {
     if (engine.schema != 'codex.gnu-engine.payload.v1' || engine.target != 'aarch64-unknown-linux-gnu'
             || engine.files*.name != ['codex-native', 'codex-code-mode-host'])
         throw new GradleException('Unsupported GNU engine payload identity')
+    def externalPayload = providers.gradleProperty('codexExternalEnvironment').getOrElse('false').toBoolean()
     engine.files.each { item ->
         def binary = new File(supplied, 'gnu-engine/' + item.name)
-        if (!binary.isFile() || binary.length() != item.bytes)
+        if (!externalPayload && (!binary.isFile() || binary.length() != item.bytes))
             throw new GradleException('GNU engine payload size differs: ' + item.name)
+        if (externalPayload && binary.exists()) throw new GradleException('Split APK must not contain the GNU payload')
     }
+    android.sourceSets.main.assets.srcDir(supplied)
+}
+
+// A desktop update can be staged separately in a local candidate APK.
+def desktopClientAssets = providers.gradleProperty('codexDesktopClientAssets')
+if (desktopClientAssets.isPresent()) {
+    def supplied = file(desktopClientAssets.get()).canonicalFile
+    def manifest = new File(supplied, 'desktop-client/manifest.json')
+    def archive = new File(supplied, 'desktop-client/client.tgz')
+    def externalPayload = providers.gradleProperty('codexExternalEnvironment').getOrElse('false').toBoolean()
+    if (!manifest.isFile() || (!externalPayload && !archive.isFile()))
+        throw new GradleException('Desktop update assets are incomplete')
+    def desktop = new groovy.json.JsonSlurper().parse(manifest)
+    if (desktop.schema != 'codex.desktop.payload.v1' || desktop.architecture != 'arm64'
+            || (!externalPayload && archive.length() != desktop.compressedBytes))
+        throw new GradleException('Desktop update assets do not match their manifest')
+    if (externalPayload && archive.exists()) throw new GradleException('Split APK must not contain the desktop payload')
+    android.androidResources.noCompress.add('tgz')
     android.sourceSets.main.assets.srcDir(supplied)
 }
 

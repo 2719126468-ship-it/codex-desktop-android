@@ -47,14 +47,7 @@ public final class PhoneRuntimeInstaller {
             // need a second 1+ GB copy in shared storage or a file-manager grant.
             source = () -> context.getAssets().open("phone-runtime/codex-phone-rootfs.tgz",
                 android.content.res.AssetManager.ACCESS_STREAMING);
-        } else {
-            File external = context.getExternalFilesDir(null);
-            if (external == null) throw new IOException("无法访问运行环境安装文件。");
-            Path archive = external.toPath().resolve("codex-phone-rootfs.tar.gz");
-            if (!Files.isRegularFile(archive, LinkOption.NOFOLLOW_LINKS))
-                throw new IOException("缺少 Linux 环境包，请安装包含运行环境的完整 APK。");
-            source = () -> Files.newInputStream(archive, LinkOption.NOFOLLOW_LINKS);
-        }
+        } else source = EnvironmentPackageSource.downloads(spec);
         PowerManager.WakeLock wake = context.getSystemService(PowerManager.class)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Codex:initial-install");
         wake.acquire();
@@ -62,6 +55,17 @@ public final class PhoneRuntimeInstaller {
             progress.accept("正在校验并安装 Linux 运行环境，首次启动需要几分钟…");
             Path root;
             try (RootfsTransaction transaction = AndroidRootfsTransaction.open(context, spec)) {
+                // A prepared root already occupies the space reserved below.
+                // Resuming account/keyring preparation must not reserve it twice.
+                if (transaction.state() == RootfsTransaction.State.NEW
+                        || transaction.state() == RootfsTransaction.State.PREPARING) {
+                    long reserve = Math.max(512L * 1024 * 1024, spec.payloadBytes / 10);
+                    long requiredSpace = spec.payloadBytes + spec.compressedBytes + reserve;
+                    if (context.getFilesDir().getUsableSpace() < requiredSpace)
+                        throw new IOException("内部存储空间不足，请至少保留 "
+                                + ((requiredSpace + 1024L * 1024 * 1024 - 1) / (1024L * 1024 * 1024))
+                                + " GB 可用空间后重试安装。");
+                }
                 // Preparation is resumable and never publishes files/debian.
                 root = transaction.prepare(source).root;
                 provisionMachineId(root);

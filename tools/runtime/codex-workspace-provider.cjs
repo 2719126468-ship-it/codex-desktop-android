@@ -219,7 +219,11 @@ function integrateNetworkProbe(original, runtime = {}) {
     }
     if (options.spawnCommand != null || options.spawnArgs != null || options.wslDistro != null)
       throw Error('Unsupported startup configuration probe transport');
-    const executablePath = '/usr/lib/chatgpt/resources/codex';
+    const desktop = env.CODEX_PHONE_DESKTOP_DIR;
+    if (desktop !== undefined && desktop !== '/usr/lib/chatgpt' &&
+        !/^\/usr\/local\/lib\/codex\/desktops\/[0-9]{2}\.[0-9]{4}\.[0-9]{4,6}-[a-f0-9]{16}$/.test(desktop))
+      throw Error('Invalid installed desktop directory');
+    const executablePath = path.posix.join(desktop ?? '/usr/lib/chatgpt', 'resources/codex');
     verifyExecutable(executablePath);
     // Preserve the real CLI options, configuration layers, auth policy and
     // environment. The bundled official program has no Codex native-session
@@ -240,6 +244,13 @@ function integrateStartupTransportResolver(original, runtime = {}) {
   };
 }
 
+// The desktop onboarding mode also controls geometry, independently of the
+// rendered route. Keep login/welcome content but use normal window geometry.
+function phoneWindowMode(value, env = process.env) {
+  return env.CODEX_PHONE_CLIENT_COMPAT === '1' && value?.mode === 'onboarding' ?
+    { ...value, mode: 'app' } : value;
+}
+
 // Enter Electron's own fullscreen mode (the F11 menu role), once per main window.
 // EWMH alone only changes the outer X11 window and can leave the client chrome visible.
 function installPhoneFullscreen(electron, env = process.env) {
@@ -254,28 +265,52 @@ function installPhoneFullscreen(electron, env = process.env) {
     if (!window || window.isDestroyed() || tracked.has(window) || !window.webContents) return;
     tracked.add(window);
     const contents = window.webContents;
+    let queued = false;
     const detach = () => {
       window.removeListener('ready-to-show', enter);
+      window.removeListener('show', enter);
+      window.removeListener('focus', enter);
+      window.removeListener('enter-full-screen', confirmed);
       contents.removeListener('did-finish-load', enter);
     };
+    function confirmed() {
+      applied.add(window);
+      detach();
+    }
     function enter() {
-      if (applied.has(window) || window.isDestroyed() || contents.isDestroyed()) return;
+      if (queued || applied.has(window) || window.isDestroyed() || contents.isDestroyed()) return;
+      // New clients paint hidden startup windows before restoring their geometry.
+      // Wait for mapping, then run after the client's show/maximize listeners.
+      if (!window.isVisible() || window.isMinimized() || window.isFullScreenable?.() === false) return;
       if (window.getParentWindow?.() || window.isModal?.()) return;
       let url;
       try { url = new URL(contents.getURL()); } catch { return; }
       // Never fullscreen auth popups, DevTools, or the client's embedded browser.
       if (url.protocol !== 'app:' || url.hostname !== '-' || url.pathname !== '/index.html') return;
-      applied.add(window);
-      try {
-        window.setFullScreen(true);
-        detach();
-      } catch {
-        applied.delete(window);
-        console.warn('[codex-phone-window] Fullscreen request unavailable');
-      }
+      queued = true;
+      setImmediate(() => {
+        queued = false;
+        if (applied.has(window) || window.isDestroyed() || contents.isDestroyed()) return;
+        if (!window.isVisible() || window.isMinimized() || window.isFullScreenable?.() === false) return;
+        let current;
+        try { current = new URL(contents.getURL()); } catch { return; }
+        if (current.protocol !== 'app:' || current.hostname !== '-' || current.pathname !== '/index.html' ||
+            window.getParentWindow?.() || window.isModal?.()) return;
+        try {
+          if (!window.isFullScreen()) window.setFullScreen(true);
+          // A successful setter call is not an acknowledgement from X11.
+          // Keep listening if the window manager has not accepted it yet.
+          if (window.isFullScreen()) confirmed();
+        } catch {
+          console.warn('[codex-phone-window] Fullscreen request unavailable');
+        }
+      });
     }
     contents.on('did-finish-load', enter);
     window.on('ready-to-show', enter);
+    window.on('show', enter);
+    window.on('focus', enter);
+    window.on('enter-full-screen', confirmed);
     window.once('closed', detach);
     enter();
   }
@@ -289,4 +324,4 @@ if (process.versions.electron && process.type === 'browser' && process.env.CODEX
   installPhoneFullscreen(require('electron'));
 }
 
-module.exports = { integrate, integrateNetworkProbe, integrateStartupTransportResolver, installPhoneFullscreen, readConfig, manifest, copyArchive, validate, officialUrl };
+module.exports = { integrate, integrateNetworkProbe, integrateStartupTransportResolver, installPhoneFullscreen, phoneWindowMode, readConfig, manifest, copyArchive, validate, officialUrl };

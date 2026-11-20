@@ -36,9 +36,11 @@ public final class CodexRuntimeService extends Service {
     public static final String ACTION_START = "com.ai.codex.START_RUNTIME";
     public static final String ACTION_STOP = "stop";
     public static final String EXTRA_PHASE_TIME = "com.ai.codex.PHASE_TIME";
+    public static final String EXTRA_STARTUP_LOG = "com.ai.codex.STARTUP_LOG";
     public static final String EXTRA_THREAD = "com.ai.codex.OPEN_THREAD";
     public static final String EXTRA_CONNECTOR_CALLBACK = "com.ai.codex.CONNECTOR_CALLBACK";
     private String phase = "starting", phaseDetail = "";
+    private final com.ai.codex.CodexStartupLog startupLog = new com.ai.codex.CodexStartupLog();
     private long phaseAt = SystemClock.elapsedRealtimeNanos(), shutdownRequestedAt;
     private int activeResponses;
     private final Map<String, String> responseStatus = new LinkedHashMap<>();
@@ -297,12 +299,15 @@ public final class CodexRuntimeService extends Service {
     }
     private void broadcastPhase() {
         sendBroadcast(new Intent(ACTION_STATUS).setPackage(getPackageName()).putExtra("phase", phase)
-                .putExtra("detail", phaseDetail).putExtra(EXTRA_PHASE_TIME, phaseAt));
+                .putExtra("detail", phaseDetail).putExtra(EXTRA_PHASE_TIME, phaseAt)
+                .putExtra(EXTRA_STARTUP_LOG, startupLog.snapshot()));
     }
     private void publishPhase(String next, String detail) {
         if (Looper.myLooper() != Looper.getMainLooper()) { mainHandler.post(() -> publishPhase(next, detail)); return; }
         if (destroyed) return;
         phase = next; phaseDetail = detail == null ? "" : detail;
+        if (!phaseDetail.isEmpty()) startupLog.step(phaseDetail, SystemClock.elapsedRealtime());
+        if ("ready".equals(next)) startupLog.step("Codex 桌面已就绪", SystemClock.elapsedRealtime());
         phaseAt = "stopping".equals(next) && shutdownRequestedAt != 0
                 ? shutdownRequestedAt : SystemClock.elapsedRealtimeNanos();
         getSystemService(NotificationManager.class).notify(1, runtimeNotification());
@@ -445,7 +450,8 @@ public final class CodexRuntimeService extends Service {
         liveFrame = 0;
         conversationCommand = null;
         conversationEnvironment = null;
-        publishPhase("starting", "");
+        startupLog.reset(SystemClock.elapsedRealtime());
+        publishPhase("starting", "正在检查本地运行环境…");
         synchronized (lifecycleLock) {
             if (destroyed || worker != null) return;
             stopping = false;
@@ -663,6 +669,12 @@ public final class CodexRuntimeService extends Service {
         } catch (Exception ignored) { }
         return -1;
     }
+    private void startupStep(CodexExecutorRuntime runtime, String message) {
+        mainHandler.post(() -> {
+            if (!destroyed && !stopping && runtime == executorRuntime
+                    && "starting".equals(phase) && startupLog.step(message, SystemClock.elapsedRealtime())) broadcastPhase();
+        });
+    }
     private void startWorkspace(CodexExecutorRuntime runtime, java.util.concurrent.CompletableFuture<Void> completion,
             RuntimeActivations generationActivations) {
         java.lang.Process started = null;
@@ -679,10 +691,16 @@ public final class CodexRuntimeService extends Service {
             requireReadableFile(root, "usr/local/lib/codex/codex_ime.py");
             requireReadableFile(root, "usr/local/lib/codex/keyboard-focus.js");
             requireReadableFile(root, "usr/share/X11/xkb/rules/evdev");
+            startupStep(runtime, "Linux 运行环境已就绪");
+            startupStep(runtime, "正在准备本地执行服务…");
             CodexExecutorRuntime.Endpoint nativeEndpoint = runtime.isNativeSelected()
                     ? runtime.prepare(identity.home).get(90, java.util.concurrent.TimeUnit.SECONDS) : null;
+            startupStep(runtime, "本地执行服务已就绪");
             File localTools = nativeEndpoint != null && nativeEndpoint.directNative()
                     ? CodexLocalTools.install(this, identity, new File(nativeEndpoint.workspace())) : null;
+            String desktop = localTools == null ? null : com.ai.codex.install.DesktopClientInstaller.install(
+                    this, root, () -> publishPhase("starting", "正在安装新版 Codex 桌面端…"));
+            startupStep(runtime, "Codex 桌面资源已就绪");
             if (nativeEndpoint != null && nativeEndpoint.directNative()) {
                 requireReadableFile(root, "usr/local/bin/codex-native");
                 requireReadableFile(root, "usr/local/libexec/codex/codex-native");
@@ -717,6 +735,7 @@ public final class CodexRuntimeService extends Service {
                 } catch (Throwable error) { xStarted.completeExceptionally(error); }
             });
             xStarted.get(15, java.util.concurrent.TimeUnit.SECONDS);
+            startupStep(runtime, "X11 显示服务已就绪");
             File aliases = new File(getFilesDir(), "native"); aliases.mkdirs();
             File alias = new File(aliases, "libtalloc.so.2");
             refreshLibraryAlias(alias, getApplicationInfo().nativeLibraryDir + "/libtalloc.so");
@@ -753,6 +772,7 @@ public final class CodexRuntimeService extends Service {
             if (!getResources().getBoolean(com.ai.codex.R.bool.codex_require_inner_display))
                 args.add("CODEX_PHONE_CLIENT_COMPAT=1");
             if (localTools != null) args.add("CODEX_TOOLS_DIR=" + localTools.getPath());
+            if (desktop != null) args.add("CODEX_PHONE_DESKTOP_DIR=" + desktop);
             if (nativeEndpoint != null && nativeEndpoint.directNative()) {
                 args.add("CODEX_CLI_PATH=/usr/local/bin/codex-native");
                 args.add("CODEX_NATIVE_BOOTSTRAP=" + nativeEndpoint.startupManifest());
@@ -770,7 +790,9 @@ public final class CodexRuntimeService extends Service {
             List<String> openArgs = new ArrayList<>(args.subList(0, args.size() - 2));
             Map<String, String> openEnvironment = new HashMap<>(builder.environment());
             mainHandler.post(() -> { conversationCommand = openArgs; conversationEnvironment = openEnvironment; });
-            builder.redirectErrorStream(true).redirectOutput(new File(getFilesDir(), "runtime.log"));
+            File runtimeLog = new File(getFilesDir(), "runtime.log");
+            builder.redirectErrorStream(true).redirectOutput(runtimeLog);
+            startupStep(runtime, "正在启动 Codex 桌面进程…");
             synchronized (lifecycleLock) {
                 if (stopping || destroyed) throw new InterruptedException("Workspace stopped");
                 started = builder.start();
@@ -789,6 +811,11 @@ public final class CodexRuntimeService extends Service {
             // client without a window must not leave an endless loading screen.
             long windowDeadline = SystemClock.elapsedRealtime() + java.util.concurrent.TimeUnit.SECONDS.toMillis(90);
             while (!clientReady.isDone()) {
+                String transcript = com.ai.codex.CodexStartupLog.readTail(runtimeLog);
+                mainHandler.post(() -> {
+                    if (!destroyed && !stopping && runtime == executorRuntime
+                            && "starting".equals(phase) && startupLog.runtime(transcript)) broadcastPhase();
+                });
                 // FileObserver delivery is best-effort on vendor ROMs. Poll the
                 // same bounded launch-token receipt before checking the deadline.
                 File receipt = new File(temp, "codex-client-ready");

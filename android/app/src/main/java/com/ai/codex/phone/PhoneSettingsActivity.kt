@@ -7,6 +7,7 @@ import android.provider.Settings
 import android.view.WindowInsets
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import com.ai.codex.phone.a11y.OverlayPrefs
 
 /** Native settings host for the vendored phone driver, without a Flutter dependency. */
 class PhoneSettingsActivity : AppCompatActivity() {
@@ -40,6 +41,10 @@ class PhoneSettingsActivity : AppCompatActivity() {
             if (liveSettings.resolveActivity(packageManager) != null)
                 button("灵动岛 / 实时活动设置") { startActivity(liveSettings) }
         }
+        val overlay = OverlayPrefs.read(this)
+        toggle("闲置时将控制悬浮条收成小球", overlay.autoFold) { enabled ->
+            OverlayPrefs.write(this, mapOf("autoCollapse" to enabled))
+        }
         button("读一下当前屏幕（不会发给模型）") { work { val out=control.testScreen(); runOnUiThread { show("读屏结果",Json.write(out)) }; null } }
         text("确认方式",21)
         val modes = arrayOf("关键步骤先询问", "本任务可免确认", "始终免确认")
@@ -56,6 +61,14 @@ class PhoneSettingsActivity : AppCompatActivity() {
                 .setNegativeButton("取消") {_,_->render()}.setPositiveButton("开启") {_,_->control.setPolicies(mapOf("confirmMode" to mode));render()}.show()
             else control.setPolicies(mapOf("confirmMode" to mode))
         };body.addView(radio)
+        toggle("对名单内的应用始终允许", control.policies().alwaysAllowEnabled) { enabled ->
+            if (!enabled) control.setPolicies(mapOf("alwaysAllowEnabled" to false))
+            else AlertDialog.Builder(this).setTitle("对名单内应用始终允许")
+                .setMessage("名单内应用的普通确认将自动放行；禁止应用和未解除的敏感操作限制仍生效。应用名单在下方编辑。")
+                .setNegativeButton("取消") { _, _ -> render() }
+                .setPositiveButton("开启") { _, _ -> control.setPolicies(mapOf("alwaysAllowEnabled" to true)); render() }
+                .setOnCancelListener { render() }.show()
+        }
         button("编辑应用名单") { rules() }
         text("不打扰模式 / Root",21)
         text(Json.write(control.background.status()))
@@ -112,9 +125,12 @@ class PhoneSettingsActivity : AppCompatActivity() {
         val p=control.policies();val form=LinearLayout(this).apply {orientation=LinearLayout.VERTICAL}
         val deny=EditText(this).apply {hint="禁止应用包名，每行一个";setText(p.denyPackages.joinToString("\n"))};form.addView(deny)
         val ask=EditText(this).apply {hint="每一步确认的应用包名，每行一个";setText(p.confirmEveryWritePackages.joinToString("\n"))};form.addView(ask)
+        val always=EditText(this).apply {hint="始终允许的应用包名，每行一个";setText(p.alwaysAllowPackages.joinToString("\n"))};form.addView(always)
         AlertDialog.Builder(this).setTitle("应用名单：修改后生效").setMessage("移除禁止名单中的应用会允许模型读取和操作它。")
             .setView(form).setNegativeButton("取消",null).setPositiveButton("保存") {_,_->
-                control.setPolicies(mapOf("denyPackages" to deny.text.lines().filter{it.isNotBlank()},"confirmEveryWritePackages" to ask.text.lines().filter{it.isNotBlank()}));render()
+                control.setPolicies(mapOf("denyPackages" to deny.text.lines().filter{it.isNotBlank()},
+                    "confirmEveryWritePackages" to ask.text.lines().filter{it.isNotBlank()},
+                    "alwaysAllowPackages" to always.text.lines().filter{it.isNotBlank()}));render()
             }.show()
     }
     private fun work(block: ()->Map<String,Any?>?) { if(busy)return;busy=true

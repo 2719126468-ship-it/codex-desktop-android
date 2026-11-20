@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/106fb10e-1151-4f02-9a93-da7b29ec0529
 
 Codex Android 是基于 FoldGPT 的独立适配项目，把 Linux ARM64 版 ChatGPT 桌面客户端带到 Android 上。它提供简体中文界面、启动全屏、共享存储项目，以及带屏幕边缘提示的前台手机操控。
 
-**本项目只在一加 13（Android 17、ARM64）上做过实机测试，其他手机能否运行没有保证。仓库提供源码和测试版 APK；更新包需要已有 Linux 运行环境，首次安装请使用包含环境的完整包。**
+**本项目只在一加 13（Android 17、ARM64）上做过实机测试，其他手机能否运行没有保证。仓库提供源码和测试版 APK；v80 支持小 APK 与配套独立环境包，首次安装将环境包放入手机内部存储的 Download 目录后自动检测。已有 v79 环境可直接覆盖升级 APK。** [拆分安装说明](docs/split-release.md)
 
 ## 功能亮点
 
@@ -38,7 +38,7 @@ CC Switch 的安装包、使用说明和功能范围见其[项目主页](https:/
 - **桌面与本地执行**使用 PRoot 提供 Debian 用户空间，运行 Linux ARM64 桌面客户端。适配后的 Codex `app-server` 通过 Android 原生执行器运行项目命令、访问工作区。模型推理由在线服务完成。
 - **手机操控**通过本机 MCP 接入 Codex。前台读屏、点击和输入由 Android 无障碍服务执行，Root 功能单独授权。
 
-当前应用 ID 为 `com.ai.codex`。本次本地测试包通过构建参数指定 versionCode `71`，适配目标为桌面客户端 `26.1111.21308` 和 Codex `rust-v0.169.0`；这些新改动的实机验证范围见兼容性文档。[架构文档](docs/architecture.md) · [后端版本与补丁清单](recovery/engine/manifest.json)
+当前应用 ID 为 `com.ai.codex`。v80 本地测试版适配 Linux ARM64 桌面客户端 `26.1117.31558` 和 Codex 后端 `0.171.0`，小 APK 约 63 MB，独立环境包约 1.37 GB。实机验证范围见兼容性文档。[架构文档](docs/architecture.md) · [后端版本与补丁清单](recovery/engine/manifest.json)
 
 ## 使用 Agent 部署
 

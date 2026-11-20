@@ -12,7 +12,7 @@ The `vendor/termux-x11` and `vendor/proot` directories contain committed source 
 | --- | --- | --- |
 | [Termux:X11](https://github.com/termux/termux-x11) | `9df8b767645aa0d0a2f2576767449df55b41962f` | GPL v3, with dependency-specific notices |
 | [PRoot](https://github.com/termux/proot) | `7266fb3e8516535682f5a9c8f3a7e70f6506eddb` | GPL v2 or later; see its source headers and `COPYING` |
-| [Codex](https://github.com/openai/codex) native execution integration | `rust-v0.169.0`, base `d32063f96c2dff1dc96af839b3952abb6acfeda4` | Apache License 2.0; preserve the upstream LICENSE and NOTICE with rebuilt source or binary distributions |
+| [Codex](https://github.com/openai/codex) native execution integration | `rust-v0.171.0`, base `ccf9be8cc458bd6b8336fe84d68d8893f2691a5e` | Apache License 2.0; preserve the upstream LICENSE and NOTICE with rebuilt source or binary distributions |
 | Apache Commons Compress (installer), with Commons IO/Codec/Lang dependencies | `1.28.0`; see Gradle dependency resolution and pinned host-test inputs | Apache License 2.0; retain component LICENSE/NOTICE files for binary distribution |
 
 The Codex integration is distributed as a source patch in [`recovery/engine`](recovery/engine), with the upstream revision and patch checksum in its manifest. It is based on the open-source Codex project, copyright OpenAI, and remains subject to its [Apache-2.0 license](docs/licenses/codex-LICENSE) and [upstream notice](docs/licenses/codex-NOTICE). These two files are retained from the recorded base revision. The source restoration tool obtains that upstream tree separately. This attribution does not apply the repository's GPL license to upstream Codex code or grant rights to the proprietary desktop client.
@@ -23,7 +23,7 @@ This publication distributes source, without APKs, runtime libraries or Linux im
 
 OpenAI's application is not licensed by this repository. Users must obtain it from the official source under the applicable OpenAI terms. This project does not grant redistribution rights to OpenAI binaries, icons or other assets. Account data, proprietary installers and preconfigured Linux images are excluded from the source publication and must remain outside future releases.
 
-The integration includes a compatibility shim that changes runtime behavior, including sandbox checks, and a version-specific workspace adapter that modifies a limited ASAR integration point. The current development client is `26.1111.21308`; the adaptation flow retains the original archive and rejects unknown versions. The resulting installation must not be described as an unmodified client or as compatible with arbitrary future client updates.
+The integration includes a compatibility shim that changes runtime behavior, including sandbox checks, and a version-specific workspace adapter that modifies a limited ASAR integration point. The current development client is `26.1117.31558`. The adaptation flow retains the original archive and rejects unknown versions. The resulting installation must not be described as an unmodified client or as compatible with arbitrary future client updates.
 
 These adaptations do not provide equivalent Linux namespace isolation. The keyboard bridge also attaches through the client's local debugger and installs DOM event listeners. See the [architecture](docs/architecture.md) and [security policy](SECURITY.md) for the execution and trust boundaries.
 

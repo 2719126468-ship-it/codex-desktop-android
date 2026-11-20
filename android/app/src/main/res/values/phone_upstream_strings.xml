@@ -186,4 +186,9 @@
     <string name="phone_confirm_coordinate_long">在「%1$s」长按截图位置 (%2$s, %3$s)</string>
     <string name="phone_confirm_coordinate_swipe">在「%1$s」从 (%2$d,%3$d) 滑动到 (%4$d,%5$d)，%6$d 毫秒</string>
     <string name="phone_status_coordinate">执行截图坐标手势</string>
+    <string name="overlay_allow_round">本轮允许</string>
+    <string name="overlay_move_left">移到左侧</string>
+    <string name="overlay_move_centre">移到中间</string>
+    <string name="overlay_move_right">移到右侧</string>
+    <string name="phone_system_intent_unavailable">无法准备这次系统操作，未发送请求。</string>
 </resources>

@@ -76,9 +76,18 @@ public final class GnuEngineInstaller {
             }
         }
         if (installed) return; // No full binary reread on every desktop launch.
+        boolean embedded = java.util.Arrays.asList(assets).containsAll(NAMES);
+        if (!embedded) {
+            // The APK authenticates the descriptor; verify the environment's
+            // pair once before recording the existing files' inode identities.
+            for (int index = 0; index < files.length(); index++) {
+                JSONObject item = files.getJSONObject(index);
+                verifyInstalled(new File(bin, item.getString("name")), item, uid);
+            }
+        }
         ArrayList<File> staged = new ArrayList<>();
         try {
-            for (int index = 0; index < files.length(); index++) {
+            for (int index = 0; embedded && index < files.length(); index++) {
                 JSONObject item = files.getJSONObject(index);
                 File temporary = File.createTempFile(".gnu-engine-", ".next", bin);
                 staged.add(temporary);
@@ -89,7 +98,7 @@ public final class GnuEngineInstaller {
             }
             // Both payloads are complete before either live pathname changes.
             // No desktop/controller is started until this method commits.
-            for (int index = 0; index < files.length(); index++)
+            for (int index = 0; embedded && index < files.length(); index++)
                 Os.rename(staged.get(index).getPath(), new File(bin, NAMES.get(index)).getPath());
             JSONArray installedFiles = new JSONArray();
             for (String name : NAMES) {
@@ -120,6 +129,13 @@ public final class GnuEngineInstaller {
                 || !directory.getCanonicalFile().equals(directory.getAbsoluteFile()))
             throw new java.io.IOException("GNU engine directory is not private application storage");
     }
+    private static void verifyInstalled(File file, JSONObject item, int uid) throws Exception {
+        StructStat state = ownedFile(file, uid);
+        if (state.st_size != item.getLong("bytes") || (state.st_mode & 0100) == 0)
+            throw new java.io.IOException("环境中的 Codex 后端不完整，请下载配套环境包。");
+        EnginePayloadFile.verify(file.toPath(), item.getLong("bytes"), item.getString("sha256"));
+    }
+
     private static StructStat ownedFile(File file, int uid) throws Exception {
         StructStat state = Os.lstat(file.getPath());
         if (!OsConstants.S_ISREG(state.st_mode) || state.st_uid != uid || state.st_nlink != 1 || (state.st_mode & 0022) != 0)

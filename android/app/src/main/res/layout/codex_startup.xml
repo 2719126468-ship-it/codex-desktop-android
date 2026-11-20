@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:gravity="center" android:padding="24dp" android:background="#171717">
+    android:background="#171717">
+    <com.ai.codex.StartupLogView android:id="@+id/startup_logs"
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:importantForAccessibility="no" android:clickable="false" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_gravity="center" android:orientation="vertical" android:gravity="center"
+        android:padding="24dp" android:elevation="8dp">
     <ImageView android:layout_width="72dp" android:layout_height="72dp" android:src="@drawable/codex_icon" android:contentDescription="Codex" />
     <TextView android:id="@+id/startup_title" android:layout_width="match_parent" android:layout_height="wrap_content"
         android:layout_marginTop="24dp" android:gravity="center" android:text="正在启动 Codex…"
@@ -12,4 +18,5 @@
         android:layout_marginTop="24dp" android:text="重试" android:visibility="gone" />
     <Button android:id="@+id/startup_details" android:layout_width="wrap_content" android:layout_height="wrap_content"
         android:text="查看诊断" android:visibility="gone" />
-</LinearLayout>
+    </LinearLayout>
+</FrameLayout>

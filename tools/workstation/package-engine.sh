@@ -26,7 +26,8 @@ PY
 cp "$fixture/provenance.json" "$evidence/debian-library-provenance.json"
 cp "$fixture/library-rootfs.sha256" "$evidence/debian-library-rootfs.sha256"
 python3 "$repo/tools/executor/build-gnu-engine.py" package --state "$state" --libraries "$libraries"
-assets="$task_root/engine-apk-assets-0.169.0"
+version=$(python3 -c 'import json,sys,tomllib; from pathlib import Path; source=Path(json.load(open(sys.argv[1]))["source"]); print(tomllib.loads((source/"codex-rs/Cargo.toml").read_text())["workspace"]["package"]["version"])' "$state")
+assets="$task_root/engine-apk-assets-$version"
 python3 "$repo/tools/executor/stage-gnu-engine-assets.py" --state "$state" --output "$assets"
 printf '%s\n' "$assets" > "$repo/work/engine-assets-path.txt"
 timeout -k 2s 20s qemu-aarch64 -L "$fixture/rootfs" "$build/unstripped/codex" --version \
