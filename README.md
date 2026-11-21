@@ -36,9 +36,13 @@ Codex Android 是基于 FoldGPT 的独立适配项目，把 Linux ARM64 版 Chat
 
 ## 推荐搭配安卓版 CC Switch
 
-<img src="img/ccswitch1.jpg" width="25%" />
-<img src="img/ccswitch2.jpg" width="25%" />
-<img src="img/ccswitch3.jpg" width="25%" />
+<table>
+  <tr>
+    <td width="33%"><img src="img/ccswitch1.jpg" alt="CC Switch 与 Codex 搭配使用" width="100%" /></td>
+    <td width="33%"><img src="img/ccswitch2.jpg" alt="CC Switch 服务商配置列表" width="100%" /></td>
+    <td width="33%"><img src="img/ccswitch3.jpg" alt="CC Switch 自定义配置" width="100%" /></td>
+  </tr>
+</table>
 
 推荐使用 [CC Switch Android](https://github.com/JinShichang/cc-switch-android) 管理多套服务商配置，切换 API 地址、API Key 和模型。它作为独立 Android 应用运行，通过系统文件选择器获得 Codex 配置目录的读写授权，无需 Root。
 
@@ -65,6 +69,10 @@ CC Switch 的安装包、使用说明和功能范围见其[项目主页](https:/
 可直接把部署提示词交给 Agent，并附上你的构建系统、手机型号和 Android 版本。[Agent 部署指南](docs/agent-deployment.md)
 
 公开源码从零构建并完成首次安装的全流程仍待验证。构建候选 APK 与准备完整运行环境是两个步骤。[候选包构建流程](docs/build-candidate.md) · [一加 13 兼容性与验证](docs/compatibility.md)
+
+## 欢迎加入QQ群讨论
+
+<img src="img/qqgroup.jpg" alt="QQ 交流群二维码" width="30%" />
 
 ## 许可证
 
