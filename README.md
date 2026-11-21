@@ -72,7 +72,7 @@ CC Switch 的安装包、使用说明和功能范围见其[项目主页](https:/
 
 ## 欢迎加入QQ群讨论
 
-<img src="img/qqgroup.jpg" alt="QQ 交流群二维码" width="30%" />
+<img src="img/qqgroup.jpg" alt="QQ 交流群二维码" width="40%" />
 
 ## 许可证
 
