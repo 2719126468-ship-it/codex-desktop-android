@@ -62,7 +62,8 @@ jobs:
         run: |
           native="$(find downloads/install/native -mindepth 1 -maxdepth 1 -type d -name 'codex-native-*' -print -quit)"
           test -n "$native"
-          stage=work/compatibility/staged
+          native="$GITHUB_WORKSPACE/$native"
+          stage="$GITHUB_WORKSPACE/work/compatibility/staged"
           gradle -p android --no-daemon --max-workers=2 --no-parallel \
             -Dorg.gradle.jvmargs='-Xmx2g -Dfile.encoding=UTF-8' \
             -PcodexBuildToolsVersion=36.0.0 \
