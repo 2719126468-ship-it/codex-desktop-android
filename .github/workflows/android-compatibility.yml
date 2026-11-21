@@ -1,0 +1,87 @@
+name: Android API 27 compatibility build
+
+on:
+  push:
+    branches: [main, 'compat/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-api27-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-arm64-apk:
+    name: Build and validate ARM64 APK (minimum API 27)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Run packaging and runtime manifest tests
+        run: |
+          python3 -B -m unittest discover -s tools/ci -p 'test_compatibility_staging.py' -v
+          python3 -B -m unittest discover -s tools/runtime -p 'test_candidate_build.py' -v
+          python3 -B -m unittest discover -s tools/install -p 'test_phone_image.py' -v
+          python3 -B -m unittest discover -s tools/install -p 'test_build_phone_image.py' -v
+          python3 -B -m unittest discover -s tools/install -p 'test_build_rootfs.py' -v
+      - name: Install pinned Android SDK and Gradle
+        run: python3 -B tools/ci/manual_runner.py android
+      - name: Stage v80's verified ARM64 inputs
+        run: |
+          apk="$RUNNER_TEMP/Codex-Android-v80-small.apk"
+          curl -fL --retry 3 --retry-delay 2 --retry-all-errors \
+            https://github.com/JinShichang/codex-desktop-android/releases/download/v80/Codex-Android-v80-small.apk \
+            -o "$apk"
+          printf '%s  %s\n' \
+            9d9101e1a80bdaf492c02e5abc71b550cb9658aa83782e410d76cef400d12e6b "$apk" | sha256sum -c -
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
+          python3 -B tools/ci/stage-compatibility-apk.py "$apk" work/compatibility/staged
+      - name: Build API 27 ARM64 runtime libraries
+        env:
+          ANDROID_NDK_HOME: ${{ runner.temp }}/android-ndk-r29
+          CODEX_NDK_ARCHIVE: ${{ runner.temp }}/android-ndk-r29-linux.zip
+        run: |
+          curl -fL --retry 3 --retry-delay 2 --retry-all-errors \
+            https://dl.google.com/android/repository/android-ndk-r29-linux.zip \
+            -o "$CODEX_NDK_ARCHIVE"
+          printf '%s  %s\n' \
+            4abbbcdc842f3d4879206e9695d52709603e52dd68d3c1fff04b3b5e7a308ecf "$CODEX_NDK_ARCHIVE" | sha256sum -c -
+          unzip -q "$CODEX_NDK_ARCHIVE" -d "$RUNNER_TEMP"
+          bash tools/install/native/build-native.sh
+      - name: Assemble, test, and inspect the APK
+        run: |
+          native="$(find downloads/install/native -mindepth 1 -maxdepth 1 -type d -name 'codex-native-*' -print -quit)"
+          test -n "$native"
+          stage=work/compatibility/staged
+          gradle --no-daemon --max-workers=2 --no-parallel \
+            -Dorg.gradle.jvmargs='-Xmx2g -Dfile.encoding=UTF-8' \
+            -PcodexBuildToolsVersion=36.0.0 \
+            -PcodexExternalEnvironment=true \
+            -PcodexRequireExecutor=true \
+            -PcodexRuntimeJni="$native/runtime" \
+            -PcodexX11Jni="$stage/x11" \
+            -PcodexFrozenTransportJni="$stage/transport" \
+            -PcodexDebugJni="$stage/debug-jni" \
+            -PcodexDebugAssets="$stage/debug-assets" \
+            -PcodexGnuEngineAssets="$stage/executor/assets" \
+            -PcodexDesktopClientAssets="$stage/executor/assets" \
+            -PcodexPhoneImageAssets="$stage/executor/assets" \
+            -PcodexExecutorAssets="$stage/executor/assets" \
+            -PcodexExecutorJni="$stage/executor/jniLibs" \
+            :app:assembleDebug :app:testDebugUnitTest :shizukuTransport:testDebugUnitTest
+          apk=android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | grep -F "sdkVersion:'27'"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
+          python3 -B tools/install/verify-apk-contents.py --native-update --external-environment "$apk"
+          sha256sum "$apk"
+          echo 'The APK was built and verified on this ephemeral runner. No Actions artifact or cache is uploaded.' >> "$GITHUB_STEP_SUMMARY"

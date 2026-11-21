@@ -6,7 +6,7 @@ android {
     ndkVersion '29.0.14206865'
     defaultConfig {
         applicationId 'com.ai.codex'
-        minSdk 30
+        minSdk 27
         targetSdk 37
         versionCode providers.gradleProperty('codexVersionCode').map { it.toInteger() }.getOrElse(60)
         versionName providers.gradleProperty('codexVersionName').getOrElse('0.2.0-dev-ime-refresh')
@@ -259,7 +259,7 @@ def buildLocalToolsLauncher = tasks.register('buildCodexToolsLauncher', CodexToo
     inputs.file(new File(ndk, 'source.properties'))
     outputs.file(binary)
     doFirst { binary.get().parentFile.mkdirs() }
-    commandLine compiler.absolutePath, '--target=aarch64-linux-android30',
+    commandLine compiler.absolutePath, '--target=aarch64-linux-android27',
             '--sysroot=' + new File(toolchain, 'sysroot').absolutePath,
             '-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', '-fPIE', '-pie', '-fstack-protector-strong',
             '-Wl,-z,relro,-z,now,-z,noexecstack,-z,max-page-size=16384,-z,common-page-size=16384',
