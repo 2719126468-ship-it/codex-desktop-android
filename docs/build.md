@@ -1,11 +1,11 @@
 # Build and validate Codex
 
-This repository contains source for the OnePlus 13 development build. Building
-the APK requires prepared native libraries and an executor package. A first
-installation also needs a Debian runtime and the separately acquired desktop
-client. The [candidate builder](build-candidate.md) packages updates from
-explicit inputs. See [device compatibility](compatibility.md) for what has
-been tested.
+This repository contains source for the ARM64 Android build. Building
+the APK requires prepared native libraries and an executor package. The full
+first-install candidate additionally embeds the verified Debian rootfs archive,
+including the matching Linux desktop client; users do not download that archive
+separately. The [candidate builder](build-candidate.md) remains the update-package
+path. See [device compatibility](compatibility.md) for what has been tested.
 
 ## Start with the source checks
 
@@ -41,7 +41,7 @@ The checked-in build configuration currently selects:
 | Java | JDK 21 for the existing build workflow; Java source compatibility 17 |
 | Gradle | 9.7.1 used by the development workflow; no root Gradle wrapper included |
 | Android Gradle Plugin | 9.3.1 |
-| Android SDK | Compile/target API 37; minimum API 30 |
+| Android SDK | Compile/target API 37; minimum API 27 (Android 8.1) |
 | Android NDK | 29.0.14206865 (r29) |
 | CMake | 3.22.1 for the Android Gradle build |
 | Target ABI | `arm64-v8a` |
@@ -158,12 +158,16 @@ build state and signed OpenAI package inputs for Linux ARM64 client
 [image builder](../tools/install/build-phone-image.py).
 
 The builder produces `codex-phone-rootfs.tar.gz` and an `assets/phone-runtime`
-descriptor and inventory. Pass the parent `assets/` directory with
-`-PcodexPhoneImageAssets=...` during APK assembly. On a fresh installation, place
-the archive in the app's external files directory before first launch. The
-installer verifies the archive against the descriptor embedded in the signed
-APK. It prepares the Linux environment in staging and preserves an existing
-`files/debian`.
+descriptor and inventory. For a complete first-install APK, pass
+`--embed-archive` to `build-phone-image.py`, then pass the parent `assets/`
+directory with `-PcodexPhoneImageAssets=...` during APK assembly. The API 27
+ARM64 CI candidate stages the independently published v80 archive only after
+checking its pinned SHA-256 and matching it to the embedded release descriptor.
+The APK verifier checks the archive bytes against that descriptor. The Android
+installer copies and hashes the input in 64 KiB blocks, validates the tar stream,
+and extracts files incrementally into a private staging directory; it does not
+load the 1.27 GiB compressed image into memory. It preserves an existing
+`files/debian` and does not overwrite a user's existing environment.
 
 Validate launch, login, local command execution, independent sessions and
 intentional stop on the device after installation. [Device validation checklist](compatibility.md#设备验收)
