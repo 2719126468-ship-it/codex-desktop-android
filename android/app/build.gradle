@@ -109,7 +109,7 @@ if (phoneImageAssets.isPresent()) {
         phoneArchiveFile = file(archiveInput.get()).canonicalFile
         if (!phoneArchiveFile.isFile() || phoneArchiveFile.length() != release.spec.compressedBytes)
             throw new GradleException('The isolated rootfs archive does not match its release descriptor')
-        android.androidResources.noCompress.add('tgz')
+        android.androidResources.noCompress.add('rootfs')
     }
     def stagedImage = layout.buildDirectory.dir('generated/phoneImageAssets')
     def syncPhoneImageAssets = tasks.register('syncPhoneImageAssets', PhoneImageAssets) {
