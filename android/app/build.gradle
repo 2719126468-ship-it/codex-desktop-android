@@ -112,6 +112,10 @@ if (phoneImageAssets.isPresent()) {
         // AGP expands assets ending in .gz before APK packaging. Stage the
         // original gzip bytes as .tgz, then store them without recompression.
         android.androidResources.noCompress.add('tgz')
+        // AAPT expands the source .tar.gz into a second .tar asset even though
+        // the installer consumes only the byte-preserved .tgz staged below.
+        // Ignore that generated expansion while retaining the complete archive.
+        android.androidResources.ignoreAssetsPattern = '!.svn:!.git:!.DS_Store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~:codex-phone-rootfs.tar'
     }
     def stagedImage = layout.buildDirectory.dir('generated/phoneImageAssets')
     def syncPhoneImageAssets = tasks.register('syncPhoneImageAssets', PhoneImageAssets) {
