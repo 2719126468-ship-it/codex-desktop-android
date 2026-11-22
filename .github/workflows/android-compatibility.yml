@@ -85,6 +85,7 @@ jobs:
             -PcodexGnuEngineAssets="$stage/executor/assets" \
             -PcodexDesktopClientAssets="$stage/executor/assets" \
             -PcodexPhoneImageAssets="$stage/executor/assets" \
+            -PcodexPhoneImageArchive="$stage/phone-image-archive/codex-phone-rootfs.tar.gz" \
             -PcodexEmbedPhoneImage=true \
             -PcodexExecutorAssets="$stage/executor/assets" \
             -PcodexExecutorJni="$stage/executor/jniLibs" \
