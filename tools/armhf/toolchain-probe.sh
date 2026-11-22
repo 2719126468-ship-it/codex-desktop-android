@@ -51,4 +51,20 @@ verify_armhf() {
 verify_armhf "$work/probe-c"
 verify_armhf "$work/probe-rust"
 
+command -v qemu-arm >/dev/null
+sysroot=/usr/arm-linux-gnueabihf
+test -e "$sysroot/lib/ld-linux-armhf.so.3"
+
+for binary in "$work/probe-c" "$work/probe-rust"; do
+    output="$(qemu-arm -cpu cortex-a7 -L "$sysroot" "$binary")"
+    case "$binary" in
+        */probe-c) expected=armhf-c-toolchain-ok ;;
+        */probe-rust) expected=armhf-rust-toolchain-ok ;;
+    esac
+    test "$output" = "$expected"
+    printf 'Executed on ARMv7 Cortex-A7 emulation: %s -> %s\n' "$(basename "$binary")" "$output"
+done
+
+printf '\nToolchain and ARMv7 runtime probe passed. This does not build V8, Codex, Android JNI, or an APK.\n'
+
 printf '\nToolchain probe passed. This validates only the Debian ARMhf C/Rust cross-toolchain; it does not build V8, Codex, Android JNI, or an APK.\n'
