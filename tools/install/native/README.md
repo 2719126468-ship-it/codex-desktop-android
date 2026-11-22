@@ -32,8 +32,10 @@ wsl --distribution Ubuntu-24.04 --exec bash /mnt/c/Dev/Codex/tools/install/nativ
 Defaults are `/opt/codex/android-ndk-r29` for `ANDROID_NDK_HOME` and
 `/mnt/c/Dev/AndroidSdk-Linux/downloads/android-ndk-r29-linux.zip` for
 `CODEX_NDK_ARCHIVE`. Override those environment variables for another machine.
-Target compilation is Android API 30, ARM64; PRoot's `-m32` target produces its
-ARM32 loader using the same NDK toolchain.
+Target compilation is Android API 27, ARM64; PRoot's `-m32` target produces its
+ARM32 guest loader using the same NDK toolchain. That loader does not add the
+`armeabi-v7a` Android app ABI; the Codex host app, native executor and Linux
+desktop remain ARM64-only.
 
 All source extraction and compilation happen in a new
 `/var/tmp/codex-native-XXXXXXXX` directory on Linux ext4. The complete artifact

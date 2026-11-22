@@ -4,6 +4,7 @@ plugins { id 'com.android.library' }
 // the source directory's build folder across those roots.
 layout.buildDirectory = rootProject.layout.buildDirectory.dir('modules/' + project.name)
 def frozenTransportNative = providers.gradleProperty('codexFrozenTransportJni')
+def frozenTransportManifest = providers.gradleProperty('codexFrozenTransportManifest')
 def sourceSupportBuild = providers.gradleProperty('codexRuntimeSupportBuild')
 if (sourceSupportBuild.isPresent() && !frozenTransportNative.isPresent()) {
     throw new GradleException('Source-built transport requires its explicit frozen JNI directory')
@@ -13,7 +14,7 @@ android {
     compileSdk 37
     ndkVersion '29.0.14206865'
     defaultConfig {
-        minSdk 30
+        minSdk 27
         targetSdk 37
         ndk { abiFilters 'arm64-v8a' }
         externalNativeBuild { cmake { arguments '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON' } }
@@ -40,6 +41,24 @@ if (frozenTransportNative.isPresent()) {
                 'arm64-v8a/libcodex_shizuku_transport.so': 'd4bb423a0dbe354485337d947bec486d6012d7b37a2ae0d73d0def8f26fe4ca6',
                 'arm64-v8a/libcodex_bionic_cwd.so': 'f65702d47130bf8f3098e7b9a5da5d982bbbc0d20cf50eeb61cc5fd489237157'
             ]
+            if (frozenTransportManifest.isPresent()) {
+                if (sourceSupportBuild.isPresent()) {
+                    throw new GradleException('Pinned release JNI and source-built transport evidence cannot be combined')
+                }
+                def manifestFile = file(frozenTransportManifest.get()).canonicalFile
+                if (!manifestFile.isFile()) throw new GradleException('Pinned release transport manifest is missing')
+                def manifest = new groovy.json.JsonSlurper().parse(manifestFile)
+                def names = ['libcodex_shizuku_transport.so', 'libcodex_bionic_cwd.so'] as Set
+                if (manifest.schema != 'codex.v80-transport-inputs.v1'
+                        || manifest.sourceApkSha256 != '9d9101e1a80bdaf492c02e5abc71b550cb9658aa83782e410d76cef400d12e6b'
+                        || !(manifest.libraries instanceof Map) || manifest.libraries.keySet() != names
+                        || manifest.libraries.values().any { !(it ==~ /[0-9a-f]{64}/) }) {
+                    throw new GradleException('Pinned release transport manifest identity or inventory differs')
+                }
+                expected = manifest.libraries.collectEntries { name, digest ->
+                    [('arm64-v8a/' + name): digest]
+                }
+            }
             if (sourceSupportBuild.isPresent()) {
                 def build = file(sourceSupportBuild.get()).canonicalFile
                 def hash = { File input -> java.security.MessageDigest.getInstance('SHA-256').digest(input.bytes).encodeHex().toString() }

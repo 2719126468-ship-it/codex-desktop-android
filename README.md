@@ -62,6 +62,8 @@ CC Switch 的安装包、使用说明和功能范围见其[项目主页](https:/
 
 当前应用包名为 `com.ai.codex`。[架构文档](docs/architecture.md) · [后端版本与补丁清单](recovery/engine/manifest.json)
 
+此 fork 的 CI 目标为 Android 8.1（API 27）及以上的 ARM64 Android 系统。上游 Codex 执行器和 Linux 桌面环境均为 ARM64；PRoot 附带的 ARM32 loader 仅用于 guest 兼容，不代表支持 32 位 Android 系统或 `armeabi-v7a` APK。
+
 ## 使用 Agent 部署
 
 建议在电脑上克隆仓库，用能读源码、运行终端命令的编程 Agent 协助部署。构建涉及 Android SDK、NDK、原生库、Codex 后端和 Debian 运行环境。桌面客户端需从 OpenAI 单独获取，并与仓库中的适配版本匹配。原生构建建议在 Linux 或 WSL 的 Linux 文件系统中进行。[构建指南](docs/build.md)

@@ -60,9 +60,9 @@ cat > "$work/cc" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
 for argument in "\$@"; do
-  case "\$argument" in -c|-E|-S|-fsyntax-only) exec "$toolchain/aarch64-linux-android30-clang" "\$@";; esac
+  case "\$argument" in -c|-E|-S|-fsyntax-only) exec "$toolchain/aarch64-linux-android27-clang" "\$@";; esac
 done
-exec "$toolchain/aarch64-linux-android30-clang" "\$@" -Wl,-z,max-page-size=16384,-z,common-page-size=16384
+exec "$toolchain/aarch64-linux-android27-clang" "\$@" -Wl,-z,max-page-size=16384,-z,common-page-size=16384
 EOF
 chmod 700 "$work/cc"
 common="-O2 -fPIC -fstack-protector-strong -D_FORTIFY_SOURCE=2 -ffile-prefix-map=$work=/codex-native-build"

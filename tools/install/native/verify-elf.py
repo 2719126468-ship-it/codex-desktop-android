@@ -82,7 +82,7 @@ provenance_hashes = {str(path.relative_to(a.artifact)): hashlib.sha256(path.read
                      for path in provenance_files if path.is_file()}
 ndk_archive_hash = (a.artifact / "build/ndk-archive.sha256").read_text().split()[0]
 require(ndk_archive_hash == "4abbbcdc842f3d4879206e9695d52709603e52dd68d3c1fff04b3b5e7a308ecf", "unexpected verified NDK archive hash")
-manifest = {"status": "cross-compiled and statically verified; Android execution not tested", "api": 30,
+manifest = {"status": "cross-compiled and statically verified; Android execution not tested", "api": 27,
             "ndk_revision": "29.0.14206865", "ndk_archive_sha256": ndk_archive_hash,
             "proot_commit": a.proot, "talloc_version": "2.4.3", "android_shmem_version": "0.7", "android_shmem_commit": a.shmem,
             "recipe_reference": "termux/termux-packages@90081438daf30a6b46f6745daff6966dc71cb7bc",
