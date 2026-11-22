@@ -85,6 +85,7 @@ jobs:
             -PcodexGnuEngineAssets="$stage/executor/assets" \
             -PcodexDesktopClientAssets="$stage/executor/assets" \
             -PcodexPhoneImageAssets="$stage/executor/assets" \
+            -PcodexEmbedPhoneImage=true \
             -PcodexExecutorAssets="$stage/executor/assets" \
             -PcodexExecutorJni="$stage/executor/jniLibs" \
             :app:assembleDebug :shizukuTransport:testDebugUnitTest
