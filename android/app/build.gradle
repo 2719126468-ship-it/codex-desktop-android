@@ -119,6 +119,7 @@ if (phoneImageAssets.isPresent()) {
         }
         if (embedArchive) {
             from(phoneArchiveFile) {
+                into 'phone-runtime'
                 rename { 'codex-phone-rootfs.rootfs' }
             }
         }
