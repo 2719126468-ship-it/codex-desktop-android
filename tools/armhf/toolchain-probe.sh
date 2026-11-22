@@ -41,6 +41,7 @@ verify_armhf() {
     grep -Eq 'Class:[[:space:]]+ELF32' <<<"$header"
     grep -Eq 'Data:[[:space:]]+2.s complement, little endian' <<<"$header"
     grep -Eq 'Machine:[[:space:]]+ARM' <<<"$header"
+    grep -q 'Tag_CPU_arch: v7' <<<"$attributes"
     grep -q 'Tag_ABI_VFP_args: VFP registers' <<<"$attributes"
     arm-linux-gnueabihf-readelf -l "$binary" | grep -q 'Requesting program interpreter: /lib/ld-linux-armhf.so.3'
     printf '\nVerified ARMhf ELF: %s\n' "$binary"
@@ -65,6 +66,4 @@ for binary in "$work/probe-c" "$work/probe-rust"; do
     printf 'Executed on ARMv7 Cortex-A7 emulation: %s -> %s\n' "$(basename "$binary")" "$output"
 done
 
-printf '\nToolchain and ARMv7 runtime probe passed. This does not build V8, Codex, Android JNI, or an APK.\n'
-
-printf '\nToolchain probe passed. This validates only the Debian ARMhf C/Rust cross-toolchain; it does not build V8, Codex, Android JNI, or an APK.\n'
+printf '\nToolchain and ARMv7 runtime probe passed. This validates only the Debian ARMhf C/Rust cross-toolchain; it does not build V8, Codex, Android JNI, or an APK.\n'
