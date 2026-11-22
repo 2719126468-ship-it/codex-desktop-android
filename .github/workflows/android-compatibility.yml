@@ -84,6 +84,6 @@ jobs:
           apk=android/app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | grep -F "sdkVersion:'27'"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
-          python3 -B tools/install/verify-apk-contents.py --native-update --external-environment "$apk"
+          python3 -B tools/install/verify-apk-contents.py --debug --native-update --external-environment "$apk"
           sha256sum "$apk"
           echo 'The APK was built and verified on this ephemeral runner. No Actions artifact or cache is uploaded.' >> "$GITHUB_STEP_SUMMARY"
