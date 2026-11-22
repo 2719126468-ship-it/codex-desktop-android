@@ -82,26 +82,48 @@ def verify_native_update(apk, external_environment=False):
                 raise ValueError('Native update GNU engine differs from its manifest: ' + row['name'])
         if {n for n in names if n.startswith('assets/gnu-engine/') and not n.endswith('/')} != expected_engine:
             raise ValueError('Unexpected GNU engine asset')
+        embedded_phone_image = False
         if external_environment:
-            if any(name.endswith(('.tgz', '.tar.gz')) and name.startswith(('assets/desktop-client/', 'assets/phone-runtime/')) for name in names):
-                raise ValueError('Split APK embeds a full environment archive')
             release = json.loads(archive.read('assets/phone-runtime/release.json'))
             inventory = archive.read('assets/phone-runtime/inventory.json')
             if (release.get('format') != 'codex.phone-image.v1' or release.get('archive') != 'codex-phone-rootfs.tar.gz'
                     or release.get('accountIncluded') is not False or release.get('keyringIncluded') is not False
                     or release.get('inventorySha256') != hashlib.sha256(inventory).hexdigest()
                     or release.get('inventoryBytes') != len(inventory)):
-                raise ValueError('Split environment release descriptor differs')
+                raise ValueError('Environment release descriptor differs')
             desktop = json.loads(archive.read('assets/desktop-client/manifest.json'))
             if (desktop.get('schema') != 'codex.desktop.payload.v1' or desktop.get('architecture') != 'arm64'
                     or desktop.get('version') != release.get('client', {}).get('version')):
-                raise ValueError('Split environment desktop version differs')
+                raise ValueError('Environment desktop version differs')
+            image_name = 'assets/phone-runtime/codex-phone-rootfs.tar.gz'
+            other_archives = [name for name in names if name.endswith(('.tgz', '.tar.gz'))
+                              and name.startswith(('assets/desktop-client/', 'assets/phone-runtime/'))
+                              and name != image_name]
+            if other_archives:
+                raise ValueError('Unexpected environment archive payload')
+            embedded_phone_image = image_name in names
+            if embedded_phone_image:
+                spec = release.get('spec')
+                if not isinstance(spec, dict) or spec.get('sha256') is None:
+                    raise ValueError('Embedded phone image has no authenticated size/hash descriptor')
+                info = archive.getinfo(image_name)
+                if info.file_size != spec.get('compressedBytes'):
+                    raise ValueError('Embedded phone image size differs from descriptor')
+                hasher, size = hashlib.sha256(), 0
+                with archive.open(image_name) as stream:
+                    while block := stream.read(1024 * 1024):
+                        hasher.update(block)
+                        size += len(block)
+                if size != spec.get('compressedBytes') or hasher.hexdigest() != spec.get('sha256'):
+                    raise ValueError('Embedded phone image digest differs from descriptor')
+            elif any(name.startswith('assets/phone-runtime/') and name.endswith('.tar.gz') for name in names):
+                raise ValueError('Unexpected split phone image archive')
         dex = b''.join(archive.read(name) for name in names if name.endswith('.dex'))
         for name in (b'Lcom/ai/codex/LiveNotifications;', b'Lcom/ai/codex/phone/PhoneControl;',
                      b'Lcom/termux/x11/CodexRuntimeService;'):
             if name not in dex:
                 raise ValueError('Native update application class is missing: ' + name.decode())
-    return {'apk_sha256': digest, 'variant': 'debug-split-environment' if external_environment else 'debug-native-update', 'native_update_contents': 'PASS',
+    return {'apk_sha256': digest, 'variant': ('debug-full-environment' if embedded_phone_image else 'debug-split-environment') if external_environment else 'debug-native-update', 'native_update_contents': 'PASS',
             'gnuEngineVersion': manifest.get('version'), 'legacyDiagnosticFixturesQualified': False,
             'deviceQualified': False, 'limit': 'Current native update contents; legacy diagnostic fixtures and phone behavior are separate'}
 
