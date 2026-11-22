@@ -97,7 +97,7 @@ class CompatibilityStagingTests(unittest.TestCase):
             digest = self.make_apk(apk, phone_spec=image_spec)
             with patch.object(staging, "V80_APK_SHA256", digest):
                 report = staging.stage(apk, root / "stage", image)
-            embedded = root / "stage/executor/assets/phone-runtime/codex-phone-rootfs.tar.gz"
+            embedded = root / "stage/phone-image-archive/codex-phone-rootfs.tar.gz"
             self.assertTrue(report["embedded_phone_image"])
             self.assertEqual(report["phone_image_bytes"], image.stat().st_size)
             self.assertEqual(staging.digest(embedded), image_spec["sha256"])
