@@ -72,6 +72,7 @@ jobs:
             -PcodexRuntimeJni="$native/runtime" \
             -PcodexX11Jni="$stage/x11" \
             -PcodexFrozenTransportJni="$stage/transport" \
+            -PcodexFrozenTransportManifest="$stage/transport-inputs.json" \
             -PcodexDebugJni="$stage/debug-jni" \
             -PcodexDebugAssets="$stage/debug-assets" \
             -PcodexGnuEngineAssets="$stage/executor/assets" \

@@ -67,6 +67,10 @@ class CompatibilityStagingTests(unittest.TestCase):
             self.assertTrue((root / "stage/executor/assets/codex-executor/probe.py").is_file())
             self.assertTrue((root / "stage/executor/assets/bionic-python/lib/python3.14/os.py").is_file())
             self.assertTrue((root / "stage/executor/jniLibs/arm64-v8a/libcodex_test_executor.so").is_file())
+            manifest = json.loads((root / "stage/transport-inputs.json").read_text())
+            self.assertEqual(manifest["schema"], "codex.v80-transport-inputs.v1")
+            self.assertEqual(manifest["sourceApkSha256"], digest)
+            self.assertEqual(set(manifest["libraries"]), staging.TRANSPORT)
             self.assertFalse((root / "stage/executor/assets/phone-runtime/codex-phone-rootfs.tar.gz").exists())
 
     def test_refuses_unexpected_android_abi(self):

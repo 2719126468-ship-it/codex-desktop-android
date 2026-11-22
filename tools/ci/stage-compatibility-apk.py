@@ -131,6 +131,15 @@ def stage(apk, output):
                 or {row.get("name") for row in gnu_files} != {"codex-native", "codex-code-mode-host"}):
             raise ValueError("The v80 GNU engine descriptor is invalid")
 
+        transport_manifest = {
+            "schema": "codex.v80-transport-inputs.v1",
+            "sourceApkSha256": V80_APK_SHA256,
+            "libraries": {name: native[name] for name in sorted(TRANSPORT)},
+        }
+        with (output / "transport-inputs.json").open("x", encoding="utf-8") as stream:
+            json.dump(transport_manifest, stream, sort_keys=True, indent=2)
+            stream.write("\n")
+
         for name in names:
             if not name.startswith("assets/") or name.endswith("/"):
                 continue
@@ -148,7 +157,8 @@ def stage(apk, output):
 
     return {"sha256": V80_APK_SHA256, "assets": len([n for n in names if selected_asset(n)]),
             "executor_libraries": len(executor_libraries), "x11": "libXlorie.so",
-            "transport_libraries": sorted(TRANSPORT), "runtime": "built separately for API 27"}
+            "transport_libraries": sorted(TRANSPORT), "transport_manifest": "transport-inputs.json",
+            "runtime": "built separately for API 27"}
 
 
 def main():
