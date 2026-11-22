@@ -19,7 +19,7 @@ import java.util.function.Consumer;
  * Keyring-only preparation remains evidence for its original scope; activation
  * additionally requires complete immutable inputs and an actual guest smoke test. */
 public final class PhoneRuntimeInstaller {
-    static final String BUNDLED_ARCHIVE_NAME = "codex-phone-rootfs.tar.gz";
+    static final String BUNDLED_ARCHIVE_NAME = "codex-phone-rootfs.tgz";
     private PhoneRuntimeInstaller() {}
 
     static boolean hasBundledArchive(List<String> assets) {
