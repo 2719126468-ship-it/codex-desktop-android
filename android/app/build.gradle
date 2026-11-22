@@ -99,12 +99,14 @@ if (phoneImageAssets.isPresent()) {
         throw new GradleException('Complete phone image release assets do not match their inventory')
     }
     def embedArchive = providers.gradleProperty('codexEmbedPhoneImage').getOrElse('false').toBoolean()
+    // Declare outside the conditional so the task configuration closure can capture it.
+    def phoneArchiveFile = null
     if (embedArchive) {
         // Keep the large .tar.gz outside every AAPT asset source directory.
         // Only the byte-preserved .tgz copy generated below enters the APK.
         def archiveInput = providers.gradleProperty('codexPhoneImageArchive')
         if (!archiveInput.isPresent()) throw new GradleException('The full APK requires an isolated rootfs archive input')
-        def phoneArchiveFile = file(archiveInput.get()).canonicalFile
+        phoneArchiveFile = file(archiveInput.get()).canonicalFile
         if (!phoneArchiveFile.isFile() || phoneArchiveFile.length() != release.spec.compressedBytes)
             throw new GradleException('The isolated rootfs archive does not match its release descriptor')
         android.androidResources.noCompress.add('tgz')
