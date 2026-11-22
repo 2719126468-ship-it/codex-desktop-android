@@ -99,20 +99,29 @@ if (phoneImageAssets.isPresent()) {
         throw new GradleException('Complete phone image release assets do not match their inventory')
     }
     def embedArchive = providers.gradleProperty('codexEmbedPhoneImage').getOrElse('false').toBoolean()
+    // Declare outside the conditional so the task configuration closure can capture it.
+    def phoneArchiveFile = null
     if (embedArchive) {
-        def archive = new File(supplied, 'phone-runtime/codex-phone-rootfs.tar.gz')
-        if (!archive.isFile() || archive.length() != release.spec.compressedBytes)
-            throw new GradleException('The full APK requires its matching embedded rootfs archive')
-        // AGP expands assets ending in .gz before APK packaging. Stage the
-        // original gzip bytes as .tgz, then store them without recompression.
-        android.androidResources.noCompress.add('tgz')
+        // Keep the large .tar.gz outside every AAPT asset source directory.
+        // Use an opaque extension: AAPT otherwise expands gzip assets into duplicate .tar entries.
+        def archiveInput = providers.gradleProperty('codexPhoneImageArchive')
+        if (!archiveInput.isPresent()) throw new GradleException('The full APK requires an isolated rootfs archive input')
+        phoneArchiveFile = file(archiveInput.get()).canonicalFile
+        if (!phoneArchiveFile.isFile() || phoneArchiveFile.length() != release.spec.compressedBytes)
+            throw new GradleException('The isolated rootfs archive does not match its release descriptor')
+        android.androidResources.noCompress.add('rootfs')
     }
     def stagedImage = layout.buildDirectory.dir('generated/phoneImageAssets')
     def syncPhoneImageAssets = tasks.register('syncPhoneImageAssets', PhoneImageAssets) {
         from(supplied) {
             include 'phone-runtime/release.json', 'phone-runtime/inventory.json'
-            if (embedArchive) include 'phone-runtime/codex-phone-rootfs.tar.gz'
-            rename { name -> name == 'codex-phone-rootfs.tar.gz' ? 'codex-phone-rootfs.tgz' : name }
+            if (!embedArchive) exclude 'phone-runtime/codex-phone-rootfs.tar.gz'
+        }
+        if (embedArchive) {
+            from(phoneArchiveFile) {
+                into 'phone-runtime'
+                rename { 'codex-phone-rootfs.rootfs' }
+            }
         }
         outputDir.set(stagedImage)
         into outputDir

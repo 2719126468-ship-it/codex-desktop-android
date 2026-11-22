@@ -95,8 +95,8 @@ def verify_native_update(apk, external_environment=False):
             if (desktop.get('schema') != 'codex.desktop.payload.v1' or desktop.get('architecture') != 'arm64'
                     or desktop.get('version') != release.get('client', {}).get('version')):
                 raise ValueError('Environment desktop version differs')
-            image_name = 'assets/phone-runtime/codex-phone-rootfs.tgz'
-            other_archives = [name for name in names if name.endswith(('.tgz', '.tar.gz'))
+            image_name = 'assets/phone-runtime/codex-phone-rootfs.rootfs'
+            other_archives = [name for name in names if name.endswith(('.rootfs', '.tgz', '.tar.gz'))
                               and name.startswith(('assets/desktop-client/', 'assets/phone-runtime/'))
                               and name != image_name]
             if other_archives:
@@ -116,7 +116,7 @@ def verify_native_update(apk, external_environment=False):
                         size += len(block)
                 if size != spec.get('compressedBytes') or hasher.hexdigest() != spec.get('sha256'):
                     raise ValueError('Embedded phone image digest differs from descriptor')
-            elif any(name.startswith('assets/phone-runtime/') and name.endswith(('.tar.gz', '.tgz')) for name in names):
+            elif any(name.startswith('assets/phone-runtime/') and name.endswith(('.tar.gz', '.tgz', '.rootfs')) for name in names):
                 raise ValueError('Unexpected split phone image archive')
         dex = b''.join(archive.read(name) for name in names if name.endswith('.dex'))
         for name in (b'Lcom/ai/codex/LiveNotifications;', b'Lcom/ai/codex/phone/PhoneControl;',

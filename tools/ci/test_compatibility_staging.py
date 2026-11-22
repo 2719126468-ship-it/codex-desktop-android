@@ -74,7 +74,7 @@ class CompatibilityStagingTests(unittest.TestCase):
             self.assertEqual(manifest["schema"], "codex.v80-transport-inputs.v1")
             self.assertEqual(manifest["sourceApkSha256"], digest)
             self.assertEqual(set(manifest["libraries"]), staging.TRANSPORT)
-            self.assertFalse((root / "stage/executor/assets/phone-runtime/codex-phone-rootfs.tar.gz").exists())
+            self.assertFalse((root / "stage/phone-image-archive/codex-phone-rootfs.tar.gz").exists())
 
     def test_embeds_only_archive_matching_pinned_phone_descriptor(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -97,7 +97,7 @@ class CompatibilityStagingTests(unittest.TestCase):
             digest = self.make_apk(apk, phone_spec=image_spec)
             with patch.object(staging, "V80_APK_SHA256", digest):
                 report = staging.stage(apk, root / "stage", image)
-            embedded = root / "stage/executor/assets/phone-runtime/codex-phone-rootfs.tar.gz"
+            embedded = root / "stage/phone-image-archive/codex-phone-rootfs.tar.gz"
             self.assertTrue(report["embedded_phone_image"])
             self.assertEqual(report["phone_image_bytes"], image.stat().st_size)
             self.assertEqual(staging.digest(embedded), image_spec["sha256"])
