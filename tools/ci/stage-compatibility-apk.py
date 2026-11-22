@@ -73,6 +73,7 @@ def stage(apk, output, phone_image_archive=None):
         "x11": output / "x11/arm64-v8a",
         "transport": output / "transport/arm64-v8a",
         "executor_jni": output / "executor/jniLibs/arm64-v8a",
+        "phone_archive": output / "phone-image-archive",
     }
     for path in (*roots.values(), output / "debug-jni", output / "debug-assets"):
         path.mkdir(parents=True, exist_ok=True)
@@ -164,7 +165,7 @@ def stage(apk, output, phone_image_archive=None):
                 copy_entry(archive, name, roots["assets"] / PurePosixPath(name).relative_to("assets"))
 
         if phone_image_archive is not None:
-            destination = roots["assets"] / "phone-runtime" / "codex-phone-rootfs.tar.gz"
+            destination = roots["phone_archive"] / "codex-phone-rootfs.tar.gz"
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(phone_image_archive, destination)
 
@@ -179,7 +180,8 @@ def stage(apk, output, phone_image_archive=None):
             "transport_libraries": sorted(TRANSPORT), "transport_manifest": "transport-inputs.json",
             "runtime": "built separately for API 27",
             "embedded_phone_image": phone_image_archive is not None,
-            "phone_image_bytes": Path(phone_image_archive).stat().st_size if phone_image_archive is not None else 0}
+            "phone_image_bytes": Path(phone_image_archive).stat().st_size if phone_image_archive is not None else 0,
+            "phone_image_archive": "phone-image-archive/codex-phone-rootfs.tar.gz" if phone_image_archive is not None else None}
 
 
 def main():
