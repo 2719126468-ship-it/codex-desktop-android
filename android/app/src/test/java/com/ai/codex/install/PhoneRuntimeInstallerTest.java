@@ -9,8 +9,8 @@ import org.junit.Test;
 public final class PhoneRuntimeInstallerTest {
     @Test public void recognizesThePublishedBundledRootfsName() {
         assertTrue(PhoneRuntimeInstaller.hasBundledArchive(List.of(
-            "release.json", "inventory.json", "codex-phone-rootfs.tar.gz")));
-        assertFalse(PhoneRuntimeInstaller.hasBundledArchive(List.of(
             "release.json", "inventory.json", "codex-phone-rootfs.tgz")));
+        assertFalse(PhoneRuntimeInstaller.hasBundledArchive(List.of(
+            "release.json", "inventory.json", "codex-phone-rootfs.tar.gz")));
     }
 }
