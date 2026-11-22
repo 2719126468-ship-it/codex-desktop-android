@@ -30,7 +30,7 @@ Codex Android 是基于 FoldGPT 的独立适配项目，把 Linux ARM64 版 Chat
     ```
 
     
-- 首次使用需要下载**环境包**，并将环境包放入Download文件夹（一般浏览器的默认下载目录就是这里 不用特意去移动）。
+- **完整 ARM64 安装包内置首次启动环境**：安装 APK 后无需再单独下载或解压 Debian 环境包，首次启动会自动校验并准备环境。完整包较大（内置压缩环境约 1.27 GiB），下载和安装前请确保有足够存储空间；环境解包按数据流分块处理，不会将整个压缩包载入内存。
 - 设置调整在应用快捷方式中（App Shortcuts）长按APP图标可以看到Android工具和Codex设置选项。
 
 
@@ -70,7 +70,7 @@ CC Switch 的安装包、使用说明和功能范围见其[项目主页](https:/
 
 可直接把部署提示词交给 Agent，并附上你的构建系统、手机型号和 Android 版本。[Agent 部署指南](docs/agent-deployment.md)
 
-公开源码从零构建并完成首次安装的全流程仍待验证。构建候选 APK 与准备完整运行环境是两个步骤。[候选包构建流程](docs/build-candidate.md) · [一加 13 兼容性与验证](docs/compatibility.md)
+完整 ARM64 APK 候选会将首次安装所需的 Debian rootfs 与 APK 一起分发；构建和设备首次启动仍需分别通过 CI 与真机验收。[候选包构建流程](docs/build-candidate.md) · [一加 13 兼容性与验证](docs/compatibility.md)
 
 ## 欢迎加入QQ群讨论
 
