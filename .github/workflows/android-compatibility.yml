@@ -93,6 +93,30 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | grep -F "sdkVersion:'27'"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
           python3 -B tools/install/verify-apk-contents.py --debug --native-update --external-environment "$apk"
+          python3 -B - "$apk" <<'PY'
+          import hashlib, sys, zipfile
+          apk = sys.argv[1]
+          with zipfile.ZipFile(apk) as archive:
+              rows = sorted((info.file_size, info.compress_size, info.filename)
+                            for info in archive.infolist() if not info.is_dir())
+              print("APK_BYTES", __import__("os").path.getsize(apk))
+              print("APK_LARGEST_ENTRIES")
+              for size, compressed, name in rows[-30:][::-1]:
+                  print(f"{size}\t{compressed}\t{name}")
+              seen = {}
+              for size, compressed, name in rows:
+                  if size < 64 * 1024 * 1024:
+                      continue
+                  digest = hashlib.sha256()
+                  with archive.open(name) as stream:
+                      for block in iter(lambda: stream.read(1024 * 1024), b""):
+                          digest.update(block)
+                  key = digest.hexdigest()
+                  if key in seen:
+                      print(f"APK_DUPLICATE_CONTENT\t{size}\t{seen[key]}\t{name}")
+                  else:
+                      seen[key] = name
+          PY
           sha256sum "$apk" | tee "$apk.sha256"
       - name: Upload verified API 27 ARM64 APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
