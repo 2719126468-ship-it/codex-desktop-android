@@ -134,9 +134,11 @@ checking the published release list:
   selectors likewise define Linux x86_64 and AArch64 targets; the default
   fallback is x86_64, not ARMv7.
 - `third_party/v8/artifact_profile.bzl` defines CPU constraints only for
-  `arm64` and `x64`; its compatibility check rejects any CPU outside those
-  profiles. This is an explicit source-build configuration boundary, not
-  merely a missing prebuilt download.
+  `arm64` and `x64`; its profile values also accept only those two names.
+  Its current platform check treats every non-`arm64` value as x64, so an
+  ARMv7 extension must add an explicit ARM constraint/check rather than
+  relying on the existing fallback. This is an explicit source-build
+  configuration boundary, not merely a missing prebuilt download.
 - `third_party/v8/README.md` documents the same Linux release/source pair
   targets for x86_64 and AArch64 only.
 - This repository's `tools/executor/build-gnu-engine.py` also pins
