@@ -212,3 +212,46 @@ Pinned source files:
 - [artifact_profile.bzl](https://github.com/openai/codex/blob/ccf9be8cc458bd6b8336fe84d68d8893f2691a5e/third_party/v8/artifact_profile.bzl)
 - [BUILD.bazel](https://github.com/openai/codex/blob/ccf9be8cc458bd6b8336fe84d68d8893f2691a5e/third_party/v8/BUILD.bazel)
 - [README.md](https://github.com/openai/codex/blob/ccf9be8cc458bd6b8336fe84d68d8893f2691a5e/third_party/v8/README.md)
+
+
+## Clarification from the V8 engine-policy audit (2026-11-22)
+
+The V8 engine itself already contains a 32-bit ARM compilation branch in
+Codex's pinned source. In
+`third_party/v8/engine.BUILD.bazel`, the `v8_target_arm` selection emits
+`V8_TARGET_ARCH_ARM`, `CAN_USE_ARMV7_INSTRUCTIONS`, and
+`CAN_USE_VFP3_INSTRUCTIONS`. Therefore the blocker is **not** that V8 has
+no ARM32 code-generation configuration.
+
+The missing piece is Codex's consumer artifact integration:
+
+- `artifact_profile.bzl` accepts only `arm64` and `x64` profile values
+  and declares only AArch64/x86_64 platform constraints. Its current
+  non-ARM64 branch checks x86_64, so simply adding an `armv7` string would
+  be incorrect; the rule must explicitly validate ARMv7.
+- `third_party/v8/BUILD.bazel` has no ARMv7 Linux archive or generated
+  binding selector, and its bindgen target flags do not declare an ARMv7
+  Linux triple.
+- The existing Codex V8 source profile, archive and Rust binding therefore
+  cannot currently be selected as a consistent ARMv7 artifact pair.
+
+There are two distinct ABIs in this project and they must not be conflated:
+
+1. Android host JNI/runtime libraries use the NDK's
+   `armeabi-v7a` / Android API 27 ABI.
+2. The Debian PRoot guest and its GNU Codex engine need a Linux ARM
+   hard-float userspace ABI, expected to be
+   `armv7-unknown-linux-gnueabihf` if the selected Debian armhf toolchain
+   and V8 build are proven compatible.
+
+An Android NDK `armeabi-v7a` shared object cannot be substituted for a
+glibc-based Debian armhf executable or library, and a GNU armhf V8 archive
+cannot be loaded directly into the Android Bionic host process. Each side
+needs its own toolchain, dependencies, manifest, and runtime tests.
+
+This clarification narrows the V8 task: first prove a reproducible
+ARMv7 hard-float V8 archive plus bindings from the pinned source, then
+integrate that pair into the GNU guest engine. It does not remove the
+separate Android JNI/runtime port or the missing ARMhf desktop-client
+distribution blocker. No ARMv7 binary has been built or tested as part of
+this source audit.
