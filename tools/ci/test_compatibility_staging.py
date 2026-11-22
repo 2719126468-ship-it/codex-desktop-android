@@ -3,6 +3,7 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import tarfile
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -15,7 +16,7 @@ SPEC.loader.exec_module(staging)
 
 
 class CompatibilityStagingTests(unittest.TestCase):
-    def make_apk(self, path, *, extra=()):
+    def make_apk(self, path, *, extra=(), phone_spec=None):
         native = {
             "libcodex_shizuku_transport.so": "transport-bytes",
             "libcodex_bionic_cwd.so": "cwd-bytes",
@@ -26,6 +27,8 @@ class CompatibilityStagingTests(unittest.TestCase):
         phone_release = {"format": "codex.phone-image.v1", "inventorySha256": hashlib.sha256(phone_inventory).hexdigest(),
                          "inventoryBytes": len(phone_inventory), "accountIncluded": False, "keyringIncluded": False,
                          "client": {"version": "test"}}
+        if phone_spec is not None:
+            phone_release.update(archive="codex-phone-rootfs.tar.gz", spec=phone_spec)
         payloads = {
             "assets/codex-executor-deployment.json": json.dumps({"nativeLibraries": deployment}).encode(),
             "assets/codex-executor-manifest.json": b"[]",
@@ -72,6 +75,43 @@ class CompatibilityStagingTests(unittest.TestCase):
             self.assertEqual(manifest["sourceApkSha256"], digest)
             self.assertEqual(set(manifest["libraries"]), staging.TRANSPORT)
             self.assertFalse((root / "stage/executor/assets/phone-runtime/codex-phone-rootfs.tar.gz").exists())
+
+    def test_embeds_only_archive_matching_pinned_phone_descriptor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image = root / "codex-phone-rootfs.tar.gz"
+            with tarfile.open(image, "w:gz", format=tarfile.PAX_FORMAT) as archive:
+                for name in (".", "usr"):
+                    entry = tarfile.TarInfo(name)
+                    entry.type = tarfile.DIRTYPE
+                    entry.mode = 0o755
+                    archive.addfile(entry)
+                data = b"fixture rootfs"
+                entry = tarfile.TarInfo("usr/runtime")
+                entry.size = len(data)
+                entry.mode = 0o644
+                import io
+                archive.addfile(entry, io.BytesIO(data))
+            image_spec = staging.phone_image.inspect_archive(image, staging.digest(image))
+            apk = root / "v80.apk"
+            digest = self.make_apk(apk, phone_spec=image_spec)
+            with patch.object(staging, "V80_APK_SHA256", digest):
+                report = staging.stage(apk, root / "stage", image)
+            embedded = root / "stage/executor/assets/phone-runtime/codex-phone-rootfs.tar.gz"
+            self.assertTrue(report["embedded_phone_image"])
+            self.assertEqual(report["phone_image_bytes"], image.stat().st_size)
+            self.assertEqual(staging.digest(embedded), image_spec["sha256"])
+
+    def test_rejects_phone_image_that_differs_from_descriptor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image = root / "codex-phone-rootfs.tar.gz"
+            image.write_bytes(b"not the authenticated archive")
+            apk = root / "v80.apk"
+            digest = self.make_apk(apk, phone_spec={"sha256": "0" * 64})
+            with patch.object(staging, "V80_APK_SHA256", digest):
+                with self.assertRaisesRegex(ValueError, "digest mismatch"):
+                    staging.stage(apk, root / "stage", image)
 
     def test_refuses_unexpected_android_abi(self):
         with tempfile.TemporaryDirectory() as directory:
