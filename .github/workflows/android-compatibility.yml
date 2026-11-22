@@ -18,7 +18,7 @@ jobs:
   build-arm64-apk:
     name: Build and validate ARM64 APK (minimum API 27)
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -45,7 +45,14 @@ jobs:
           printf '%s  %s\n' \
             9d9101e1a80bdaf492c02e5abc71b550cb9658aa83782e410d76cef400d12e6b "$apk" | sha256sum -c -
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
-          python3 -B tools/ci/stage-compatibility-apk.py "$apk" work/compatibility/staged
+          image="$RUNNER_TEMP/codex-phone-rootfs.tar.gz"
+          curl -fL --retry 3 --retry-delay 2 --retry-all-errors \
+            https://github.com/JinShichang/codex-desktop-android/releases/download/v80/codex-phone-rootfs.tar.gz \
+            -o "$image"
+          printf '%s  %s\n' \
+            d3d0aea653d6748be2c65e88093ce8d88f24a5031e251709d9d01c995bf58ec1 "$image" | sha256sum -c -
+          python3 -B tools/ci/stage-compatibility-apk.py "$apk" work/compatibility/staged \
+            --phone-image-archive "$image"
       - name: Build API 27 ARM64 runtime libraries
         env:
           ANDROID_NDK_HOME: ${{ runner.temp }}/android-ndk-r29
@@ -78,6 +85,7 @@ jobs:
             -PcodexGnuEngineAssets="$stage/executor/assets" \
             -PcodexDesktopClientAssets="$stage/executor/assets" \
             -PcodexPhoneImageAssets="$stage/executor/assets" \
+            -PcodexEmbedPhoneImage=true \
             -PcodexExecutorAssets="$stage/executor/assets" \
             -PcodexExecutorJni="$stage/executor/jniLibs" \
             :app:assembleDebug :shizukuTransport:testDebugUnitTest
@@ -89,9 +97,10 @@ jobs:
       - name: Upload verified API 27 ARM64 APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: codex-android-api27-arm64-debug
+          name: codex-android-api27-arm64-full-debug
           path: |
             android/app/build/outputs/apk/debug/app-debug.apk
             android/app/build/outputs/apk/debug/app-debug.apk.sha256
           if-no-files-found: error
+          compression-level: 0
           retention-days: 14

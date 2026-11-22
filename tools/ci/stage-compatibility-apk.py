@@ -4,8 +4,13 @@ import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
+import shutil
 import stat
+import sys
 import zipfile
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "install"))
+import phone_image
 
 
 V80_APK_SHA256 = "9d9101e1a80bdaf492c02e5abc71b550cb9658aa83782e410d76cef400d12e6b"
@@ -58,7 +63,7 @@ def selected_asset(name):
     return False
 
 
-def stage(apk, output):
+def stage(apk, output, phone_image_archive=None):
     if digest(apk) != V80_APK_SHA256:
         raise ValueError("The v80 source APK SHA-256 differs from the pinned release asset")
     output = Path(output).resolve()
@@ -120,6 +125,15 @@ def stage(apk, output):
                 or phone_release.get("accountIncluded") is not False
                 or phone_release.get("keyringIncluded") is not False):
             raise ValueError("The v80 phone environment descriptors do not match")
+        if phone_image_archive is not None:
+            if phone_release.get("archive") != "codex-phone-rootfs.tar.gz":
+                raise ValueError("The pinned phone image descriptor names an unexpected archive")
+            expected_spec = phone_release.get("spec")
+            if not isinstance(expected_spec, dict):
+                raise ValueError("The pinned phone image descriptor omits archive limits")
+            actual_spec = phone_image.inspect_archive(phone_image_archive, expected_spec.get("sha256"))
+            if actual_spec != expected_spec:
+                raise ValueError("The downloaded phone image differs from its signed release descriptor")
         desktop = json.loads(archive.read("assets/desktop-client/manifest.json"))
         if (desktop.get("schema") != "codex.desktop.payload.v1" or desktop.get("architecture") != "arm64"
                 or desktop.get("version") != phone_release.get("client", {}).get("version")):
@@ -149,6 +163,11 @@ def stage(apk, output):
             if selected_asset(name):
                 copy_entry(archive, name, roots["assets"] / PurePosixPath(name).relative_to("assets"))
 
+        if phone_image_archive is not None:
+            destination = roots["assets"] / "phone-runtime" / "codex-phone-rootfs.tar.gz"
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(phone_image_archive, destination)
+
         for name in executor_libraries:
             copy_entry(archive, "lib/arm64-v8a/" + name, roots["executor_jni"] / name)
         for name in TRANSPORT:
@@ -158,15 +177,19 @@ def stage(apk, output):
     return {"sha256": V80_APK_SHA256, "assets": len([n for n in names if selected_asset(n)]),
             "executor_libraries": len(executor_libraries), "x11": "libXlorie.so",
             "transport_libraries": sorted(TRANSPORT), "transport_manifest": "transport-inputs.json",
-            "runtime": "built separately for API 27"}
+            "runtime": "built separately for API 27",
+            "embedded_phone_image": phone_image_archive is not None,
+            "phone_image_bytes": Path(phone_image_archive).stat().st_size if phone_image_archive is not None else 0}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("apk", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--phone-image-archive", type=Path,
+                        help="Verified first-install rootfs archive to embed in the APK")
     args = parser.parse_args()
-    print(json.dumps(stage(args.apk, args.output), sort_keys=True))
+    print(json.dumps(stage(args.apk, args.output, args.phone_image_archive), sort_keys=True))
 
 
 if __name__ == "__main__":

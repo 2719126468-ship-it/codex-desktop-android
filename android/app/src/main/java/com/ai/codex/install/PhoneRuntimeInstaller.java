@@ -19,7 +19,12 @@ import java.util.function.Consumer;
  * Keyring-only preparation remains evidence for its original scope; activation
  * additionally requires complete immutable inputs and an actual guest smoke test. */
 public final class PhoneRuntimeInstaller {
+    static final String BUNDLED_ARCHIVE_NAME = "codex-phone-rootfs.tgz";
     private PhoneRuntimeInstaller() {}
+
+    static boolean hasBundledArchive(List<String> assets) {
+        return assets.contains(BUNDLED_ARCHIVE_NAME);
+    }
     public static void ensureInstalled(Context context, Consumer<String> progress) throws Exception {
         Path active = context.getFilesDir().toPath().resolve("debian");
         if (Files.exists(active, LinkOption.NOFOLLOW_LINKS)) return;
@@ -42,10 +47,10 @@ public final class PhoneRuntimeInstaller {
         if (inventory.length != release.getInt("inventoryBytes") || !hex.toString().equals(release.getString("inventorySha256")))
             throw new IOException("完整运行环境的文件清单校验失败。");
         RootfsTransaction.ArchiveSource source;
-        if (assets.contains("codex-phone-rootfs.tgz")) {
+        if (hasBundledArchive(assets)) {
             // Stream the APK-owned archive directly. A full installer must not
             // need a second 1+ GB copy in shared storage or a file-manager grant.
-            source = () -> context.getAssets().open("phone-runtime/codex-phone-rootfs.tgz",
+            source = () -> context.getAssets().open("phone-runtime/" + BUNDLED_ARCHIVE_NAME,
                 android.content.res.AssetManager.ACCESS_STREAMING);
         } else source = EnvironmentPackageSource.downloads(spec);
         PowerManager.WakeLock wake = context.getSystemService(PowerManager.class)
