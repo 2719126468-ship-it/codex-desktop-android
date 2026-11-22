@@ -77,7 +77,7 @@ if (desktopClientAssets.isPresent()) {
             || (!externalPayload && archive.length() != desktop.compressedBytes))
         throw new GradleException('Desktop update assets do not match their manifest')
     if (externalPayload && archive.exists()) throw new GradleException('Split APK must not contain the desktop payload')
-    android.androidResources.noCompress.add('rootfs')
+    android.androidResources.noCompress.add('tgz')
     android.sourceSets.main.assets.srcDir(supplied)
 }
 
