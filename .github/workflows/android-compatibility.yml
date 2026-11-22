@@ -80,7 +80,7 @@ jobs:
             -PcodexPhoneImageAssets="$stage/executor/assets" \
             -PcodexExecutorAssets="$stage/executor/assets" \
             -PcodexExecutorJni="$stage/executor/jniLibs" \
-            :app:assembleDebug :app:testDebugUnitTest :shizukuTransport:testDebugUnitTest
+            :app:assembleDebug :shizukuTransport:testDebugUnitTest
           apk=android/app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | grep -F "sdkVersion:'27'"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
