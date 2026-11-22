@@ -74,7 +74,7 @@ class CompatibilityStagingTests(unittest.TestCase):
             self.assertEqual(manifest["schema"], "codex.v80-transport-inputs.v1")
             self.assertEqual(manifest["sourceApkSha256"], digest)
             self.assertEqual(set(manifest["libraries"]), staging.TRANSPORT)
-            self.assertFalse((root / "stage/executor/assets/phone-runtime/codex-phone-rootfs.tar.gz").exists())
+            self.assertFalse((root / "stage/phone-image-archive/codex-phone-rootfs.tar.gz").exists())
 
     def test_embeds_only_archive_matching_pinned_phone_descriptor(self):
         with tempfile.TemporaryDirectory() as directory:
