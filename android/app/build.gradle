@@ -103,26 +103,25 @@ if (phoneImageAssets.isPresent()) {
         def archive = new File(supplied, 'phone-runtime/codex-phone-rootfs.tar.gz')
         if (!archive.isFile() || archive.length() != release.spec.compressedBytes)
             throw new GradleException('The full APK requires its matching embedded rootfs archive')
-        // The compatibility builder also places this source archive under
-        // the executor asset root. Exclude that original .tar.gz path from all
-        // source sets: syncPhoneImageAssets below adds the exact same bytes once
-        // under the installer contract's .tgz name. Keeping both copies nearly
-        // doubles the APK without adding any runtime capability.
-        android.sourceSets.main.assets.exclude('phone-runtime/codex-phone-rootfs.tar.gz')
-        // AGP expands assets ending in .gz before APK packaging. Stage the
-        // original gzip bytes as .tgz, then store them without recompression.
+        // Keep the large .tar.gz outside every AAPT asset source directory.
+        // Only the byte-preserved .tgz copy generated below enters the APK.
+        def archiveInput = providers.gradleProperty('codexPhoneImageArchive')
+        if (!archiveInput.isPresent()) throw new GradleException('The full APK requires an isolated rootfs archive input')
+        def archive = file(archiveInput.get()).canonicalFile
+        if (!archive.isFile() || archive.length() != release.spec.compressedBytes)
+            throw new GradleException('The isolated rootfs archive does not match its release descriptor')
         android.androidResources.noCompress.add('tgz')
-        // AAPT expands the source .tar.gz into a second .tar asset even though
-        // the installer consumes only the byte-preserved .tgz staged below.
-        // Ignore that generated expansion while retaining the complete archive.
-        android.androidResources.ignoreAssetsPattern = '!.svn:!.git:!.DS_Store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~:codex-phone-rootfs.tar'
     }
     def stagedImage = layout.buildDirectory.dir('generated/phoneImageAssets')
     def syncPhoneImageAssets = tasks.register('syncPhoneImageAssets', PhoneImageAssets) {
         from(supplied) {
             include 'phone-runtime/release.json', 'phone-runtime/inventory.json'
-            if (embedArchive) include 'phone-runtime/codex-phone-rootfs.tar.gz'
-            rename { name -> name == 'codex-phone-rootfs.tar.gz' ? 'codex-phone-rootfs.tgz' : name }
+            if (!embedArchive) exclude 'phone-runtime/codex-phone-rootfs.tar.gz'
+        }
+        if (embedArchive) {
+            from(archive) {
+                rename { 'codex-phone-rootfs.tgz' }
+            }
         }
         outputDir.set(stagedImage)
         into outputDir
