@@ -158,3 +158,57 @@ Pinned source references:
 - [V8 artifact_profile.bzl](https://github.com/openai/codex/blob/ccf9be8cc458bd6b8336fe84d68d8893f2691a5e/third_party/v8/artifact_profile.bzl)
 - [V8 README](https://github.com/openai/codex/blob/ccf9be8cc458bd6b8336fe84d68d8893f2691a5e/third_party/v8/README.md)
 - [This repository's GNU engine builder](https://github.com/2719126468-ship-it/codex-desktop-android/blob/main/tools/executor/build-gnu-engine.py)
+
+## Exact V8 Bazel graph audit (2026-11-22, pinned Codex revision)
+
+A direct read of the pinned source files confirms that the ARMv7 blocker is
+implemented in the build graph, not just in release asset naming:
+
+- `third_party/v8/artifact_profile.bzl` defines
+  `_CPU_CONSTRAINTS` with only `arm64` and `x64`. The
+  `_v8_artifact_files` rule also restricts `v8_cpu` to those two values.
+  Its platform check selects ARM64 for `arm64` and x64 otherwise; adding
+  `armv7` without changing this rule would incorrectly route the check to
+  x86_64 rather than validate an ARMv7 constraint.
+- `third_party/v8/BUILD.bazel` has no ARMv7 branch in the prebuilt archive,
+  source archive, prebuilt binding, or source binding selectors. The Linux
+  GNU/musl archive generation list contains only `aarch64` and `x86_64`.
+  The source-binding target list likewise declares only those two Linux CPUs.
+- The source-build target table maps only x86_64 and AArch64 to V8 CPU
+  profiles. The generated binding targets and release-pair targets are
+  declared for those same architectures; the default selector falls back to
+  x86_64, which must never be mistaken for an ARMv7 build.
+- `third_party/v8/README.md` documents release-pair publishing for the
+  x86_64 and AArch64 Linux GNU/musl targets only.
+
+### Required V8 port sequence (do not skip gates)
+
+1. Add an explicit Bazel ARMv7 CPU constraint and platform/toolchain mapping;
+   make the artifact-profile rule reject unknown CPUs rather than treating
+   every non-ARM64 value as x64.
+2. Define the exact ARMv7 Linux GNU ABI (including hard-float ABI and minimum
+   CPU/FPU assumptions) and verify it agrees across Bazel, Clang, Rust,
+   Debian armhf, and the Android PRoot guest.
+3. Build the V8 archive from the pinned V8 source with a dedicated ARMv7
+   profile and produce the matching generated Rust bindings from the same
+   headers, defines, and ABI settings. Archive and binding must be a single
+   versioned pair with reproducible hashes.
+4. Build and run V8's own tests and Codex's V8 integration/runtime tests on
+   ARMv7 hardware or a qualified emulator. Cross-compilation success alone
+   is insufficient.
+5. Only then wire the pair into Codex's Cargo/Bazel selectors and build both
+   shipped GNU executables. Audit all transitive native dependencies and
+   runtime loading on a real ARMv7 Android 8.1 device.
+
+This is a feasibility/implementation boundary, not a claim that V8 itself
+cannot support 32-bit ARM. The pinned Codex integration currently lacks the
+CPU profile, target platform, archive, binding, and release-pair graph needed
+to build it. The next implementation should be a separate, tightly scoped
+V8 ARMv7 source-build spike; do not change the Android ABI filter or mark
+the product lane green before that spike produces and tests a real archive
+and matching bindings.
+
+Pinned source files:
+- [artifact_profile.bzl](https://github.com/openai/codex/blob/ccf9be8cc458bd6b8336fe84d68d8893f2691a5e/third_party/v8/artifact_profile.bzl)
+- [BUILD.bazel](https://github.com/openai/codex/blob/ccf9be8cc458bd6b8336fe84d68d8893f2691a5e/third_party/v8/BUILD.bazel)
+- [README.md](https://github.com/openai/codex/blob/ccf9be8cc458bd6b8336fe84d68d8893f2691a5e/third_party/v8/README.md)
