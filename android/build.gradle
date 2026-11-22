@@ -1,8 +1,21 @@
 buildscript {
-    repositories { google(); mavenCentral() }
+    repositories {
+        google()
+        // Keep Maven Central's Google-hosted mirror ahead of Central so CI does
+        // not fail the entire build when repo.maven.apache.org returns HTTP 429.
+        maven { url 'https://maven-central.storage-download.googleapis.com/maven2/' }
+        mavenCentral()
+    }
     dependencies { classpath 'com.android.tools.build:gradle:9.3.1' }
 }
-allprojects { repositories { google(); mavenCentral(); maven { url 'https://jitpack.io' } } }
+allprojects {
+    repositories {
+        google()
+        maven { url 'https://maven-central.storage-download.googleapis.com/maven2/' }
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
 // Candidate builds select an inventoried X11 library explicitly. Its maintained
 // source remains in vendor/termux-x11; -PbuildX11FromSource enables the NDK build.
 subprojects { p ->
