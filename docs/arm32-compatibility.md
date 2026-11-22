@@ -122,3 +122,39 @@ engine/native executor, independent CI, and real-device API 27 acceptance.
 
 Until then, advertise ARMv7 as **blocked / not supported**. The successful
 ARM64 API 27 build is not evidence of 32-bit compatibility.
+
+## Pinned Codex V8 source-build boundary (2026-11-22)
+
+A second pass inspected the actual V8 source-build selectors at the pinned
+Codex revision `ccf9be8cc458bd6b8336fe84d68d8893f2691a5e`, rather than only
+checking the published release list:
+
+- `third_party/v8/BUILD.bazel` maps Linux prebuilt archives and bindings
+  only for x86_64 and AArch64 GNU/musl. Its source-archive and source-binding
+  selectors likewise define Linux x86_64 and AArch64 targets; the default
+  fallback is x86_64, not ARMv7.
+- `third_party/v8/artifact_profile.bzl` defines CPU constraints only for
+  `arm64` and `x64`; its compatibility check rejects any CPU outside those
+  profiles. This is an explicit source-build configuration boundary, not
+  merely a missing prebuilt download.
+- `third_party/v8/README.md` documents the same Linux release/source pair
+  targets for x86_64 and AArch64 only.
+- This repository's `tools/executor/build-gnu-engine.py` also pins
+  `TARGET = "aarch64-unknown-linux-gnu"` and configures the AArch64 linker,
+  OpenSSL target, and V8 archive/binding inputs throughout the build.
+
+Therefore a Rust target install or a Cargo target override cannot produce a
+working ARMhf engine by itself. A real port must first add and qualify an
+ARMv7 V8 CPU profile, Bazel platform/toolchain, generated V8 archive and
+matching Rust bindings, then audit and build the full Codex dependency graph
+and both shipped executables. No such ARMv7 V8 profile or artifact pair is
+present in the pinned source. This is now the primary engine feasibility
+blocker; do not create a nominal ARMv7 CI lane that merely compiles a small
+Rust crate or skips the V8-backed engine.
+
+Pinned source references:
+
+- [V8 BUILD.bazel](https://github.com/openai/codex/blob/ccf9be8cc458bd6b8336fe84d68d8893f2691a5e/third_party/v8/BUILD.bazel)
+- [V8 artifact_profile.bzl](https://github.com/openai/codex/blob/ccf9be8cc458bd6b8336fe84d68d8893f2691a5e/third_party/v8/artifact_profile.bzl)
+- [V8 README](https://github.com/openai/codex/blob/ccf9be8cc458bd6b8336fe84d68d8893f2691a5e/third_party/v8/README.md)
+- [This repository's GNU engine builder](https://github.com/2719126468-ship-it/codex-desktop-android/blob/main/tools/executor/build-gnu-engine.py)
