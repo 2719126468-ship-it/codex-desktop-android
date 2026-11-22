@@ -71,7 +71,7 @@ class SplitApkContentsTest(unittest.TestCase):
             self.verify()
 
     def test_rejects_full_archive_inside_split_apk(self):
-        self.files['assets/phone-runtime/codex-phone-rootfs.tgz'] = b'unexpected'
+        self.files['assets/phone-runtime/codex-phone-rootfs.rootfs'] = b'unexpected'
         with self.assertRaisesRegex(ValueError, 'full environment archive'):
             self.verify()
 
