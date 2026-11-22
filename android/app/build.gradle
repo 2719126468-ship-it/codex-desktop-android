@@ -104,8 +104,8 @@ if (phoneImageAssets.isPresent()) {
         // Only the byte-preserved .tgz copy generated below enters the APK.
         def archiveInput = providers.gradleProperty('codexPhoneImageArchive')
         if (!archiveInput.isPresent()) throw new GradleException('The full APK requires an isolated rootfs archive input')
-        def archive = file(archiveInput.get()).canonicalFile
-        if (!archive.isFile() || archive.length() != release.spec.compressedBytes)
+        def phoneArchiveFile = file(archiveInput.get()).canonicalFile
+        if (!phoneArchiveFile.isFile() || phoneArchiveFile.length() != release.spec.compressedBytes)
             throw new GradleException('The isolated rootfs archive does not match its release descriptor')
         android.androidResources.noCompress.add('tgz')
     }
@@ -116,7 +116,7 @@ if (phoneImageAssets.isPresent()) {
             if (!embedArchive) exclude 'phone-runtime/codex-phone-rootfs.tar.gz'
         }
         if (embedArchive) {
-            from(archive) {
+            from(phoneArchiveFile) {
                 rename { 'codex-phone-rootfs.tgz' }
             }
         }
