@@ -257,3 +257,57 @@ integrate that pair into the GNU guest engine. It does not remove the
 separate Android JNI/runtime port or the missing ARMhf desktop-client
 distribution blocker. No ARMv7 binary has been built or tested as part of
 this source audit.
+
+
+
+## GNU engine package-selector audit (2026-11-22)
+
+The pinned Codex package layer adds another required integration boundary
+after the V8 Bazel graph:
+
+- `scripts/codex_package/targets.py` has explicit `TargetSpec` entries for
+  x86_64 and AArch64 Linux GNU/musl, but no
+  `armv7-unknown-linux-gnueabihf` entry. Its host normalization also maps
+  only amd64/x86_64 and aarch64/arm64; ARMv7 must be explicit rather than
+  inferred from a generic 32-bit host name.
+- `scripts/codex_package/v8.py` does not build V8. It downloads the Codex
+  release pair named from `TargetSpec.target`:
+  `librusty_v8_<profile>_<target>.a.gz` and
+  `src_binding_<profile>_<target>.rs`, then verifies both against the
+  pinned release checksum manifest. Adding a target-table row alone would
+  therefore request assets that do not exist; it cannot generate the
+  ARMv7 pair.
+- This repository's `tools/executor/build-gnu-engine.py` imports
+  `fetch_codex_v8_artifacts` and freezes the returned archive and binding
+  hashes into build evidence. The current build flow is a consumer of
+  published V8 release pairs, not a V8 source-archive producer.
+
+The implementation must consequently introduce a distinct, reproducible
+ARMv7 V8 producer stage before enabling the ARMhf package target. That stage
+must emit the archive and binding together, record their source revision,
+toolchain/profile inputs and SHA-256 values, and test the pair by linking and
+running a minimal Rusty_V8 consumer under ARMv7. The GNU engine builder can
+then consume that locally qualified pair through its existing paired
+`RUSTY_V8_ARCHIVE` / `RUSTY_V8_SRC_BINDING_PATH` override, but only after
+the pair's provenance is verified and the target-specific linker/OpenSSL
+configuration is implemented. It must not silently fall back to the
+published x86_64 or AArch64 artifacts.
+
+### Current implementation status
+
+| Layer | Pinned-source status |
+| --- | --- |
+| V8 ARM code-generation branch | Present (`v8_target_arm`) |
+| Codex V8 artifact CPU profile | Missing ARMv7 |
+| V8 Linux ARMhf archive selector | Missing |
+| V8 Linux ARMhf bindgen target | Missing |
+| Codex package `TargetSpec` | Missing ARMhf |
+| V8 source-pair producer in this repo | Missing |
+| GNU engine ARMhf linker/OpenSSL profile | Missing |
+| ARMhf Codex executables | Not built |
+
+This is why the successful C/Rust toolchain probe is a useful prerequisite,
+not a green engine build. The next code change should be isolated to a
+reproducible V8 ARMv7 producer and its source-graph selectors; do not enable
+the package target or change the Android APK ABI filters until that stage
+has a passing Rusty_V8 consumer test.
