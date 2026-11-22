@@ -49,7 +49,7 @@ jobs:
           curl -fL --retry 3 --retry-delay 2 --retry-all-errors \
             https://github.com/JinShichang/codex-desktop-android/releases/download/v80/codex-phone-rootfs.tar.gz \
             -o "$image"
-          printf '%s  %s\\n' \
+          printf '%s  %s\n' \
             d3d0aea653d6748be2c65e88093ce8d88f24a5031e251709d9d01c995bf58ec1 "$image" | sha256sum -c -
           python3 -B tools/ci/stage-compatibility-apk.py "$apk" work/compatibility/staged \
             --phone-image-archive "$image"
