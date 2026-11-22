@@ -103,6 +103,12 @@ if (phoneImageAssets.isPresent()) {
         def archive = new File(supplied, 'phone-runtime/codex-phone-rootfs.tar.gz')
         if (!archive.isFile() || archive.length() != release.spec.compressedBytes)
             throw new GradleException('The full APK requires its matching embedded rootfs archive')
+        // The compatibility builder also places this source archive under
+        // the executor asset root. Exclude that original .tar.gz path from all
+        // source sets: syncPhoneImageAssets below adds the exact same bytes once
+        // under the installer contract's .tgz name. Keeping both copies nearly
+        // doubles the APK without adding any runtime capability.
+        android.sourceSets.main.assets.exclude('phone-runtime/codex-phone-rootfs.tar.gz')
         // AGP expands assets ending in .gz before APK packaging. Stage the
         // original gzip bytes as .tgz, then store them without recompression.
         android.androidResources.noCompress.add('tgz')
