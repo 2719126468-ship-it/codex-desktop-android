@@ -99,10 +99,10 @@ jobs:
           apk = sys.argv[1]
           with zipfile.ZipFile(apk) as archive:
               names = {info.filename for info in archive.infolist()}
-              required_rootfs = "assets/phone-runtime/codex-phone-rootfs.tgz"
+              required_rootfs = "assets/phone-runtime/codex-phone-rootfs.rootfs"
               redundant_rootfs = "assets/phone-runtime/codex-phone-rootfs.tar"
               if required_rootfs not in names or redundant_rootfs in names:
-                  raise SystemExit("APK must contain the compressed rootfs exactly once, without AAPT expanded .tar")
+                  raise SystemExit("APK must contain the opaque rootfs exactly once, without AAPT expanded .tar")
               print("ROOTFS_ARCHIVE", required_rootfs, "present; expanded .tar absent")
               rows = sorted((info.file_size, info.compress_size, info.filename)
                             for info in archive.infolist() if not info.is_dir())
