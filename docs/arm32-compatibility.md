@@ -14,18 +14,31 @@ runtime needed for a working ARMv7 device.
 
 ## What the repository currently proves
 
-- The merged Android API 27 build still targets `arm64-v8a` only.
-- The pinned v80 APK contains only `arm64-v8a` native libraries. Its
-  desktop-client manifest declares `architecture: arm64`.
-- Its GNU engine manifest declares `aarch64-unknown-linux-gnu`.
-- The native runtime recipe targets `aarch64-linux-android27` and writes
-  artifacts under `runtime/arm64-v8a`.
-- The existing `libproot-loader32.so` is PRoot's 32-bit *guest ELF loader*
-  inside the ARM64 Android app. It is not an ARM32 Android JNI library and
-  does not make the APK installable on a 32-bit-only device.
+- `android/app/build.gradle:14` explicitly filters the Android host to
+  `arm64-v8a`. The same file validates the GNU engine as
+  `aarch64-unknown-linux-gnu` (line 53), the desktop client as `arm64`
+  (line 76), and executor JNI under the `arm64-v8a` directory (lines
+  157–160).
+- `tools/install/native/build-native.sh` creates only
+  `runtime/arm64-v8a` (line 21), invokes
+  `aarch64-linux-android27-clang` (lines 63–65), and places the PRoot
+  executable and both loaders in that ARM64 directory (lines 93–99).
+  In particular, `libproot-loader32.so` is a 32-bit *guest ELF loader*
+  carried inside the ARM64 runtime. It is not an ARM32 Android JNI library.
+- `tools/install/build_rootfs.py` declares `ARCH = "arm64"` (line 25)
+  and builds/publishes an ARM64 Debian rootfs (lines 250–259 and 313–344).
+- `tools/install/official_client_package.py` pins the
+  `chatgpt_arm64.deb` acquisition URL (line 24), rejects any package whose
+  architecture is not `arm64` (line 52), and validates ARM64 core ELF
+  executables (lines 266 and 316).
+- The existing API 27 GitHub Actions workflow builds an ARM64 APK only.
+  Its successful result is a regression check for the 64-bit baseline, not
+  evidence of ARMv7 compatibility.
 
-Changing only Gradle's `abiFilters` or adding `armeabi-v7a` to the APK
-would produce a misleading, incomplete package and is not an acceptable fix.
+These are independent architecture locks across Android packaging, native
+runtime, guest rootfs, and desktop client acquisition. Changing only Gradle's
+`abiFilters` or adding `armeabi-v7a` to the APK would produce a misleading,
+incomplete package and is not an acceptable fix.
 
 ## Required implementation work
 
