@@ -100,9 +100,6 @@ if (phoneImageAssets.isPresent()) {
     }
     def embedArchive = providers.gradleProperty('codexEmbedPhoneImage').getOrElse('false').toBoolean()
     if (embedArchive) {
-        def archive = new File(supplied, 'phone-runtime/codex-phone-rootfs.tar.gz')
-        if (!archive.isFile() || archive.length() != release.spec.compressedBytes)
-            throw new GradleException('The full APK requires its matching embedded rootfs archive')
         // Keep the large .tar.gz outside every AAPT asset source directory.
         // Only the byte-preserved .tgz copy generated below enters the APK.
         def archiveInput = providers.gradleProperty('codexPhoneImageArchive')
