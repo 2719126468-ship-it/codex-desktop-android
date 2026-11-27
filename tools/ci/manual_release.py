@@ -471,8 +471,51 @@ def apk():
         firstInstallTested=False,
         description=(ROOT / "config/android/release-notes.txt").read_text(encoding="utf-8").strip())
     save(release / "build-info.json", value)
-    (release / "SHA256SUMS").write_text(value["apkSha256"] + "  " + destination.name + "\n")
-    print(json.dumps({"apk": destination.name, "sha256": value["apkSha256"], "bytes": value["apkBytes"]}))
+    checksums = release / "SHA256SUMS"
+    checksums.write_text(value["apkSha256"] + "  " + destination.name + "\n", encoding="utf-8")
+    bundle = release / f"Codex-Android-{value['releaseTag']}-full-bundle.zip"
+    bundle_info = create_release_bundle(destination, release / "build-info.json", checksums, bundle)
+    print(json.dumps({"apk": destination.name, "sha256": value["apkSha256"], "bytes": value["apkBytes"],
+                      "bundle": bundle_info}))
+
+
+def create_release_bundle(apk_path, build_info_path, checksums_path, destination):
+    """Create and verify a Store-mode ZIP; the APK is already compressed and signed."""
+    apk_path, build_info_path, checksums_path, destination = map(
+        Path, (apk_path, build_info_path, checksums_path, destination))
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(destination, "w", compression=zipfile.ZIP_STORED, allowZip64=True) as bundle:
+        bundle.write(apk_path, apk_path.name)
+        bundle.write(build_info_path, "build-info.json")
+        bundle.write(checksums_path, "SHA256SUMS")
+        bundle.writestr("INSTALL-zh-CN.txt", (
+            "Codex Desktop Android（ARM64）安装说明\n"
+            "1. 解压本 ZIP，确认 APK 与 SHA256SUMS 位于同一目录。\n"
+            "2. 在该目录执行 sha256sum -c SHA256SUMS，或使用可信的 SHA-256 工具核对 APK。\n"
+            "3. 将 APK 安装到 ARM64 Android 设备；目标最低版本为 Android 8.1（API 27）。\n"
+            "4. 覆盖安装旧版本时，必须使用相同签名证书；若签名不一致，Android 会拒绝更新。\n"
+            "5. 首次启动会初始化内置环境，请预留足够存储空间并保持设备供电。\n"
+            "注意：ZIP 仅用于打包分发，APK 已签名且无需重新解压或修改。\n"
+        ).encode("utf-8"))
+    if destination.stat().st_size >= 2 * 1024**3:
+        raise ValueError("Release ZIP exceeds the 2 GiB asset limit")
+    with zipfile.ZipFile(destination, "r") as bundle:
+        expected = {apk_path.name, "build-info.json", "SHA256SUMS", "INSTALL-zh-CN.txt"}
+        if set(bundle.namelist()) != expected or bundle.testzip() is not None:
+            raise ValueError("Release ZIP contents or CRC verification failed")
+        info = bundle.getinfo(apk_path.name)
+        if info.file_size != apk_path.stat().st_size:
+            raise ValueError("Bundled APK size differs from the signed APK")
+        with bundle.open(apk_path.name) as source, apk_path.open("rb") as original:
+            left = hashlib.sha256()
+            right = hashlib.sha256()
+            while block := source.read(1024 * 1024):
+                left.update(block)
+            while block := original.read(1024 * 1024):
+                right.update(block)
+        if left.digest() != right.digest():
+            raise ValueError("Bundled APK SHA-256 differs from the signed APK")
+    return {"name": destination.name, "bytes": destination.stat().st_size, "sha256": digest(destination)}
 
 
 def upload_release_asset(repository, release_id, path):
@@ -507,7 +550,10 @@ def publish():
     if env.get("GITHUB_EVENT_NAME") != "workflow_dispatch":
         raise RuntimeError("Releases can only be published from an explicitly dispatched workflow")
     repository, tag = env["GITHUB_REPOSITORY"], value["releaseTag"]
-    files = [WORK / "release" / name for name in (value["apk"], "build-info.json", "SHA256SUMS")]
+    bundle_name = f"Codex-Android-{tag}-full-bundle.zip"
+    files = [WORK / "release" / name for name in (value["apk"], bundle_name, "build-info.json", "SHA256SUMS")]
+    if not (WORK / "release" / bundle_name).is_file():
+        raise FileNotFoundError("Verified release ZIP is missing; rebuild the APK stage")
     expected = {path.name: {"size": path.stat().st_size, "digest": "sha256:" + digest(path)} for path in files}
     if expected[value["apk"]] != {"size": value["apkBytes"], "digest": "sha256:" + value["apkSha256"]}:
         raise ValueError("Verified APK differs before publication")
