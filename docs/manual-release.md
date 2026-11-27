@@ -73,7 +73,10 @@ Debian 软件源或工具链可在仓库脚本未变化时更新；需要刷新�
 完整 APK 内置环境包与对应校验清单，首次启动直接流式解压、创建本机账户和密钥环。
 已有 Linux 环境继续保留，不会因为内置了新环境包就重置项目或登录信息。
 发布前校验 APK 内容、原签名和上传摘要；通过后自动公开 Release，并使用
-`config/android/release-notes.txt` 中的说明，同时附带 `build-info.json` 和 `SHA256SUMS`。
+`config/android/release-notes.txt` 中的说明，同时附带独立 APK、`Codex-Android-<tag>-full-bundle.zip`、
+`build-info.json` 和 `SHA256SUMS`。ZIP 使用 Store 模式（不对已压缩、已签名的 APK 二次压缩），
+包含 APK、构建记录、SHA-256 校验文件和中文安装说明；发布前会验证 ZIP CRC、成员清单、
+APK 文件长度与 SHA-256。独立 APK 仍可直接下载，不要求用户先下载 ZIP。
 未通过的上传保留为草稿；小体积日志保留七天，不上传签名密钥或手机数据。
 
 2026-11-16，[第 10 轮 Actions](https://github.com/JinShichang/codex-desktop-android/actions/runs/43744217664)
