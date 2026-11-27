@@ -310,6 +310,8 @@ class PublicationTests(unittest.TestCase):
             "desktopVersion": "9.8.7", "engine": {"tag": "rust-v9.8.7"}}
         (self.work / "release/build-info.json").write_text(json.dumps(self.value))
         (self.work / "release/SHA256SUMS").write_text(self.value["apkSha256"] + "  full.apk\n")
+        release.create_release_bundle(self.work / "release/full.apk", self.work / "release/build-info.json",
+            self.work / "release/SHA256SUMS", self.work / "release/full-bundle.zip")
         self.env = patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_REPOSITORY": "owner/repo",
             "GITHUB_RUN_ID": "12345", "GITHUB_STEP_SUMMARY": str(self.work / "step-summary.md")})
         self.env.start()
@@ -403,7 +405,7 @@ class PublicationTests(unittest.TestCase):
                          {"draft": False, "body": self.description})
         self.assertNotIn("--generate-notes", published)
         self.assertEqual(self.remote["body"], self.description)
-        self.assertEqual(set(self.uploads), {"full.apk", "build-info.json", "SHA256SUMS"})
+        self.assertEqual(set(self.uploads), {"full.apk", "full-bundle.zip", "build-info.json", "SHA256SUMS"})
         summary = (self.work / "step-summary.md").read_text()
         self.assertIn("Desktop: 9.8.7; backend: rust-v9.8.7", summary)
 
@@ -445,8 +447,16 @@ class PublicationTests(unittest.TestCase):
         with patch.object(release, "command", side_effect=interrupted), self.assertRaises(OSError):
             release.publish()
         release.publish()
-        self.assertEqual(len(self.uploads), 3)
+        self.assertEqual(len(self.uploads), 4)
         self.assertEqual([name for name, _ in self.calls].count("release-publish"), 1)
+
+    def test_release_bundle_is_store_mode_and_contains_verified_apk_and_instructions(self):
+        bundle_path = self.work / "release/full-bundle.zip"
+        with ZipFile(bundle_path) as bundle:
+            self.assertEqual(set(bundle.namelist()), {"full.apk", "build-info.json", "SHA256SUMS", "INSTALL-zh-CN.txt"})
+            self.assertEqual(bundle.getinfo("full.apk").compress_type, ZIP_STORED)
+            self.assertIsNone(bundle.testzip())
+            self.assertIn("Android 8.1", bundle.read("INSTALL-zh-CN.txt").decode("utf-8"))
 
     def test_modified_apk_is_rejected_before_any_github_request(self):
         (self.work / "release/full.apk").write_bytes(b"modified artifact")
