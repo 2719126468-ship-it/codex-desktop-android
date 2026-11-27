@@ -311,7 +311,7 @@ class PublicationTests(unittest.TestCase):
         (self.work / "release/build-info.json").write_text(json.dumps(self.value))
         (self.work / "release/SHA256SUMS").write_text(self.value["apkSha256"] + "  full.apk\n")
         release.create_release_bundle(self.work / "release/full.apk", self.work / "release/build-info.json",
-            self.work / "release/SHA256SUMS", self.work / "release/full-bundle.zip")
+            self.work / "release/SHA256SUMS", self.work / "release/Codex-Android-v123-full-bundle.zip")
         self.env = patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_REPOSITORY": "owner/repo",
             "GITHUB_RUN_ID": "12345", "GITHUB_STEP_SUMMARY": str(self.work / "step-summary.md")})
         self.env.start()
@@ -405,7 +405,7 @@ class PublicationTests(unittest.TestCase):
                          {"draft": False, "body": self.description})
         self.assertNotIn("--generate-notes", published)
         self.assertEqual(self.remote["body"], self.description)
-        self.assertEqual(set(self.uploads), {"full.apk", "full-bundle.zip", "build-info.json", "SHA256SUMS"})
+        self.assertEqual(set(self.uploads), {"full.apk", "Codex-Android-v123-full-bundle.zip", "build-info.json", "SHA256SUMS"})
         summary = (self.work / "step-summary.md").read_text()
         self.assertIn("Desktop: 9.8.7; backend: rust-v9.8.7", summary)
 
@@ -451,7 +451,7 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual([name for name, _ in self.calls].count("release-publish"), 1)
 
     def test_release_bundle_is_store_mode_and_contains_verified_apk_and_instructions(self):
-        bundle_path = self.work / "release/full-bundle.zip"
+        bundle_path = self.work / "release/Codex-Android-v123-full-bundle.zip"
         with ZipFile(bundle_path) as bundle:
             self.assertEqual(set(bundle.namelist()), {"full.apk", "build-info.json", "SHA256SUMS", "INSTALL-zh-CN.txt"})
             self.assertEqual(bundle.getinfo("full.apk").compress_type, ZIP_STORED)
