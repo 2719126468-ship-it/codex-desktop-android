@@ -1,0 +1,287 @@
+name: Android API 27 full ARM64 release build
+
+on:
+  push:
+    branches: [main, 'compat/**', 'fix/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Verify, sign, then publish the full APK as a GitHub Release'
+        type: choice
+        default: 'publish'
+        options: ['skip', 'publish']
+      release_tag:
+        description: 'Release tag; blank = v<versionCode>-full-arm64'
+        type: string
+        required: false
+      version_code:
+        description: 'Android versionCode; blank = 900 + workflow run number'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-full-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-full-arm64-apk:
+    name: Build, sign and verify the full ARM64 APK (minimum API 27)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Run packaging and runtime manifest tests
+        run: |
+          python3 -B -m unittest discover -s tools/ci -p 'test_compatibility_staging.py' -v
+          python3 -B -m unittest discover -s tools/runtime -p 'test_candidate_build.py' -v
+          python3 -B -m unittest discover -s tools/install -p 'test_phone_image.py' -v
+          python3 -B -m unittest discover -s tools/install -p 'test_build_phone_image.py' -v
+          python3 -B -m unittest discover -s tools/install -p 'test_build_rootfs.py' -v
+      - name: Install pinned Android SDK and Gradle
+        run: python3 -B tools/ci/manual_runner.py android
+      - name: Stage verified ARM64 inputs and the first-install image
+        run: |
+          apk="$RUNNER_TEMP/Codex-Android-v80-small.apk"
+          curl -fL --retry 3 --retry-delay 2 --retry-all-errors \
+            https://github.com/JinShichang/codex-desktop-android/releases/download/v80/Codex-Android-v80-small.apk \
+            -o "$apk"
+          printf '%s  %s\n' \
+            9d9101e1a80bdaf492c02e5abc71b550cb9658aa83782e410d76cef400d12e6b "$apk" | sha256sum -c -
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
+          image="$RUNNER_TEMP/codex-phone-rootfs.tar.gz"
+          curl -fL --retry 3 --retry-delay 2 --retry-all-errors \
+            https://github.com/JinShichang/codex-desktop-android/releases/download/v80/codex-phone-rootfs.tar.gz \
+            -o "$image"
+          printf '%s  %s\n' \
+            d3d0aea653d6748be2c65e88093ce8d88f24a5031e251709d9d01c995bf58ec1 "$image" | sha256sum -c -
+          python3 -B tools/ci/stage-compatibility-apk.py "$apk" work/compatibility/staged \
+            --phone-image-archive "$image"
+      - name: Build API 27 ARM64 runtime libraries
+        env:
+          ANDROID_NDK_HOME: ${{ runner.temp }}/android-ndk-r29
+          CODEX_NDK_ARCHIVE: ${{ runner.temp }}/android-ndk-r29-linux.zip
+        run: |
+          curl -fL --retry 3 --retry-delay 2 --retry-all-errors \
+            https://dl.google.com/android/repository/android-ndk-r29-linux.zip \
+            -o "$CODEX_NDK_ARCHIVE"
+          printf '%s  %s\n' \
+            4abbbcdc842f3d4879206e9695d52709603e52dd68d3c1fff04b3b5e7a308ecf "$CODEX_NDK_ARCHIVE" | sha256sum -c -
+          unzip -q "$CODEX_NDK_ARCHIVE" -d "$RUNNER_TEMP"
+          bash tools/install/native/build-native.sh
+      - name: Materialize the release signing identity
+        env:
+          KEYSTORE_BASE64: ${{ secrets.CODEX_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_BASE64}" ]; then
+            echo '::error::CODEX_KEYSTORE_BASE64 is missing. The APK would carry a throwaway debug key and would refuse to install over an existing app.'
+            exit 1
+          fi
+          key="$RUNNER_TEMP/codex-release.keystore"
+          umask 077
+          printf '%s' "${KEYSTORE_BASE64}" | base64 -d > "$key"
+          test -s "$key"
+          echo "CODEX_KEYSTORE_PATH=$key" >> "$GITHUB_ENV"
+          echo "signing keystore materialized ($(wc -c < "$key") bytes)"
+      - name: Assemble, sign, test, and inspect the APK
+        env:
+          CODEX_SIGNING_KEYSTORE: ${{ env.CODEX_KEYSTORE_PATH }}
+          CODEX_SIGNING_CERT_SHA256: ${{ secrets.CODEX_SIGNING_CERT_SHA256 }}
+          CODEX_SIGNING_STORE_PASSWORD: ${{ secrets.CODEX_SIGNING_STORE_PASSWORD }}
+          CODEX_SIGNING_KEY_ALIAS: ${{ secrets.CODEX_SIGNING_KEY_ALIAS }}
+          CODEX_SIGNING_KEY_PASSWORD: ${{ secrets.CODEX_SIGNING_KEY_PASSWORD }}
+          INPUT_VERSION_CODE: ${{ inputs.version_code }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          vc="${INPUT_VERSION_CODE}"
+          if [ -z "$vc" ]; then vc=$(( 900 + RUN_NUMBER )); fi
+          vn="${vc}-full-arm64"
+          echo "building versionCode=$vc versionName=$vn" | tee -a "$GITHUB_STEP_SUMMARY"
+          native="$(find downloads/install/native -mindepth 1 -maxdepth 1 -type d -name 'codex-native-*' -print -quit)"
+          test -n "$native"
+          native="$GITHUB_WORKSPACE/$native"
+          stage="$GITHUB_WORKSPACE/work/compatibility/staged"
+          gradle -p android --no-daemon --max-workers=2 --no-parallel \
+            -Dorg.gradle.jvmargs='-Xmx2g -Dfile.encoding=UTF-8' \
+            -PcodexBuildToolsVersion=36.0.0 \
+            -PcodexVersionCode="$vc" \
+            -PcodexVersionName="$vn" \
+            -PcodexExternalEnvironment=true \
+            -PcodexRequireExecutor=true \
+            -PcodexRuntimeJni="$native/runtime" \
+            -PcodexX11Jni="$stage/x11" \
+            -PcodexFrozenTransportJni="$stage/transport" \
+            -PcodexFrozenTransportManifest="$stage/transport-inputs.json" \
+            -PcodexDebugJni="$stage/debug-jni" \
+            -PcodexDebugAssets="$stage/debug-assets" \
+            -PcodexGnuEngineAssets="$stage/executor/assets" \
+            -PcodexDesktopClientAssets="$stage/executor/assets" \
+            -PcodexPhoneImageAssets="$stage/executor/assets" \
+            -PcodexPhoneImageArchive="$stage/phone-image-archive/codex-phone-rootfs.tar.gz" \
+            -PcodexEmbedPhoneImage=true \
+            -PcodexExecutorAssets="$stage/executor/assets" \
+            -PcodexExecutorJni="$stage/executor/jniLibs" \
+            :app:assembleDebug :shizukuTransport:testDebugUnitTest
+          apk=android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | grep -F "sdkVersion:'27'"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$apk" | tee "$apk.certs.txt"
+          if [ -n "${CODEX_SIGNING_CERT_SHA256:-}" ]; then
+            want="$(printf '%s' "$CODEX_SIGNING_CERT_SHA256" | tr -d ':' | tr 'A-F' 'a-f')"
+            got="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$apk.certs.txt" | head -1)"
+            if [ "$got" != "$want" ]; then
+              echo "::error::signer $got does not match the configured identity $want"
+              exit 1
+            fi
+            echo "signer identity verified: $got"
+          fi
+          python3 -B tools/install/verify-apk-contents.py --debug --native-update --external-environment "$apk"
+          python3 -B - "$apk" <<'PY'
+          import hashlib, os, sys, zipfile
+          apk = sys.argv[1]
+          with zipfile.ZipFile(apk) as archive:
+              names = {info.filename for info in archive.infolist()}
+              required_rootfs = "assets/phone-runtime/codex-phone-rootfs.rootfs"
+              redundant_rootfs = "assets/phone-runtime/codex-phone-rootfs.tar"
+              if required_rootfs not in names or redundant_rootfs in names:
+                  raise SystemExit("APK must contain the opaque rootfs exactly once, without AAPT expanded .tar")
+              print("ROOTFS_ARCHIVE", required_rootfs, "present; expanded .tar absent")
+              rows = sorted((info.file_size, info.compress_size, info.filename)
+                            for info in archive.infolist() if not info.is_dir())
+              print("APK_BYTES", os.path.getsize(apk))
+              print("APK_LARGEST_ENTRIES")
+              for size, compressed, name in rows[-25:][::-1]:
+                  print("%d\t%d\t%s" % (size, compressed, name))
+              seen = {}
+              for size, compressed, name in rows:
+                  if size < 64 * 1024 * 1024:
+                      continue
+                  digest = hashlib.sha256()
+                  with archive.open(name) as stream:
+                      for block in iter(lambda: stream.read(1024 * 1024), b""):
+                          digest.update(block)
+                  key = digest.hexdigest()
+                  if key in seen:
+                      print("APK_DUPLICATE_CONTENT\t%d\t%s\t%s" % (size, seen[key], name))
+                  else:
+                      seen[key] = name
+          PY
+          sha256sum "$apk" | tee "$apk.sha256"
+          badging="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk")"
+          built_vc="$(printf '%s\n' "$badging" | sed -n "s/^package:.*versionCode='\([0-9]*\)'.*/\1/p")"
+          built_vn="$(printf '%s\n' "$badging" | sed -n "s/^package:.*versionName='\([^']*\)'.*/\1/p")"
+          signer="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$apk.certs.txt" | head -1)"
+          nbytes="$(wc -c < "$apk" | tr -d ' ')"
+          rootfs_sha="$(sha256sum "$stage/phone-image-archive/codex-phone-rootfs.tar.gz" | awk '{print $1}')"
+          {
+            printf 'versionCode=%s\n' "$built_vc"
+            printf 'versionName=%s\n' "$built_vn"
+            printf 'sha256=%s\n' "$(sha256sum "$apk" | awk '{print $1}')"
+            printf 'bytes=%s\n' "$nbytes"
+            printf 'signerSha256=%s\n' "$signer"
+            printf 'rootfsSha256=%s\n' "$rootfs_sha"
+          } > "$apk.version.txt"
+          cat "$apk.version.txt" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Upload the signed full APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: codex-android-api27-arm64-full-signed
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/debug/app-debug.apk.sha256
+            android/app/build/outputs/apk/debug/app-debug.apk.certs.txt
+            android/app/build/outputs/apk/debug/app-debug.apk.version.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  publish-release:
+    name: Publish the signed full APK as a GitHub Release
+    needs: build-full-arm64-apk
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_release == 'publish'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: codex-android-api27-arm64-full-signed
+          path: dist
+      - name: Verify the downloaded artifact before publishing
+        run: |
+          set -euo pipefail
+          apk=dist/app-debug.apk
+          test -f "$apk"
+          test -f dist/app-debug.apk.version.txt
+          expected="$(sed -n 's/^sha256=//p' dist/app-debug.apk.version.txt)"
+          actual="$(sha256sum "$apk" | awk '{print $1}')"
+          test -n "$expected"
+          test "$expected" = "$actual"
+          echo "sha256 verified: $actual" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Publish Release with the signed full APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+          TARGET_SHA: ${{ github.sha }}
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          vc="$(sed -n 's/^versionCode=//p' dist/app-debug.apk.version.txt)"
+          vn="$(sed -n 's/^versionName=//p' dist/app-debug.apk.version.txt)"
+          sha="$(sed -n 's/^sha256=//p' dist/app-debug.apk.version.txt)"
+          nbytes="$(sed -n 's/^bytes=//p' dist/app-debug.apk.version.txt)"
+          signer="$(sed -n 's/^signerSha256=//p' dist/app-debug.apk.version.txt)"
+          tag="${INPUT_TAG:-v${vc}-full-arm64}"
+          asset="Codex-Android-v${vc}-full-arm64.apk"
+          mv dist/app-debug.apk "dist/$asset"
+          ( cd dist && sha256sum "$asset" > "$asset.sha256" )
+          cp dist/app-debug.apk.certs.txt "dist/$asset.certs.txt"
+          cp dist/app-debug.apk.version.txt "dist/$asset.build-info.txt"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "::error::Release $tag already exists; releases are never overwritten. Pass another release_tag input."
+            exit 1
+          fi
+          notes="$(mktemp)"
+          {
+            echo "## Codex Desktop for Android - signed full ARM64 build"
+            echo
+            echo "| item | value |"
+            echo "| --- | --- |"
+            echo "| versionCode | $vc |"
+            echo "| versionName | $vn |"
+            echo "| minimum API | 27 (Android 8.1) |"
+            echo "| ABI | arm64-v8a |"
+            echo "| size | $nbytes bytes |"
+            echo "| signing cert SHA-256 | $signer |"
+            echo "| commit | $TARGET_SHA |"
+            echo "| workflow | $WORKFLOW_URL |"
+            echo
+            echo "Contains the complete first-install environment (Debian rootfs, GNU engine, desktop client) inside the APK."
+            echo
+            echo "### SHA-256"
+            echo
+            echo "    $sha  $asset"
+            echo
+            echo "Updates install over a build signed with the same certificate; a different identity requires uninstalling the old app first."
+          } > "$notes"
+          gh release create "$tag" "dist/$asset" "dist/$asset.sha256" "dist/$asset.certs.txt" "dist/$asset.build-info.txt" \
+            --target "$TARGET_SHA" \
+            --title "Codex Android $tag (signed full ARM64)" \
+            --notes-file "$notes"
+          gh release view "$tag" --json tagName,url,assets \
+            --jq '.tagName, .url, (.assets[] | .name + " " + (.size | tostring))' | tee -a "$GITHUB_STEP_SUMMARY"
