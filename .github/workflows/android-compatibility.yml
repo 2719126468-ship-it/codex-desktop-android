@@ -6,6 +6,16 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Verify then publish the APK as a GitHub Release'
+        type: choice
+        default: 'no'
+        options: [no, yes]
+      release_tag:
+        description: 'Release tag; blank = v<versionCode>-api27'
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -86,6 +96,12 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
           python3 -B tools/install/verify-apk-contents.py --debug --native-update --external-environment "$apk"
           sha256sum "$apk" | tee "$apk.sha256"
+          badging="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk")"
+          vc="$(printf '%s\n' "$badging" | sed -n "s/^package:.*versionCode='\([0-9]*\)'.*/\1/p")"
+          vn="$(printf '%s\n' "$badging" | sed -n "s/^package:.*versionName='\([^']*\)'.*/\1/p")"
+          printf 'versionCode=%s\nversionName=%s\nsha256=%s\n' \
+            "$vc" "$vn" "$(sha256sum "$apk" | awk '{print $1}')" > "$apk.version.txt"
+          cat "$apk.version.txt"
       - name: Upload verified API 27 ARM64 APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -93,5 +109,79 @@ jobs:
           path: |
             android/app/build/outputs/apk/debug/app-debug.apk
             android/app/build/outputs/apk/debug/app-debug.apk.sha256
+            android/app/build/outputs/apk/debug/app-debug.apk.version.txt
           if-no-files-found: error
           retention-days: 14
+
+  publish-release:
+    name: Publish verified APK as a GitHub Release
+    needs: build-arm64-apk
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_release == 'yes'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: codex-android-api27-arm64-debug
+          path: dist
+      - name: Verify the downloaded artifact before publishing
+        run: |
+          set -euo pipefail
+          apk=dist/app-debug.apk
+          test -f "$apk"
+          test -f dist/app-debug.apk.version.txt
+          expected="$(sed -n 's/^sha256=//p' dist/app-debug.apk.version.txt)"
+          actual="$(sha256sum "$apk" | awk '{print $1}')"
+          test -n "$expected"
+          test "$expected" = "$actual"
+          echo "sha256 verified: $actual" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Publish Release with the verified APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+          TARGET_SHA: ${{ github.sha }}
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          vc="$(sed -n 's/^versionCode=//p' dist/app-debug.apk.version.txt)"
+          vn="$(sed -n 's/^versionName=//p' dist/app-debug.apk.version.txt)"
+          sha="$(sed -n 's/^sha256=//p' dist/app-debug.apk.version.txt)"
+          tag="${INPUT_TAG:-v${vc}-api27}"
+          asset="Codex-Android-${tag}-api27-arm64-debug.apk"
+          mv dist/app-debug.apk "dist/$asset"
+          sha256sum "dist/$asset" > "dist/$asset.sha256"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "::error::Release $tag already exists; existing releases are never overwritten. Pass another release_tag input."
+            exit 1
+          fi
+          notes="$(mktemp)"
+          {
+            echo "## Codex Desktop for Android - API 27 ARM64 compatibility build"
+            echo
+            echo "| item | value |"
+            echo "| --- | --- |"
+            echo "| versionCode | \`$vc\` |"
+            echo "| versionName | \`$vn\` |"
+            echo "| minimum API | 27 (Android 8.1) |"
+            echo "| ABI | arm64-v8a |"
+            echo "| build type | debug, built and verified on the ephemeral runner |"
+            echo "| commit | \`$TARGET_SHA\` |"
+            echo "| workflow | $WORKFLOW_URL |"
+            echo
+            echo "### SHA-256"
+            echo
+            echo "    $sha  $asset"
+            echo
+            echo "The signing identity must match the already installed app; uninstall first if it differs."
+          } > "$notes"
+          gh release create "$tag" "dist/$asset" "dist/$asset.sha256" \
+            --target "$TARGET_SHA" \
+            --title "Codex Android ${tag} (API 27 ARM64)" \
+            --notes-file "$notes"
+          gh release view "$tag" --json tagName,url,assets \
+            --jq '.tagName, .url, (.assets[] | .name + " " + (.size | tostring))' | tee -a "$GITHUB_STEP_SUMMARY"
