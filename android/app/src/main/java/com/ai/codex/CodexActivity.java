@@ -214,17 +214,11 @@ public final class CodexActivity extends CodexDisplayActivity {
     }
     private boolean environmentReadyForLaunch() {
         boolean needsInstall = com.ai.codex.install.EnvironmentPackageSource.needsInstall(this);
-        boolean externalPackageRequired = needsInstall;
-        if (needsInstall) {
-            try {
-                String[] assets = getAssets().list("phone-runtime");
-                externalPackageRequired = assets == null
-                        || !java.util.Arrays.asList(assets).contains("codex-phone-rootfs.tgz");
-            } catch (java.io.IOException unavailable) {
-                // Let the normal source validator report any asset read error.
-            }
-        }
-        boolean access = !externalPackageRequired || com.ai.codex.install.EnvironmentPackageSource.hasDownloadsAccess();
+        // A full build embeds the archive, so no Download copy or storage grant is involved.
+        boolean externalPackageRequired = needsInstall
+                && !com.ai.codex.install.EnvironmentPackageSource.hasBundledArchive(this);
+        boolean access = !externalPackageRequired
+                || com.ai.codex.install.EnvironmentPackageSource.hasDownloadsAccess(this);
         boolean present = access && (!externalPackageRequired
                 || java.nio.file.Files.isRegularFile(
                         com.ai.codex.install.EnvironmentPackageSource.archiveFile().toPath(),
@@ -238,7 +232,7 @@ public final class CodexActivity extends CodexDisplayActivity {
         String title = state == EnvironmentLaunchGate.State.ACCESS_REQUIRED
                 ? "允许读取 Download 环境包" : "请先下载运行环境";
         String detail = state == EnvironmentLaunchGate.State.ACCESS_REQUIRED
-                ? "首次安装需要读取 Download 目录中的环境包。请在系统设置中允许所有文件访问；授权后会自动检查，无需选择文件。"
+                ? "首次安装需要读取 Download 目录中的环境包。请授予存储读取权限；授权后会自动检查，无需选择文件。"
                 : "请从发布页面下载 codex-phone-rootfs.tar.gz，保存到手机内部存储的 Download 目录。无需解压，请保留原文件名。下载完成后返回 Codex，应用会自动检查，也可以点击重新检查。";
         showRuntimePrerequisite(title, detail);
         if (!environmentLaunchGate.shouldPrompt(state) || environmentDialog != null) return false;
@@ -265,6 +259,18 @@ public final class CodexActivity extends CodexDisplayActivity {
         return false;
     }
     private void openEnvironmentAccessSettings() {
+        // API 30+ gates public storage behind MANAGE_EXTERNAL_STORAGE; older releases
+        // only know the runtime READ_EXTERNAL_STORAGE permission. Both intents are
+        // resolved defensively because unsupported actions throw on older platforms.
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
+            String missing = com.ai.codex.install.EnvironmentPackageSource.requiredPermission();
+            if (missing != null && checkSelfPermission(missing) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[] {missing}, 0x0c0d);
+                return;
+            }
+            Toast.makeText(this, "请在系统设置中授予 Codex 存储读取权限，然后返回重试。", Toast.LENGTH_LONG).show();
+            return;
+        }
         try {
             startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
                     .setData(Uri.parse("package:" + getPackageName())));
@@ -275,11 +281,18 @@ public final class CodexActivity extends CodexDisplayActivity {
             }
         }
     }
+    @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(request, permissions, results);
+        if (request == 0x0c0d) {
+            environmentLaunchGate.retry();
+            refreshDisplayPolicy();
+        }
+    }
     @Override public void onBackPressed() { getOnBackPressedDispatcher().onBackPressed(); }
     @Override protected void onRuntimeStopped() { com.ai.codex.phone.PhoneControl.get(this).onEngineStopped(); CodexDeviceFeatures.turnOffTorch(this); finishAndRemoveTask(); }
     private void showExitOptions() {
         android.view.WindowInsets insets = getWindow().getDecorView().getRootWindowInsets();
-        if (insets != null && insets.isVisible(android.view.WindowInsets.Type.ime())) {
+        if (insets != null && CodexPlatform.imeVisible(insets)) {
             getLorieView().setKeyboardVisible(false);
             return;
         }

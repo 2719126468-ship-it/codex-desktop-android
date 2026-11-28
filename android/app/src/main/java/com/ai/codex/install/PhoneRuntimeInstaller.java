@@ -19,11 +19,14 @@ import java.util.function.Consumer;
  * Keyring-only preparation remains evidence for its original scope; activation
  * additionally requires complete immutable inputs and an actual guest smoke test. */
 public final class PhoneRuntimeInstaller {
-    static final String BUNDLED_ARCHIVE_NAME = "codex-phone-rootfs.tgz";
+    /** Full builds stage the archive as an opaque .rootfs entry; v80 shipped .tgz. */
+    static final String BUNDLED_ARCHIVE_PREFIX = "codex-phone-rootfs.";
     private PhoneRuntimeInstaller() {}
 
     static boolean hasBundledArchive(List<String> assets) {
-        return assets.contains(BUNDLED_ARCHIVE_NAME);
+        if (assets == null) return false;
+        for (String name : assets) if (name.startsWith(BUNDLED_ARCHIVE_PREFIX)) return true;
+        return false;
     }
     public static void ensureInstalled(Context context, Consumer<String> progress) throws Exception {
         Path active = context.getFilesDir().toPath().resolve("debian");
@@ -46,13 +49,9 @@ public final class PhoneRuntimeInstaller {
         for (byte b : digest.digest(inventory)) hex.append(String.format(Locale.ROOT, "%02x", b & 255));
         if (inventory.length != release.getInt("inventoryBytes") || !hex.toString().equals(release.getString("inventorySha256")))
             throw new IOException("完整运行环境的文件清单校验失败。");
-        RootfsTransaction.ArchiveSource source;
-        if (hasBundledArchive(assets)) {
-            // Stream the APK-owned archive directly. A full installer must not
-            // need a second 1+ GB copy in shared storage or a file-manager grant.
-            source = () -> context.getAssets().open("phone-runtime/" + BUNDLED_ARCHIVE_NAME,
-                android.content.res.AssetManager.ACCESS_STREAMING);
-        } else source = EnvironmentPackageSource.downloads(spec);
+        // Stream an APK-owned archive directly when this build has one; otherwise the
+        // authenticated public Download copy. A full installer never needs both.
+        RootfsTransaction.ArchiveSource source = EnvironmentPackageSource.open(context, spec);
         PowerManager.WakeLock wake = context.getSystemService(PowerManager.class)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Codex:initial-install");
         wake.acquire();

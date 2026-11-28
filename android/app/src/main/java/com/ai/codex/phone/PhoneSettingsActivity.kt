@@ -21,7 +21,7 @@ class PhoneSettingsActivity : AppCompatActivity() {
     override fun onDestroy() { alive = false; control.background.cancelUnwantedPending(); super.onDestroy() }
     private fun render() {
         val scroll = ScrollView(this)
-        scroll.setOnApplyWindowInsetsListener { v, i -> val b=i.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout());v.setPadding(b.left,b.top,b.right,b.bottom);i }
+        scroll.setOnApplyWindowInsetsListener { v, i -> com.ai.codex.CodexPlatform.padForSystemBars(v, i); i }
         body = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; val d=(20*resources.displayMetrics.density).toInt();setPadding(d,d,d,d) }
         scroll.addView(body);setContentView(scroll)
         text("手机操控", 26)

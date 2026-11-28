@@ -17,7 +17,7 @@ public final class CodexLogExport {
     private static final int LIMIT = 2 * 1024 * 1024;
     private CodexLogExport() {}
     public static File export(Context context) throws Exception {
-        if (!Environment.isExternalStorageManager()) throw new IOException("请先允许所有文件访问，再点击导出日志");
+        if (!CodexPlatform.allFilesAccess(context)) throw new IOException("请先允许所有文件访问，再点击导出日志");
         Path volume = Environment.getExternalStorageDirectory().toPath().toRealPath();
         Path folder = volume;
         for (String part : new String[]{"codex", "log"}) {

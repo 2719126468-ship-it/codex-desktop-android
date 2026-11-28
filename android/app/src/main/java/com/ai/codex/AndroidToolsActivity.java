@@ -25,8 +25,7 @@ public final class AndroidToolsActivity extends androidx.appcompat.app.AppCompat
     private void render() {
         ScrollView scroll = new ScrollView(this);
         scroll.setOnApplyWindowInsetsListener((view, insets) -> {
-            android.graphics.Insets bars = insets.getInsets(android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout());
-            view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            CodexPlatform.padForSystemBars(view, insets);
             return insets;
         });
         content = new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL);
@@ -43,9 +42,11 @@ public final class AndroidToolsActivity extends androidx.appcompat.app.AppCompat
                 }).setNegativeButton("取消", null).show());
         text("自动：探测通过才使用 Adreno 加速，否则回退软件渲染。兼容模式使用 CPU；加速模式失败会给出诊断。", 16);
         button("导出日志到 /sdcard/codex/log", () -> {
-            if (!android.os.Environment.isExternalStorageManager()) {
-                android.widget.Toast.makeText(this, "请先允许所有文件访问，再点击导出日志", android.widget.Toast.LENGTH_LONG).show();
-                startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).setData(Uri.parse("package:" + getPackageName())));
+            if (!CodexPlatform.allFilesAccess(this)) {
+                if (!CodexPlatform.requestAllFilesAccess(this, 0x0c0e)) {
+                    android.widget.Toast.makeText(this, "请先允许所有文件访问，再点击导出日志", android.widget.Toast.LENGTH_LONG).show();
+                    startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).setData(Uri.parse("package:" + getPackageName())));
+                }
                 return;
             }
             android.widget.Toast.makeText(this, "正在收集并打包日志…", android.widget.Toast.LENGTH_SHORT).show();
@@ -57,15 +58,19 @@ public final class AndroidToolsActivity extends androidx.appcompat.app.AppCompat
         text("按你的要求读取的消息和截图会在对话中发送给模型。你可以随时在 Android 设置中撤销权限。", 16);
         button("手机操控（读屏、操作与 Root 后台屏）", () -> startActivity(new Intent(this, com.ai.codex.phone.PhoneSettingsActivity.class)));
         button("其他设备能力 / 文件与传感器", () -> startActivity(new Intent(this, DeviceCapabilitiesActivity.class)));
-        boolean storage = android.os.Environment.isExternalStorageManager();
+        boolean storage = CodexPlatform.allFilesAccess(this);
         text("共享存储：" + (storage ? "已允许访问所有文件" : "未授权"), 18);
         text("共享项目目录：/sdcard/codex/Projects。授权后重新打开桌面以连接共享存储。", 16);
         button(storage ? "管理所有文件访问" : "允许所有文件访问", () -> {
+            if (CodexPlatform.requestAllFilesAccess(this, 0x0c0f)) return;
             try {
                 startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
                         .setData(Uri.parse("package:" + getPackageName())));
             } catch (android.content.ActivityNotFoundException unavailable) {
-                startActivity(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));
+                try { startActivity(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)); }
+                catch (android.content.ActivityNotFoundException missing) {
+                    android.widget.Toast.makeText(this, "请在系统设置中授予存储读取权限", android.widget.Toast.LENGTH_LONG).show();
+                }
             }
         });
         boolean screen = CodexAndroidPermissionActivity.isGranted(this, "screen_control");

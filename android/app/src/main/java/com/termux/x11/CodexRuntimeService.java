@@ -746,7 +746,7 @@ public final class CodexRuntimeService extends Service {
                 "-b", "/dev", "-b", "/proc", "-b", "/sys", "-b", "/system", "-b", "/apex",
                 "-b", temp.getAbsolutePath() + ":/tmp",
                 "-b", sharedMemory.getAbsolutePath() + ":/dev/shm"));
-            if (android.os.Environment.isExternalStorageManager()) {
+            if (com.ai.codex.CodexPlatform.allFilesAccess(this)) {
                 args.add("-b"); args.add("/storage");
                 args.add("-b"); args.add(android.os.Environment.getExternalStorageDirectory().getPath() + ":/sdcard");
             }

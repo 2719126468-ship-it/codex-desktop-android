@@ -20,7 +20,7 @@ public final class DeviceCapabilitiesActivity extends androidx.appcompat.app.App
     @Override public void onCreate(Bundle state){super.onCreate(state);render();}
     private void render(){
         ScrollView scroll=new ScrollView(this);
-        scroll.setOnApplyWindowInsetsListener((v,insets)->{android.graphics.Insets bars=insets.getInsets(android.view.WindowInsets.Type.systemBars()|android.view.WindowInsets.Type.displayCutout());v.setPadding(bars.left,bars.top,bars.right,bars.bottom);return insets;});
+        scroll.setOnApplyWindowInsetsListener((v,insets)->{CodexPlatform.padForSystemBars(v,insets);return insets;});
         content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);int pad=(int)(20*getResources().getDisplayMetrics().density);content.setPadding(pad,pad,pad,pad);scroll.addView(content);setContentView(scroll);
         text("设备能力授权",25);text("默认关闭，逐项授权。授权仅属于本次安装，可随时撤销。读取的屏幕、位置、文件和短信可能随对话发送给模型。",16);
         text("Root 模式（KernelSU / APatch）",21);

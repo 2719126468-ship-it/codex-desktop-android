@@ -21,8 +21,8 @@ public final class SharedProjectStorage {
         return root;
     }
     public static JSONObject inspect(Context context) throws Exception {
-        JSONObject status = new JSONObject().put("allFilesAccess", Environment.isExternalStorageManager());
-        if (!Environment.isExternalStorageManager()) return status.put("readWriteVerified", false);
+        JSONObject status = new JSONObject().put("allFilesAccess", CodexPlatform.allFilesAccess(context));
+        if (!CodexPlatform.allFilesAccess(context)) return status.put("readWriteVerified", false);
         File root = root();
         if (!root.isDirectory() && !root.mkdirs()) throw new java.io.IOException("Cannot create shared project directory");
         byte[] expected = "Codex shared storage access\n".getBytes(StandardCharsets.UTF_8);
