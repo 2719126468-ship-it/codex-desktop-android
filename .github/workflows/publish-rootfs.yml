@@ -7,6 +7,11 @@ name: Publish the verified phone rootfs archive
 # descriptor inside the pinned v80 APK before anything is uploaded.
 
 on:
+  # A dispatch-only workflow is indexed from the default branch alone, which makes it
+  # undiscoverable on a topic branch. The push trigger only registers the file; the job
+  # itself still refuses to run unless a human dispatched it.
+  push:
+    branches: [main, 'compat/**']
   workflow_dispatch:
     inputs:
       release_tag:
@@ -24,6 +29,7 @@ concurrency:
 jobs:
   publish-rootfs:
     name: Verify and publish codex-phone-rootfs.tar.gz
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
