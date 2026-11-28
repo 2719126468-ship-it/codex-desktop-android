@@ -152,7 +152,7 @@ jobs:
           vn="$(sed -n 's/^versionName=//p' dist/app-debug.apk.version.txt)"
           sha="$(sed -n 's/^sha256=//p' dist/app-debug.apk.version.txt)"
           tag="${INPUT_TAG:-v${vc}-api27}"
-          asset="Codex-Android-${tag}-api27-arm64-debug.apk"
+          asset="Codex-Android-v${vc}-api27-arm64-debug.apk"
           mv dist/app-debug.apk "dist/$asset"
           sha256sum "dist/$asset" > "dist/$asset.sha256"
           if gh release view "$tag" >/dev/null 2>&1; then
