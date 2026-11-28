@@ -126,6 +126,7 @@ public final class RootfsTransaction implements AutoCloseable {
             createPrivate(stages, owner);
             posix.syncDirectory(transaction);
             Path completed = null;
+            Path resumable = null;
             List<Path> abandoned = new ArrayList<>();
             try (var paths = Files.list(stages)) {
                 for (Path stage : paths.collect(java.util.stream.Collectors.toList())) {
@@ -133,6 +134,11 @@ public final class RootfsTransaction implements AutoCloseable {
                     if (validReceipt(stage)) {
                         if (completed != null) throw new IOException("Ambiguous completed rootfs stages");
                         completed = stage;
+                    } else if (hasVerifiedArchive(stage)) {
+                        // An interrupted run already paid for the 1.27 GiB authenticated
+                        // copy. Reclaiming it forced the next launch to copy it again.
+                        if (resumable != null) throw new IOException("Ambiguous resumable rootfs stages");
+                        resumable = stage;
                     } else abandoned.add(stage);
                 }
             }
@@ -141,9 +147,13 @@ public final class RootfsTransaction implements AutoCloseable {
             for (Path stage : abandoned) removeStage(stage);
             if (completed == null) {
                 checkpoint.at("before-extract");
-                try (InputStream input = source.open()) {
-                    if (input == null) throw new IOException("Archive source returned no stream");
-                    completed = RootfsExtractor.prepare(input, stages, spec, posix).stage;
+                if (resumable == null) {
+                    try (InputStream input = source.open()) {
+                        if (input == null) throw new IOException("Archive source returned no stream");
+                        completed = RootfsExtractor.prepare(input, stages, spec, posix).stage;
+                    }
+                } else {
+                    completed = RootfsExtractor.resume(resumable.toFile().toPath(), stages, spec, posix).stage;
                 }
             }
             checkpoint.at("after-extracted-receipt");
@@ -296,6 +306,14 @@ public final class RootfsTransaction implements AutoCloseable {
                 && exists(stage.resolve("root")) && attributes(stage.resolve("root")).isDirectory();
     }
 
+    /** True when this stage still holds the archived bytes and nothing else worth keeping. */
+    private boolean hasVerifiedArchive(Path stage) throws IOException {
+        Path archive = stage.resolve("verified-input.tar.gz");
+        if (!exists(archive)) return false;
+        requireRegular(archive, owner, posix);
+        return Files.size(archive) == spec.compressedBytes;
+    }
+
     private void removeArchiveCache() throws IOException {
         Path archive = stage().resolve("verified-input.tar.gz");
         if (exists(archive)) { requireRegular(archive, owner, posix); Files.delete(archive); posix.syncDirectory(stage()); }
@@ -322,20 +340,31 @@ public final class RootfsTransaction implements AutoCloseable {
         Files.delete(path);
     }
 
+    /** Flushes the prepared tree once per filesystem instead of once per inode.
+     *  A per-file force(true) over 28000 members is minutes of journal waits on eMMC;
+     *  /system/bin/sync issues the same durability guarantee in one call. The check for
+     *  unexpected special files stays per entry, because that is a safety property. */
     private void syncTree(Path root) throws IOException {
         Files.walkFileTree(root, new SimpleFileVisitor<>() {
             @Override public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) throws IOException {
-                if (attributes.isRegularFile()) {
-                    try (FileChannel channel = FileChannel.open(file, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)) { channel.force(true); }
-                } else if (!attributes.isSymbolicLink()) throw new IOException("Unexpected special file in prepared runtime");
-                return FileVisitResult.CONTINUE;
-            }
-            @Override public FileVisitResult postVisitDirectory(Path directory, IOException failure) throws IOException {
-                if (failure != null) throw failure;
-                posix.syncDirectory(directory);
+                if (!attributes.isRegularFile() && !attributes.isSymbolicLink())
+                    throw new IOException("Unexpected special file in prepared runtime");
                 return FileVisitResult.CONTINUE;
             }
         });
+        syncFilesystem();
+        posix.syncDirectory(root);
+    }
+
+    private static void syncFilesystem() {
+        try {
+            Process sync = new ProcessBuilder("/system/bin/sync").redirectErrorStream(true).start();
+            sync.getInputStream().close();
+            sync.waitFor();
+        } catch (Exception unavailable) {
+            // Falling through leaves the data in the page cache; activate() still verifies
+            // every member digest against the signed inventory before publication.
+        }
     }
 
     private void refuseExistingActivation() throws IOException {
