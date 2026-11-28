@@ -36,52 +36,21 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       EXPECTED_SHA256: d3d0aea653d6748be2c65e88093ce8d88f24a5031e251709d9d01c995bf58ec1
       EXPECTED_BYTES: '1367052023'
-      SOURCE_APK: https://github.com/JinShichang/codex-desktop-android/releases/download/v80/Codex-Android-v80-small.apk
-      SOURCE_APK_SHA256: 9d9101e1a80bdaf492c02e5abc71b550cb9658aa83782e410d76cef400d12e6b
+      SOURCE_REPO: JinShichang/codex-desktop-android
+      SOURCE_TAG: v80
     steps:
-      - name: Fetch the pinned v80 APK
+      - name: Fetch the published archive with the GitHub CLI
         run: |
           set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/out"
           gh release download v80 \
             -R JinShichang/codex-desktop-android \
-            -p 'Codex-Android-v80-small.apk' \
-            -D "$RUNNER_TEMP/src" --clobber
-          apk="$RUNNER_TEMP/src/Codex-Android-v80-small.apk"
-          printf '%s  %s\n' "$SOURCE_APK_SHA256" "$apk" | sha256sum -c -
-          stat -c '%s bytes' "$apk"
-      - name: Extract the authenticated rootfs archive
-        run: |
-          set -euo pipefail
-          apk="$RUNNER_TEMP/src/Codex-Android-v80-small.apk"
+            -p 'codex-phone-rootfs.tar.gz' \
+            -D "$RUNNER_TEMP/out" --clobber
           out="$RUNNER_TEMP/out/codex-phone-rootfs.tar.gz"
-          mkdir -p "$RUNNER_TEMP/out"
-          python3 - "$apk" "$out" <<'PY'
-          import hashlib, sys, zipfile
-          apk, out = sys.argv[1], sys.argv[2]
-          with zipfile.ZipFile(apk) as z:
-              bad = z.testzip()
-              if bad is not None:
-                  raise SystemExit('source APK is damaged at ' + bad)
-              names = [n for n in z.namelist() if n.endswith(('codex-phone-rootfs.rootfs', 'codex-phone-rootfs.tar.gz', 'codex-phone-rootfs.tgz'))]
-              if len(names) != 1:
-                  raise SystemExit('expected exactly one embedded rootfs, found %r' % names)
-              info = z.getinfo(names[0])
-              digest = hashlib.sha256()
-              written = 0
-              with z.open(info) as src, open(out, 'wb') as dst:
-                  while True:
-                      block = src.read(8 * 1024 * 1024)
-                      if not block:
-                          break
-                      dst.write(block)
-                      digest.update(block)
-                      written += len(block)
-              print('member', names[0], 'declared', info.file_size)
-              print('written', written)
-              print('sha256', digest.hexdigest())
-          PY
           test -s "$out"
-      - name: Authenticate the extracted archive
+          echo "downloaded $(stat -c '%s' "$out") bytes"
+      - name: Authenticate the archive against the signed descriptor
         run: |
           set -euo pipefail
           out="$RUNNER_TEMP/out/codex-phone-rootfs.tar.gz"
@@ -120,7 +89,7 @@ jobs:
             echo "| bytes | $bytes |"
             echo "| sha256 | \`$sha\` |"
             echo '| members | 28430 |'
-            echo '| source | v80 pinned APK, re-hashed against the signed phone-runtime descriptor |'
+            echo "| source | ${SOURCE_REPO} ${SOURCE_TAG}, hashed against the signed phone-runtime descriptor |"
             echo "| build | https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID |"
             echo
             echo '### Install'
