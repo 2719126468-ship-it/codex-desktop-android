@@ -154,7 +154,7 @@ jobs:
           tag="${INPUT_TAG:-v${vc}-api27}"
           asset="Codex-Android-v${vc}-api27-arm64-debug.apk"
           mv dist/app-debug.apk "dist/$asset"
-          sha256sum "dist/$asset" > "dist/$asset.sha256"
+          ( cd dist && sha256sum "$asset" > "$asset.sha256" )
           if gh release view "$tag" >/dev/null 2>&1; then
             echo "::error::Release $tag already exists; existing releases are never overwritten. Pass another release_tag input."
             exit 1
