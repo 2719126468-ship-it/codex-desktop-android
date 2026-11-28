@@ -90,9 +90,11 @@ public abstract class CodexDisplayActivity extends MainActivity {
         renderStartup();
     }
     @Override public void onResume() {
+        com.ai.codex.CodexTrace.stage("CodexDisplayActivity.onResume:enter");
         super.onResume();
         // A recreated display must be able to reconnect without starting Linux.
         sendBroadcast(new Intent(CodexRuntimeService.ACTION_QUERY_STATUS).setPackage(getPackageName()));
+        com.ai.codex.CodexTrace.stage("CodexDisplayActivity.onResume:done");
     }
     protected final void requestRuntimeLaunch() {
         launchGate.request(SystemClock.elapsedRealtimeNanos());

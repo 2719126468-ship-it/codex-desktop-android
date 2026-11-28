@@ -50,14 +50,25 @@ public final class CodexActivity extends CodexDisplayActivity {
     private androidx.appcompat.app.AlertDialog environmentDialog;
 
     @Override public void onCreate(Bundle state) {
-        super.onCreate(state);
+        CodexTrace.stage("CodexActivity.onCreate:enter");
+        try {
+            super.onCreate(state);
+            CodexTrace.stage("CodexActivity.onCreate:super-done");
+        } catch (Throwable error) {
+            CodexTrace.error("CodexActivity.onCreate:super", error);
+            throw error;
+        }
         current = this;
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() { showExitOptions(); }
         });
+        CodexTrace.stage("CodexActivity.onCreate:bridge");
         CodexAndroidBridge.start(this);
+        CodexTrace.stage("CodexActivity.onCreate:phone-host");
         com.ai.codex.phone.PhoneControl.get(this).startHost();
+        CodexTrace.stage("CodexActivity.onCreate:connector");
         acceptConnectorCallback(getIntent());
+        CodexTrace.stage("CodexActivity.onCreate:done");
         // The desktop client enforces a minimum window height. Keep its canvas
         // and let LorieView follow the input cursor above the Android keyboard.
         prefs.Reseed.put(false);
@@ -86,7 +97,14 @@ public final class CodexActivity extends CodexDisplayActivity {
         }
     }
     @Override public void onResume() {
-        super.onResume();
+        CodexTrace.stage("CodexActivity.onResume:enter");
+        try {
+            super.onResume();
+        } catch (Throwable error) {
+            CodexTrace.error("CodexActivity.onResume:super", error);
+            throw error;
+        }
+        CodexTrace.stage("CodexActivity.onResume:done");
         preferDisplayRefresh(true);
         // Let Android's current display policy supply high-refresh VSYNC, with no 60 Hz vote.
         if (android.os.Build.VERSION.SDK_INT >= 35)
