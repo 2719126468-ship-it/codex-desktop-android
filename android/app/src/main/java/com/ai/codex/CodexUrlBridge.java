@@ -71,7 +71,8 @@ final class CodexUrlBridge {
                     reader = new Thread(() -> serve(endpoint), "Codex-URL");
                     reader.start();
                     Log.i("Codex-URL", "Endpoint listening");
-                } catch (Exception error) {
+                } catch (Exception | LinkageError error) {
+                    CodexTrace.error("CodexUrlBridge.start", new Throwable(error));
                     server = null;
                     if (created != null) try { created.close(); } catch (IOException ignored) { }
                     Log.e("Codex-URL", "Endpoint start failed");

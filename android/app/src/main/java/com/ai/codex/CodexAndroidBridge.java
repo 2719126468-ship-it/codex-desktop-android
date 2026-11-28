@@ -25,7 +25,10 @@ public final class CodexAndroidBridge {
             new Thread(created::serve, "Codex-Android-tools").start();
             try { CodexDeviceHttp.start(context, created::call); }
             catch (Exception unavailable) { android.util.Log.w("Codex-Android", "Loopback device endpoint unavailable"); }
-        } catch (Exception error) {
+        } catch (Exception | LinkageError error) {
+            // A missing platform method is a LinkageError, not an Exception: letting it
+            // escape here would kill the process during onCreate on an older release.
+            CodexTrace.error("CodexAndroidBridge.start", new Throwable(error));
             android.util.Log.e("Codex-Android", "Android tool endpoint unavailable");
         }
     }

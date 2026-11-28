@@ -71,7 +71,8 @@ final class CodexImeBridge {
                     reader = new Thread(() -> serve(listening), "Codex-IME");
                     reader.start();
                     Log.i("Codex-IME", "Endpoint listening");
-                } catch (Exception error) {
+                } catch (Exception | LinkageError error) {
+                    CodexTrace.error("CodexImeBridge.start", new Throwable(error));
                     if (created != null) {
                         server = null;
                         try { created.close(); } catch (IOException ignored) { }
