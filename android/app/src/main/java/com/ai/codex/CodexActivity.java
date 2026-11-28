@@ -217,9 +217,13 @@ public final class CodexActivity extends CodexDisplayActivity {
         // A full build embeds the archive, so no Download copy or storage grant is involved.
         boolean externalPackageRequired = needsInstall
                 && !com.ai.codex.install.EnvironmentPackageSource.hasBundledArchive(this);
+        // The app-private drop point needs no grant at all, so the gate only asks for
+        // storage access when neither transport already holds a usable archive.
         boolean access = !externalPackageRequired
-                || com.ai.codex.install.EnvironmentPackageSource.hasDownloadsAccess(this);
+                || com.ai.codex.install.EnvironmentPackageSource.hasDownloadsAccess(this)
+                || hasPrivateArchive();
         boolean present = access && (!externalPackageRequired
+                || hasPrivateArchive()
                 || java.nio.file.Files.isRegularFile(
                         com.ai.codex.install.EnvironmentPackageSource.archiveFile().toPath(),
                         java.nio.file.LinkOption.NOFOLLOW_LINKS));
@@ -232,8 +236,10 @@ public final class CodexActivity extends CodexDisplayActivity {
         String title = state == EnvironmentLaunchGate.State.ACCESS_REQUIRED
                 ? "允许读取 Download 环境包" : "请先下载运行环境";
         String detail = state == EnvironmentLaunchGate.State.ACCESS_REQUIRED
-                ? "首次安装需要读取 Download 目录中的环境包。请授予存储读取权限；授权后会自动检查，无需选择文件。"
-                : "请从发布页面下载 codex-phone-rootfs.tar.gz，保存到手机内部存储的 Download 目录。无需解压，请保留原文件名。下载完成后返回 Codex，应用会自动检查，也可以点击重新检查。";
+                ? "首次安装需要读取环境包。请授予存储读取权限；也可以把 codex-phone-rootfs.tar.gz 拷到 "
+                        + com.ai.codex.install.EnvironmentPackageSource.privateArchiveFile(this).getParentFile().getAbsolutePath()
+                        + " 后点“重新检查”，该位置无需任何权限。"
+                : "请从发布页面下载 codex-phone-rootfs.tar.gz，保存到手机内部存储的 Download 目录，或拷到应用专属目录。无需解压，请保留原文件名。下载完成后返回 Codex，应用会自动检查，也可以点击重新检查。";
         showRuntimePrerequisite(title, detail);
         if (!environmentLaunchGate.shouldPrompt(state) || environmentDialog != null) return false;
         environmentLaunchGate.presented(state);
@@ -257,6 +263,11 @@ public final class CodexActivity extends CodexDisplayActivity {
         environmentDialog.setOnDismissListener(view -> environmentDialog = null);
         environmentDialog.show();
         return false;
+    }
+    /** True when the archive already sits in this app's own external directory. */
+    private boolean hasPrivateArchive() {
+        java.io.File candidate = com.ai.codex.install.EnvironmentPackageSource.privateArchiveFile(this);
+        return candidate.isFile() && candidate.length() > 0;
     }
     private void openEnvironmentAccessSettings() {
         // API 30+ gates public storage behind MANAGE_EXTERNAL_STORAGE; older releases

@@ -6,15 +6,20 @@ import android.os.Environment;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
-/** Fixed public Download transport; release hashes remain authenticated by the APK.
- * Android 8.1/9/10 do not expose MANAGE_EXTERNAL_STORAGE (API 30+): there the public
- * Download location is reachable through legacy READ_EXTERNAL_STORAGE instead, so the
- * access probe and the archive source both branch on the platform level. */
+/** Fixed archive transports; release hashes published inside the APK authenticate every byte.
+ *
+ * Two locations are probed, in order:
+ *   1. this app's own external directory (Android/data/<pkg>/files) - readable on every
+ *      supported release without any storage permission;
+ *   2. the public Download directory - needs MANAGE_EXTERNAL_STORAGE on API 30+ and the
+ *      legacy READ_EXTERNAL_STORAGE grant on API 27-29.
+ * A full build also embeds the archive inside the APK, in which case neither is used. */
 public final class EnvironmentPackageSource {
     public static final String ARCHIVE_NAME = "codex-phone-rootfs.tar.gz";
     private EnvironmentPackageSource() {}
@@ -23,7 +28,7 @@ public final class EnvironmentPackageSource {
         return !Files.exists(context.getFilesDir().toPath().resolve("debian"), LinkOption.NOFOLLOW_LINKS);
     }
 
-    /** True when this build can read the public Download directory. */
+    /** True when public Download is readable; the app-private location needs no grant. */
     public static boolean hasDownloadsAccess(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             return Environment.isExternalStorageManager();
@@ -32,18 +37,55 @@ public final class EnvironmentPackageSource {
                 == android.content.pm.PackageManager.PERMISSION_GRANTED;
     }
 
-    /** The permission this platform needs before the archive can be opened, or null. */
+    /** The runtime permission this platform still needs, or null when none can be requested. */
     public static String requiredPermission() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ? null : android.Manifest.permission.READ_EXTERNAL_STORAGE;
+    }
+
+    /** The app-private drop point: no permission, no scoped-storage waiver. */
+    public static File privateArchiveFile(Context context) {
+        File base = context.getExternalFilesDir(null);
+        if (base == null) base = new File(context.getFilesDir(), "external");
+        return new File(base, ARCHIVE_NAME);
     }
 
     public static File archiveFile() {
         return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), ARCHIVE_NAME);
     }
 
+    /** Every candidate path, most-readable first. */
+    public static List<File> candidates(Context context) {
+        List<File> paths = new ArrayList<>(2);
+        paths.add(privateArchiveFile(context));
+        paths.add(archiveFile());
+        return paths;
+    }
+
+    /** The first candidate that holds an archive of the expected size, or null. */
+    public static File presentArchive(Context context, RootfsExtractor.Spec spec) {
+        for (File candidate : candidates(context)) {
+            Path path = candidate.toPath();
+            try {
+                if (Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS) && Files.size(path) == spec.compressedBytes) {
+                    return candidate;
+                }
+            } catch (IOException unreadable) {
+                // A candidate that cannot be stat'ed is simply not a transport.
+            }
+        }
+        return null;
+    }
+
     public static RootfsTransaction.ArchiveSource downloads(Context context, RootfsExtractor.Spec spec) throws IOException {
+        Path privatePath = privateArchiveFile(context).toPath();
+        if (Files.isRegularFile(privatePath, LinkOption.NOFOLLOW_LINKS)) {
+            if (Files.size(privatePath) != spec.compressedBytes)
+                throw new IOException("应用专属目录中的环境包大小不匹配，请重新拷贝。");
+            return () -> new FileInputStream(privatePath.toFile());
+        }
         if (!hasDownloadsAccess(context))
-            throw new IOException("请允许 Codex 读取 Download 目录中的运行环境包。");
+            throw new IOException("请允许 Codex 读取存储，或把 " + ARCHIVE_NAME + " 拷到 "
+                    + privateArchiveFile(context).getAbsolutePath() + "。");
         Path archive = archiveFile().toPath();
         if (!Files.isRegularFile(archive, LinkOption.NOFOLLOW_LINKS))
             throw new IOException("未找到环境包，请下载 " + ARCHIVE_NAME + " 到 Download 目录后重新检查，无需解压。");
@@ -68,7 +110,6 @@ public final class EnvironmentPackageSource {
         return null;
     }
 
-    /** True when the APK itself carries the environment archive. */
     public static boolean hasBundledArchive(Context context) {
         try { return bundled(context) != null; } catch (IOException unavailable) { return false; }
     }
