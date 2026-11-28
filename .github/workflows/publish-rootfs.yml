@@ -39,6 +39,9 @@ jobs:
       SOURCE_REPO: JinShichang/codex-desktop-android
       SOURCE_TAG: v80
     steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
       - name: Fetch the published archive with the GitHub CLI
         run: |
           set -euo pipefail
