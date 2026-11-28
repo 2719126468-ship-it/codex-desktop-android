@@ -10,8 +10,8 @@ on:
       publish_release:
         description: 'Verify then publish the APK as a GitHub Release'
         type: choice
-        default: 'no'
-        options: [no, yes]
+        default: 'publish'
+        options: ['skip', 'publish']
       release_tag:
         description: 'Release tag; blank = v<versionCode>-api27'
         type: string
@@ -116,7 +116,7 @@ jobs:
   publish-release:
     name: Publish verified APK as a GitHub Release
     needs: build-arm64-apk
-    if: github.event_name == 'workflow_dispatch' && inputs.publish_release == 'yes'
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_release == 'publish'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
