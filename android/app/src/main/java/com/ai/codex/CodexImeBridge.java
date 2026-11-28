@@ -65,7 +65,7 @@ final class CodexImeBridge {
                 LocalServerSocket created = null;
                 try {
                     created = new LocalServerSocket("codex-ime-" + android.os.Process.myUid());
-                    Os.fcntlInt(created.getFileDescriptor(), OsConstants.F_SETFD, OsConstants.FD_CLOEXEC);
+                    CodexPlatform.setCloseOnExec(created.getFileDescriptor());
                     server = created;
                     LocalServerSocket listening = created;
                     reader = new Thread(() -> serve(listening), "Codex-IME");

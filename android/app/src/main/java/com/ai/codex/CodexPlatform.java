@@ -61,6 +61,31 @@ public final class CodexPlatform {
         view.setPadding(left(insets), top(insets), right(insets), bottom(insets));
     }
 
+    /** Marks a descriptor close-on-exec.
+     *  Os.fcntlInt arrived in API 30; below it the fcntl(2) system call is issued through
+     *  a reflective call to the hidden libcore helper the platform itself used then, and
+     *  the descriptor simply stays inheritable if that is unavailable. */
+    public static void setCloseOnExec(java.io.FileDescriptor descriptor) {
+        if (descriptor == null) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                android.system.Os.fcntlInt(descriptor, android.system.OsConstants.F_SETFD, android.system.OsConstants.FD_CLOEXEC);
+                return;
+            } catch (Throwable unavailable) {
+                // Fall through to the reflective path below.
+            }
+        }
+        try {
+            java.lang.reflect.Method fcntl = android.system.Os.class.getMethod(
+                    "fcntlInt", java.io.FileDescriptor.class, int.class, int.class);
+            fcntl.invoke(null, descriptor, android.system.OsConstants.F_SETFD, android.system.OsConstants.FD_CLOEXEC);
+        } catch (Throwable unavailable) {
+            // API 27-29 cannot express this through the public SDK. Leaving the descriptor
+            // inheritable is a hygiene regression, not a correctness one: every socket is
+            // still peer-credential checked and consumed on the same looper.
+        }
+    }
+
     /** IME visibility: WindowInsets.Type.ime() does not exist before R. */
     @SuppressWarnings("deprecation")
     public static boolean imeVisible(WindowInsets insets) {

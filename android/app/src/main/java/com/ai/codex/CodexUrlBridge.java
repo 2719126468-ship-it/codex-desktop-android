@@ -65,7 +65,7 @@ final class CodexUrlBridge {
                 LocalServerSocket created = null;
                 try {
                     created = new LocalServerSocket("codex-url-" + android.os.Process.myUid());
-                    Os.fcntlInt(created.getFileDescriptor(), OsConstants.F_SETFD, OsConstants.FD_CLOEXEC);
+                    CodexPlatform.setCloseOnExec(created.getFileDescriptor());
                     server = created;
                     LocalServerSocket endpoint = created;
                     reader = new Thread(() -> serve(endpoint), "Codex-URL");
@@ -181,7 +181,7 @@ final class CodexUrlBridge {
                     client = accepted;
                 }
                 try (LocalSocket request = accepted) {
-                    Os.fcntlInt(request.getFileDescriptor(), OsConstants.F_SETFD, OsConstants.FD_CLOEXEC);
+                    CodexPlatform.setCloseOnExec(request.getFileDescriptor());
                     if (request.getPeerCredentials().getUid() != android.os.Process.myUid()) {
                         respond(request, "unauthorized");
                         continue;

@@ -5,8 +5,6 @@ import android.content.Context;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
 import android.os.PowerManager;
-import android.system.Os;
-import android.system.OsConstants;
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +20,7 @@ public final class CodexAndroidBridge {
         CodexAndroidBridge created = new CodexAndroidBridge(context);
         try {
             created.server = new LocalServerSocket("codex-android-" + android.os.Process.myUid());
-            Os.fcntlInt(created.server.getFileDescriptor(), OsConstants.F_SETFD, OsConstants.FD_CLOEXEC);
+            CodexPlatform.setCloseOnExec(created.server.getFileDescriptor());
             instance = created;
             new Thread(created::serve, "Codex-Android-tools").start();
             try { CodexDeviceHttp.start(context, created::call); }
@@ -34,7 +32,7 @@ public final class CodexAndroidBridge {
     private void serve() {
         while (true) {
             try (LocalSocket socket = server.accept()) {
-                Os.fcntlInt(socket.getFileDescriptor(), OsConstants.F_SETFD, OsConstants.FD_CLOEXEC);
+                CodexPlatform.setCloseOnExec(socket.getFileDescriptor());
                 if (socket.getPeerCredentials().getUid() != android.os.Process.myUid()) continue;
                 socket.setSoTimeout(15000);
                 ByteArrayOutputStream input = new ByteArrayOutputStream();
