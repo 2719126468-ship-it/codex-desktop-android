@@ -1,0 +1,133 @@
+name: Publish the verified phone rootfs archive
+
+# One-time, manual: republish the 1.27 GiB first-install archive as its own release
+# asset so the small APK can be installed without downloading a 1.4 GiB APK.
+# The bytes are fetched once with the GitHub CLI, which is a single stream with
+# integrity handling, and the published archive is re-hashed against the signed
+# descriptor inside the pinned v80 APK before anything is uploaded.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag for the archive; blank = rootfs-v80'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rootfs-archive-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish-rootfs:
+    name: Verify and publish codex-phone-rootfs.tar.gz
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      EXPECTED_SHA256: d3d0aea653d6748be2c65e88093ce8d88f24a5031e251709d9d01c995bf58ec1
+      EXPECTED_BYTES: '1367052023'
+      SOURCE_APK: https://github.com/JinShichang/codex-desktop-android/releases/download/v80/Codex-Android-v80-small.apk
+      SOURCE_APK_SHA256: 9d9101e1a80bdaf492c02e5abc71b550cb9658aa83782e410d76cef400d12e6b
+    steps:
+      - name: Fetch the pinned v80 APK
+        run: |
+          set -euo pipefail
+          gh release download v80 \
+            -R JinShichang/codex-desktop-android \
+            -p 'Codex-Android-v80-small.apk' \
+            -D "$RUNNER_TEMP/src" --clobber
+          apk="$RUNNER_TEMP/src/Codex-Android-v80-small.apk"
+          printf '%s  %s\n' "$SOURCE_APK_SHA256" "$apk" | sha256sum -c -
+          stat -c '%s bytes' "$apk"
+      - name: Extract the authenticated rootfs archive
+        run: |
+          set -euo pipefail
+          apk="$RUNNER_TEMP/src/Codex-Android-v80-small.apk"
+          out="$RUNNER_TEMP/out/codex-phone-rootfs.tar.gz"
+          mkdir -p "$RUNNER_TEMP/out"
+          python3 - "$apk" "$out" <<'PY'
+          import hashlib, sys, zipfile
+          apk, out = sys.argv[1], sys.argv[2]
+          with zipfile.ZipFile(apk) as z:
+              bad = z.testzip()
+              if bad is not None:
+                  raise SystemExit('source APK is damaged at ' + bad)
+              names = [n for n in z.namelist() if n.endswith(('codex-phone-rootfs.rootfs', 'codex-phone-rootfs.tar.gz', 'codex-phone-rootfs.tgz'))]
+              if len(names) != 1:
+                  raise SystemExit('expected exactly one embedded rootfs, found %r' % names)
+              info = z.getinfo(names[0])
+              digest = hashlib.sha256()
+              written = 0
+              with z.open(info) as src, open(out, 'wb') as dst:
+                  while True:
+                      block = src.read(8 * 1024 * 1024)
+                      if not block:
+                          break
+                      dst.write(block)
+                      digest.update(block)
+                      written += len(block)
+              print('member', names[0], 'declared', info.file_size)
+              print('written', written)
+              print('sha256', digest.hexdigest())
+          PY
+          test -s "$out"
+      - name: Authenticate the extracted archive
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/out/codex-phone-rootfs.tar.gz"
+          actual_bytes=$(stat -c '%s' "$out")
+          actual_sha=$(sha256sum "$out" | awk '{print $1}')
+          echo "bytes=$actual_bytes sha256=$actual_sha"
+          test "$actual_bytes" = "$EXPECTED_BYTES" || { echo '::error::archive size differs from the signed descriptor'; exit 1; }
+          test "$actual_sha" = "$EXPECTED_SHA256" || { echo '::error::archive digest differs from the signed descriptor'; exit 1; }
+          gzip -t "$out"
+          members=$(tar -tzf "$out" | wc -l)
+          echo "members=$members"
+          test "$members" = '28430' || { echo '::error::member count differs from the signed descriptor'; exit 1; }
+      - name: Publish the archive as its own release
+        env:
+          INPUT_TAG: ${{ inputs.release_tag }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/out/codex-phone-rootfs.tar.gz"
+          tag="${INPUT_TAG:-rootfs-v80}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "::error::Release $tag already exists; releases are never overwritten."
+            exit 1
+          fi
+          sha=$(sha256sum "$out" | awk '{print $1}')
+          bytes=$(stat -c '%s' "$out")
+          ( cd "$RUNNER_TEMP/out" && sha256sum codex-phone-rootfs.tar.gz > codex-phone-rootfs.tar.gz.sha256 )
+          notes="$RUNNER_TEMP/notes.md"
+          {
+            echo '## Codex Android first-install environment'
+            echo
+            echo 'Signed-descriptor-verified Debian/desktop environment for the API 27 ARM64 builds.'
+            echo
+            echo '| item | value |'
+            echo '| --- | --- |'
+            echo "| bytes | $bytes |"
+            echo "| sha256 | \`$sha\` |"
+            echo '| members | 28430 |'
+            echo '| source | v80 pinned APK, re-hashed against the signed phone-runtime descriptor |'
+            echo "| build | https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID |"
+            echo
+            echo '### Install'
+            echo
+            echo '```'
+            echo 'adb push codex-phone-rootfs.tar.gz /sdcard/Download/'
+            echo '```'
+            echo
+            echo 'Keep the file name unchanged. The APK verifies it against its embedded descriptor; no extraction by hand.'
+          } > "$notes"
+          gh release create "$tag" "$out" "$RUNNER_TEMP/out/codex-phone-rootfs.tar.gz.sha256" \
+            --target "$TARGET_SHA" \
+            --title "Codex Android first-install environment ($tag)" \
+            --notes-file "$notes"
+          gh release view "$tag" --json tagName,url,assets \
+            --jq '.tagName, .url, (.assets[] | .name + " " + (.size | tostring))'
